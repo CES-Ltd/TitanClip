@@ -10,7 +10,9 @@ export function createWorkplaceGame(parent: HTMLElement): Phaser.Game {
     width: parent.clientWidth,
     height: parent.clientHeight,
     pixelArt: true,
-    backgroundColor: "#1a1a2e",
+    backgroundColor: "#09090b",
+    antialias: false,
+    roundPixels: true,
     scale: {
       mode: Phaser.Scale.RESIZE,
       autoCenter: Phaser.Scale.CENTER_BOTH,

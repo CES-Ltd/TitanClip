@@ -1,8 +1,7 @@
 import Phaser from "phaser";
 
-const SPEED = 140;
-const FRAME_W = 24;
-const DIRS = { down: 0, left: 1, up: 2, right: 3 };
+const SPEED = 160;
+const SPRITE_KEY = "boss";
 
 export class BossCharacter extends Phaser.GameObjects.Container {
   private sprite: Phaser.GameObjects.Sprite;
@@ -11,38 +10,30 @@ export class BossCharacter extends Phaser.GameObjects.Container {
   private interactKey!: Phaser.Input.Keyboard.Key;
   private nameLabel: Phaser.GameObjects.Text;
   declare public body: Phaser.Physics.Arcade.Body;
-  private facing = 0;
+  private facing: "down" | "up" | "left" | "right" = "down";
 
   constructor(scene: Phaser.Scene, x: number, y: number) {
     super(scene, x, y);
     scene.add.existing(this);
     scene.physics.add.existing(this);
 
-    // Create animations
-    for (const [name, row] of Object.entries(DIRS)) {
-      const startFrame = row * 4;
-      scene.anims.create({
-        key: `boss-walk-${name}`,
-        frames: scene.anims.generateFrameNumbers("boss", { start: startFrame, end: startFrame + 3 }),
-        frameRate: 8,
-        repeat: -1,
-      });
-    }
-
-    this.sprite = scene.add.sprite(0, 0, "boss", 0);
-    this.sprite.setOrigin(0.5, 0.7);
+    this.sprite = scene.add.sprite(0, -16, SPRITE_KEY);
+    this.sprite.setOrigin(0.5, 0.75);
     this.add(this.sprite);
 
-    this.nameLabel = scene.add.text(0, 14, "BOSS", {
-      fontSize: "8px",
+    this.nameLabel = scene.add.text(0, 20, "YOU", {
+      fontSize: "9px",
       fontFamily: "monospace",
       color: "#fbbf24",
       align: "center",
+      stroke: "#000",
+      strokeThickness: 2,
     }).setOrigin(0.5);
     this.add(this.nameLabel);
 
-    this.body.setSize(16, 16);
-    this.body.setOffset(-8, -8);
+    // Physics body — smaller hitbox at feet
+    this.body.setSize(24, 20);
+    this.body.setOffset(-12, -10);
 
     if (scene.input.keyboard) {
       this.cursors = scene.input.keyboard.createCursorKeys();
@@ -54,6 +45,9 @@ export class BossCharacter extends Phaser.GameObjects.Container {
       };
       this.interactKey = scene.input.keyboard.addKey("E");
     }
+
+    // Start idle
+    this.sprite.play(`${SPRITE_KEY}:idle-down`);
   }
 
   get interactPressed(): boolean {
@@ -75,17 +69,14 @@ export class BossCharacter extends Phaser.GameObjects.Container {
     this.body.setVelocity(vx, vy);
 
     if (vx !== 0 || vy !== 0) {
-      // Determine facing direction
       if (Math.abs(vx) > Math.abs(vy)) {
-        this.facing = vx < 0 ? DIRS.left : DIRS.right;
+        this.facing = vx < 0 ? "left" : "right";
       } else {
-        this.facing = vy < 0 ? DIRS.up : DIRS.down;
+        this.facing = vy < 0 ? "up" : "down";
       }
-      const dirName = Object.entries(DIRS).find(([, v]) => v === this.facing)?.[0] ?? "down";
-      this.sprite.anims.play(`boss-walk-${dirName}`, true);
+      this.sprite.play(`${SPRITE_KEY}:walk-${this.facing}`, true);
     } else {
-      this.sprite.anims.stop();
-      this.sprite.setFrame(this.facing * 4);
+      this.sprite.play(`${SPRITE_KEY}:idle-${this.facing}`, true);
     }
   }
 }

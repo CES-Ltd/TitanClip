@@ -6,7 +6,8 @@ import { OnboardingWizard } from "./components/OnboardingWizard";
 import { authApi } from "./api/auth";
 import { healthApi } from "./api/health";
 import { Dashboard } from "./pages/Dashboard";
-import { Workplace } from "./pages/Workplace";
+import { lazy, Suspense } from "react";
+const Workplace = lazy(() => import("./pages/Workplace").then(m => ({ default: m.Workplace })));
 import { Companies } from "./pages/Companies";
 import { Agents } from "./pages/Agents";
 import { AgentDetail } from "./pages/AgentDetail";
@@ -123,7 +124,7 @@ function boardRoutes() {
     <>
       <Route index element={<Navigate to="dashboard" replace />} />
       <Route path="dashboard" element={<Dashboard />} />
-      <Route path="workplace" element={<Workplace />} />
+      <Route path="workplace" element={<Suspense fallback={<div className="flex items-center justify-center h-full text-muted-foreground">Loading Workplace...</div>}><Workplace /></Suspense>} />
       <Route path="onboarding" element={<OnboardingRoutePage />} />
       <Route path="companies" element={<Companies />} />
       <Route path="company/settings" element={<CompanySettings />} />

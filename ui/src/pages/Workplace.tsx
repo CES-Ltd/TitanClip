@@ -1,13 +1,11 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import Phaser from "phaser";
 import { useCompany } from "../context/CompanyContext";
 import { useBreadcrumbs } from "../context/BreadcrumbContext";
 import { agentsApi } from "../api/agents";
 import { heartbeatsApi } from "../api/heartbeats";
 import { issuesApi } from "../api/issues";
 import { queryKeys } from "../lib/queryKeys";
-import { createWorkplaceGame } from "../workplace/WorkplaceGame";
 import { TaskAssignmentOverlay } from "../components/TaskAssignmentOverlay";
 
 export function Workplace() {
@@ -15,7 +13,7 @@ export function Workplace() {
   const { setBreadcrumbs } = useBreadcrumbs();
   const queryClient = useQueryClient();
   const gameContainerRef = useRef<HTMLDivElement>(null);
-  const gameRef = useRef<Phaser.Game | null>(null);
+  const gameRef = useRef<any>(null);
   const [assigningAgentId, setAssigningAgentId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -43,12 +41,16 @@ export function Workplace() {
     enabled: !!selectedCompanyId,
   });
 
-  // Initialize Phaser game
+  // Initialize Phaser game (dynamic import to avoid polluting main bundle)
   useEffect(() => {
     if (!gameContainerRef.current || gameRef.current) return;
-    gameRef.current = createWorkplaceGame(gameContainerRef.current);
-
+    let destroyed = false;
+    import("../workplace/WorkplaceGame").then(({ createWorkplaceGame }) => {
+      if (destroyed || !gameContainerRef.current) return;
+      gameRef.current = createWorkplaceGame(gameContainerRef.current);
+    });
     return () => {
+      destroyed = true;
       gameRef.current?.destroy(true);
       gameRef.current = null;
     };

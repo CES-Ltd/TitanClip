@@ -1,227 +1,197 @@
 import Phaser from "phaser";
-import type { OfficeMapData } from "../types";
 
 /**
- * BootScene: Generates all textures procedurally (no external images needed)
- * and loads the office map JSON, then starts the OfficeScene.
+ * Sprite layout: 48×96 frames, 56 columns per row.
+ * Row 0: preview thumbnails
+ * Row 1: idle — right(6) · up(6) · left(6) · down(6)
+ * Row 2: walk — right(6) · up(6) · left(6) · down(6)
  */
+export const FRAME_W = 48;
+export const FRAME_H = 96;
+export const SHEET_COLS = 56;
+export const FRAMES_PER_DIR = 6;
+export const DIRECTIONS = ["right", "up", "left", "down"] as const;
+
+const CHARACTER_SPRITES = [
+  { key: "boss", path: "/workplace/characters/boss.png" },
+  { key: "agent_01", path: "/workplace/characters/agent_01.png" },
+  { key: "agent_02", path: "/workplace/characters/agent_02.png" },
+  { key: "agent_03", path: "/workplace/characters/agent_03.png" },
+  { key: "agent_04", path: "/workplace/characters/agent_04.png" },
+  { key: "agent_05", path: "/workplace/characters/agent_05.png" },
+  { key: "agent_06", path: "/workplace/characters/agent_06.png" },
+];
+
 export class BootScene extends Phaser.Scene {
   constructor() {
     super({ key: "BootScene" });
   }
 
   preload() {
+    // Character spritesheets
+    for (const { key, path } of CHARACTER_SPRITES) {
+      this.load.spritesheet(key, path, {
+        frameWidth: FRAME_W,
+        frameHeight: FRAME_H,
+      });
+    }
+
+    // Emotes spritesheet (10x10 grid of 48x48 frames)
+    this.load.spritesheet("emotes", "/workplace/sprites/emotes_48x48.png", {
+      frameWidth: 48,
+      frameHeight: 48,
+    });
+
+    // Office map data
     this.load.json("office-map", "/workplace/office-map.json");
   }
 
   create() {
-    this.generateFloorTile();
-    this.generateWallTile();
-    this.generateDeskTile();
-    this.generatePlantTile();
-    this.generateBossSprite();
-    this.generateAgentSprite();
-    this.generateThoughtBubbles();
-    this.generateParticle();
-    this.generateInteractIcon();
+    // Build character animations for all sprites
+    for (const { key } of CHARACTER_SPRITES) {
+      this.buildCharacterAnims(key);
+    }
+
+    // Build emote animations
+    this.buildEmoteAnims();
+
+    // Generate procedural textures for the office
+    this.generateOfficeTiles();
 
     this.scene.start("OfficeScene");
     this.scene.start("UIScene");
   }
 
-  private generateFloorTile() {
-    const g = this.add.graphics();
-    g.fillStyle(0xc4a882);
-    g.fillRect(0, 0, 32, 32);
-    g.lineStyle(1, 0xb89b72);
-    g.strokeRect(0, 0, 32, 32);
-    // Subtle wood grain
-    g.lineStyle(1, 0xb89b72, 0.3);
-    g.lineBetween(0, 8, 32, 8);
-    g.lineBetween(0, 16, 32, 16);
-    g.lineBetween(0, 24, 32, 24);
-    g.generateTexture("floor", 32, 32);
-    g.destroy();
-  }
+  private buildCharacterAnims(spriteKey: string) {
+    for (const [dirIdx, dir] of DIRECTIONS.entries()) {
+      // Idle animations (row 1)
+      const idleStart = 1 * SHEET_COLS + dirIdx * FRAMES_PER_DIR;
+      this.anims.create({
+        key: `${spriteKey}:idle-${dir}`,
+        frames: this.anims.generateFrameNumbers(spriteKey, {
+          start: idleStart,
+          end: idleStart + FRAMES_PER_DIR - 1,
+        }),
+        frameRate: 8,
+        repeat: -1,
+      });
 
-  private generateWallTile() {
-    const g = this.add.graphics();
-    g.fillStyle(0x374151);
-    g.fillRect(0, 0, 32, 32);
-    g.fillStyle(0x1f2937);
-    g.fillRect(0, 28, 32, 4);
-    g.fillRect(0, 0, 32, 2);
-    g.generateTexture("wall", 32, 32);
-    g.destroy();
-  }
-
-  private generateDeskTile() {
-    const g = this.add.graphics();
-    // Desk body
-    g.fillStyle(0x92400e);
-    g.fillRect(2, 4, 28, 20);
-    g.fillStyle(0xb45309);
-    g.fillRect(4, 6, 24, 16);
-    // Monitor
-    g.fillStyle(0x1e293b);
-    g.fillRect(9, 7, 14, 10);
-    g.fillStyle(0x6366f1);
-    g.fillRect(10, 8, 12, 8);
-    // Monitor stand
-    g.fillStyle(0x475569);
-    g.fillRect(14, 17, 4, 3);
-    g.generateTexture("desk", 32, 32);
-    g.destroy();
-  }
-
-  private generatePlantTile() {
-    const g = this.add.graphics();
-    // Pot
-    g.fillStyle(0x92400e);
-    g.fillRect(10, 20, 12, 10);
-    g.fillStyle(0x78350f);
-    g.fillRect(8, 18, 16, 4);
-    // Leaves
-    g.fillStyle(0x166534);
-    g.fillCircle(16, 12, 8);
-    g.fillStyle(0x15803d);
-    g.fillCircle(12, 10, 5);
-    g.fillCircle(20, 10, 5);
-    g.fillCircle(16, 6, 4);
-    g.generateTexture("plant", 32, 32);
-    g.destroy();
-  }
-
-  private generateBossSprite() {
-    const g = this.add.graphics();
-    const fw = 24, fh = 32;
-    for (let dir = 0; dir < 4; dir++) {
-      for (let frame = 0; frame < 4; frame++) {
-        const x = (dir * 4 + frame) * fw;
-        const bob = frame % 2 === 0 ? 0 : -1;
-        // Body (gold suit)
-        g.fillStyle(0xfbbf24);
-        g.fillRect(x + 6, 10 + bob, 12, 14);
-        // Head
-        g.fillStyle(0xfde68a);
-        g.fillRect(x + 7, 2 + bob, 10, 10);
-        // Crown
-        g.fillStyle(0xf59e0b);
-        g.fillRect(x + 8, bob, 8, 3);
-        g.fillRect(x + 9, bob - 1, 2, 2);
-        g.fillRect(x + 13, bob - 1, 2, 2);
-        // Eyes
-        g.fillStyle(0x1e293b);
-        if (dir === 0 || dir === 2) { g.fillRect(x + 9, 6 + bob, 2, 2); g.fillRect(x + 13, 6 + bob, 2, 2); }
-        else { g.fillRect(x + 11, 6 + bob, 2, 2); }
-        // Legs
-        g.fillStyle(0x92400e);
-        const lo = frame === 1 ? 2 : frame === 3 ? -2 : 0;
-        g.fillRect(x + 8, 24 + bob, 3, 6);
-        g.fillRect(x + 13, 24 + bob + lo, 3, 6);
-      }
+      // Walk animations (row 2)
+      const walkStart = 2 * SHEET_COLS + dirIdx * FRAMES_PER_DIR;
+      this.anims.create({
+        key: `${spriteKey}:walk-${dir}`,
+        frames: this.anims.generateFrameNumbers(spriteKey, {
+          start: walkStart,
+          end: walkStart + FRAMES_PER_DIR - 1,
+        }),
+        frameRate: 10,
+        repeat: -1,
+      });
     }
-    g.generateTexture("boss", fw * 16, fh);
-    g.destroy();
   }
 
-  private generateAgentSprite() {
-    const g = this.add.graphics();
-    const fw = 24, fh = 32;
-    const roleColors = [0xfbbf24, 0x3b82f6, 0x10b981, 0x8b5cf6, 0xf97316, 0x14b8a6, 0x6b7280, 0xf43f5e];
+  private buildEmoteAnims() {
+    const emotes: { key: string; frames: number[]; rate: number; repeat: number }[] = [
+      { key: "emote:thinking", frames: [52, 53], rate: 2, repeat: -1 },
+      { key: "emote:device", frames: [58, 59], rate: 2, repeat: -1 },
+      { key: "emote:wrench", frames: [74, 75], rate: 2, repeat: -1 },
+      { key: "emote:dots", frames: [92, 93], rate: 2, repeat: -1 },
+      { key: "emote:sleep", frames: [56, 57], rate: 2, repeat: -1 },
+      { key: "emote:alert", frames: [40, 41], rate: 4, repeat: 3 },
+      { key: "emote:fail", frames: [50, 51], rate: 4, repeat: 3 },
+      { key: "emote:star", frames: [64, 65], rate: 3, repeat: 3 },
+      { key: "emote:heart", frames: [54, 55], rate: 2, repeat: 3 },
+      { key: "emote:music", frames: [66, 67], rate: 3, repeat: -1 },
+      { key: "emote:confused", frames: [62, 63], rate: 2, repeat: -1 },
+      { key: "emote:angry", frames: [70, 71], rate: 3, repeat: 3 },
+    ];
 
-    roleColors.forEach((color, roleIdx) => {
-      for (let dir = 0; dir < 4; dir++) {
-        for (let frame = 0; frame < 4; frame++) {
-          const x = (dir * 4 + frame) * fw;
-          const y = roleIdx * fh;
-          const bob = frame % 2 === 0 ? 0 : -1;
-          // Body
-          g.fillStyle(color);
-          g.fillRect(x + 6, y + 10 + bob, 12, 14);
-          // Head
-          g.fillStyle(0xfdd8d8);
-          g.fillRect(x + 7, y + 2 + bob, 10, 10);
-          // Eyes
-          g.fillStyle(0x1e293b);
-          if (dir === 0 || dir === 2) { g.fillRect(x + 9, y + 6 + bob, 2, 2); g.fillRect(x + 13, y + 6 + bob, 2, 2); }
-          else { g.fillRect(x + 11, y + 6 + bob, 2, 2); }
-          // Legs
-          g.fillStyle(0x334155);
-          const lo = frame === 1 ? 2 : frame === 3 ? -2 : 0;
-          g.fillRect(x + 8, y + 24 + bob, 3, 6);
-          g.fillRect(x + 13, y + 24 + bob + lo, 3, 6);
-        }
-      }
-    });
-
-    g.generateTexture("agent-sprites", fw * 16, fh * roleColors.length);
-    g.destroy();
+    for (const e of emotes) {
+      this.anims.create({
+        key: e.key,
+        frames: e.frames.map((f) => ({ key: "emotes", frame: f })),
+        frameRate: e.rate,
+        repeat: e.repeat,
+      });
+    }
   }
 
-  private generateThoughtBubbles() {
-    const g = this.add.graphics();
-    const size = 32;
-    const icons = ["thinking", "coding", "error", "success", "paused", "queued"];
+  private generateOfficeTiles() {
+    // Floor tile — dark theme inspired
+    const floor = this.add.graphics();
+    floor.fillStyle(0x1e1e2e); // dark blue-gray
+    floor.fillRect(0, 0, 48, 48);
+    floor.lineStyle(1, 0x2a2a3e, 0.4);
+    floor.strokeRect(0, 0, 48, 48);
+    floor.lineStyle(1, 0x252538, 0.2);
+    floor.lineBetween(0, 16, 48, 16);
+    floor.lineBetween(0, 32, 48, 32);
+    floor.generateTexture("floor", 48, 48);
+    floor.destroy();
 
-    icons.forEach((_, idx) => {
-      const x = idx * size;
-      // Bubble
-      g.fillStyle(0xffffff);
-      g.fillCircle(x + 16, 12, 12);
-      g.lineStyle(1, 0x94a3b8);
-      g.strokeCircle(x + 16, 12, 12);
-      // Tail
-      g.fillStyle(0xffffff);
-      g.fillRect(x + 14, 22, 4, 4);
-      g.fillRect(x + 12, 26, 2, 3);
-    });
-    // Icons inside bubbles
-    // 0: thinking (...)
-    g.fillStyle(0x64748b);
-    g.fillCircle(9 + 2, 12, 2); g.fillCircle(16, 12, 2); g.fillCircle(23 - 2, 12, 2);
-    // 1: coding (gear)
-    g.fillStyle(0x6366f1);
-    g.fillRect(32 + 12, 8, 8, 8);
-    // 2: error (!)
-    g.fillStyle(0xef4444);
-    g.fillRect(64 + 15, 6, 2, 8); g.fillRect(64 + 15, 16, 2, 2);
-    // 3: success (check)
-    g.lineStyle(2, 0x22c55e);
-    g.lineBetween(96 + 10, 12, 96 + 14, 16); g.lineBetween(96 + 14, 16, 96 + 22, 8);
-    // 4: paused (||)
-    g.fillStyle(0x94a3b8);
-    g.fillRect(128 + 12, 7, 3, 10); g.fillRect(128 + 17, 7, 3, 10);
-    // 5: queued (clock)
-    g.lineStyle(2, 0xf59e0b);
-    g.strokeCircle(160 + 16, 12, 6);
-    g.lineBetween(160 + 16, 9, 160 + 16, 12); g.lineBetween(160 + 16, 12, 160 + 19, 12);
+    // Wall tile — darker
+    const wall = this.add.graphics();
+    wall.fillStyle(0x111122);
+    wall.fillRect(0, 0, 48, 48);
+    wall.fillStyle(0x0d0d1a);
+    wall.fillRect(0, 44, 48, 4);
+    wall.fillStyle(0x6366f1); // indigo accent line
+    wall.fillRect(0, 0, 48, 2);
+    wall.generateTexture("wall", 48, 48);
+    wall.destroy();
 
-    g.generateTexture("thought-bubbles", size * 6, size);
-    g.destroy();
-  }
+    // Desk tile
+    const desk = this.add.graphics();
+    desk.fillStyle(0x2d2d3f);
+    desk.fillRoundedRect(2, 6, 44, 32, 4);
+    desk.fillStyle(0x3a3a50);
+    desk.fillRoundedRect(4, 8, 40, 28, 3);
+    // Monitor
+    desk.fillStyle(0x0f172a);
+    desk.fillRoundedRect(12, 10, 24, 16, 2);
+    desk.fillStyle(0x6366f1); // indigo screen glow
+    desk.fillRoundedRect(14, 12, 20, 12, 1);
+    // Stand
+    desk.fillStyle(0x4a4a5e);
+    desk.fillRect(22, 26, 4, 6);
+    desk.fillRect(18, 32, 12, 2);
+    desk.generateTexture("desk", 48, 48);
+    desk.destroy();
 
-  private generateParticle() {
-    const g = this.add.graphics();
-    g.fillStyle(0xfbbf24);
-    g.fillCircle(4, 4, 4);
-    g.fillStyle(0xfef3c7);
-    g.fillCircle(4, 4, 2);
-    g.generateTexture("particle", 8, 8);
-    g.destroy();
-  }
+    // Plant tile
+    const plant = this.add.graphics();
+    plant.fillStyle(0x3a2e1c);
+    plant.fillRoundedRect(14, 28, 20, 16, 3);
+    plant.fillStyle(0x2e1f0f);
+    plant.fillRect(12, 26, 24, 4);
+    plant.fillStyle(0x166534);
+    plant.fillCircle(24, 18, 12);
+    plant.fillStyle(0x15803d);
+    plant.fillCircle(18, 16, 7);
+    plant.fillCircle(30, 16, 7);
+    plant.fillCircle(24, 10, 6);
+    plant.generateTexture("plant", 48, 48);
+    plant.destroy();
 
-  private generateInteractIcon() {
-    const g = this.add.graphics();
-    // "E" key icon
-    g.fillStyle(0x1e293b);
-    g.fillRoundedRect(0, 0, 20, 20, 4);
-    g.fillStyle(0xffffff);
-    g.fillRect(6, 4, 8, 2);
-    g.fillRect(6, 4, 2, 12);
-    g.fillRect(6, 9, 6, 2);
-    g.fillRect(6, 14, 8, 2);
-    g.generateTexture("interact-icon", 20, 20);
-    g.destroy();
+    // Particle
+    const part = this.add.graphics();
+    part.fillStyle(0x6366f1);
+    part.fillCircle(4, 4, 4);
+    part.fillStyle(0xa5b4fc);
+    part.fillCircle(4, 4, 2);
+    part.generateTexture("particle", 8, 8);
+    part.destroy();
+
+    // Interact icon (E key)
+    const eKey = this.add.graphics();
+    eKey.fillStyle(0x6366f1);
+    eKey.fillRoundedRect(0, 0, 24, 24, 6);
+    eKey.fillStyle(0xffffff);
+    eKey.fillRect(7, 5, 10, 2);
+    eKey.fillRect(7, 5, 2, 14);
+    eKey.fillRect(7, 11, 8, 2);
+    eKey.fillRect(7, 17, 10, 2);
+    eKey.generateTexture("interact-icon", 24, 24);
+    eKey.destroy();
   }
 }

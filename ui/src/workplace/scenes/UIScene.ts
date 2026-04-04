@@ -1,9 +1,5 @@
 import Phaser from "phaser";
 
-/**
- * UIScene: HUD overlay showing company stats.
- * Runs in parallel with OfficeScene.
- */
 export class UIScene extends Phaser.Scene {
   private statsText!: Phaser.GameObjects.Text;
   private controlsText!: Phaser.GameObjects.Text;
@@ -13,39 +9,39 @@ export class UIScene extends Phaser.Scene {
   }
 
   create() {
-    // Stats HUD (top-right)
-    this.statsText = this.add.text(this.cameras.main.width - 16, 16, "", {
+    const w = this.cameras.main.width;
+    const h = this.cameras.main.height;
+
+    // Stats HUD (top-right) — dark indigo theme
+    this.statsText = this.add.text(w - 16, 16, "", {
       fontSize: "11px",
       fontFamily: "monospace",
-      color: "#e2e8f0",
-      backgroundColor: "rgba(15, 23, 42, 0.8)",
-      padding: { x: 8, y: 6 },
-    }).setOrigin(1, 0).setScrollFactor(0).setDepth(100);
+      color: "#c7d2fe", // indigo-200
+      backgroundColor: "rgba(15, 23, 42, 0.85)",
+      padding: { x: 10, y: 8 },
+    }).setOrigin(1, 0).setScrollFactor(0).setDepth(1000);
 
-    // Controls hint (bottom-left)
-    this.controlsText = this.add.text(16, this.cameras.main.height - 16,
-      "WASD: Move  |  E: Interact", {
+    // Controls hint (bottom-center)
+    this.controlsText = this.add.text(w / 2, h - 16,
+      "WASD: Move  |  E: Interact with Agent", {
       fontSize: "10px",
       fontFamily: "monospace",
-      color: "#94a3b8",
-      backgroundColor: "rgba(15, 23, 42, 0.7)",
-      padding: { x: 6, y: 4 },
-    }).setOrigin(0, 1).setScrollFactor(0).setDepth(100);
+      color: "#6366f1",
+      backgroundColor: "rgba(9, 9, 11, 0.85)",
+      padding: { x: 10, y: 6 },
+    }).setOrigin(0.5, 1).setScrollFactor(0).setDepth(1000);
 
     // Title (top-left)
     this.add.text(16, 16, "WORKPLACE", {
-      fontSize: "14px",
+      fontSize: "16px",
       fontFamily: "monospace",
       fontStyle: "bold",
-      color: "#fbbf24",
-      backgroundColor: "rgba(15, 23, 42, 0.8)",
-      padding: { x: 8, y: 6 },
-    }).setScrollFactor(0).setDepth(100);
+      color: "#6366f1",
+      backgroundColor: "rgba(9, 9, 11, 0.85)",
+      padding: { x: 10, y: 8 },
+    }).setScrollFactor(0).setDepth(1000);
 
-    // Listen for stats updates
     this.game.events.on("stats-updated", this.handleStatsUpdated, this);
-
-    // Handle resize
     this.scale.on("resize", this.handleResize, this);
   }
 
@@ -59,13 +55,13 @@ export class UIScene extends Phaser.Scene {
     this.statsText.setText([
       `Agents: ${stats.agentCount}`,
       `  Working: ${stats.workingCount}  Idle: ${stats.idleCount}  Error: ${stats.errorCount}`,
-      `Tasks: ${stats.taskCount}`,
+      `Tasks in queue: ${stats.taskCount}`,
     ].join("\n"));
   };
 
   private handleResize = (gameSize: Phaser.Structs.Size) => {
     this.statsText.setPosition(gameSize.width - 16, 16);
-    this.controlsText.setPosition(16, gameSize.height - 16);
+    this.controlsText.setPosition(gameSize.width / 2, gameSize.height - 16);
   };
 
   destroy() {

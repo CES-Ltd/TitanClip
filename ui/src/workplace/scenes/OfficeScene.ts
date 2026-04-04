@@ -3,7 +3,10 @@ import type { OfficeMapData, AgentState } from "../types";
 import { BossCharacter } from "../entities/BossCharacter";
 import { AgentSprite } from "../entities/AgentSprite";
 
-const INTERACT_DISTANCE = 56;
+const TILE = 48;
+const INTERACT_DISTANCE = 72;
+const MAP_W = 24;
+const MAP_H = 16;
 
 export class OfficeScene extends Phaser.Scene {
   private boss!: BossCharacter;
@@ -17,52 +20,78 @@ export class OfficeScene extends Phaser.Scene {
 
   create() {
     this.mapData = this.cache.json.get("office-map") as OfficeMapData;
-    const { width, height, tileSize } = this.mapData;
-    const mapW = width * tileSize;
-    const mapH = height * tileSize;
+    const mapW = MAP_W * TILE;
+    const mapH = MAP_H * TILE;
+
+    this.cameras.main.setBackgroundColor(0x09090b);
 
     // Draw floor
-    for (let y = 0; y < height; y++) {
-      for (let x = 0; x < width; x++) {
-        this.add.image(x * tileSize + tileSize / 2, y * tileSize + tileSize / 2, "floor");
+    for (let y = 1; y < MAP_H - 1; y++) {
+      for (let x = 1; x < MAP_W - 1; x++) {
+        this.add.image(x * TILE + TILE / 2, y * TILE + TILE / 2, "floor");
       }
     }
 
     // Draw walls
-    for (let x = 0; x < width; x++) {
-      this.add.image(x * tileSize + tileSize / 2, tileSize / 2, "wall");
-      this.add.image(x * tileSize + tileSize / 2, (height - 1) * tileSize + tileSize / 2, "wall");
+    for (let x = 0; x < MAP_W; x++) {
+      this.add.image(x * TILE + TILE / 2, TILE / 2, "wall");
+      this.add.image(x * TILE + TILE / 2, (MAP_H - 1) * TILE + TILE / 2, "wall");
     }
-    for (let y = 0; y < height; y++) {
-      this.add.image(tileSize / 2, y * tileSize + tileSize / 2, "wall");
-      this.add.image((width - 1) * tileSize + tileSize / 2, y * tileSize + tileSize / 2, "wall");
+    for (let y = 0; y < MAP_H; y++) {
+      this.add.image(TILE / 2, y * TILE + TILE / 2, "wall");
+      this.add.image((MAP_W - 1) * TILE + TILE / 2, y * TILE + TILE / 2, "wall");
     }
+
+    // Desk positions (3 rows of 3, well-spaced)
+    const deskPositions = [
+      { index: 0, x: 5 * TILE, y: 4 * TILE },
+      { index: 1, x: 10 * TILE, y: 4 * TILE },
+      { index: 2, x: 15 * TILE, y: 4 * TILE },
+      { index: 3, x: 5 * TILE, y: 8 * TILE },
+      { index: 4, x: 10 * TILE, y: 8 * TILE },
+      { index: 5, x: 15 * TILE, y: 8 * TILE },
+      { index: 6, x: 5 * TILE, y: 12 * TILE },
+      { index: 7, x: 10 * TILE, y: 12 * TILE },
+      { index: 8, x: 15 * TILE, y: 12 * TILE },
+    ];
+    this.mapData.deskPositions = deskPositions;
 
     // Draw desks
-    this.mapData.deskPositions.forEach((desk) => {
-      this.add.image(desk.x, desk.y - tileSize / 2, "desk");
-    });
+    for (const desk of deskPositions) {
+      this.add.image(desk.x, desk.y - TILE / 2, "desk").setDepth(1);
+    }
 
-    // Draw plants in corners
-    const margin = tileSize * 2;
-    [
-      [margin, margin], [mapW - margin, margin],
-      [margin, mapH - margin], [mapW - margin, mapH - margin],
-    ].forEach(([px, py]) => {
-      this.add.image(px, py, "plant");
-    });
+    // Plants in corners
+    const margin = TILE * 2;
+    for (const [px, py] of [[margin, margin], [mapW - margin, margin], [margin, mapH - margin], [mapW - margin, mapH - margin]]) {
+      this.add.image(px, py, "plant").setDepth(1);
+    }
+
+    // Waypoints
+    this.mapData.waypoints = [
+      { name: "breakRoom", x: (MAP_W - 3) * TILE, y: 3 * TILE },
+      { name: "waterCooler", x: (MAP_W - 3) * TILE, y: 7 * TILE },
+      { name: "whiteboard", x: MAP_W / 2 * TILE, y: 2 * TILE },
+      { name: "entrance", x: MAP_W / 2 * TILE, y: (MAP_H - 2) * TILE },
+      { name: "lounge", x: 3 * TILE, y: (MAP_H - 3) * TILE },
+    ];
+
+    // Spawn point
+    const spawnX = (MAP_W / 2) * TILE;
+    const spawnY = (MAP_H - 3) * TILE;
 
     // Boss character
-    this.boss = new BossCharacter(this, this.mapData.spawnX, this.mapData.spawnY);
+    this.boss = new BossCharacter(this, spawnX, spawnY);
     this.boss.setDepth(10);
 
     // Camera
     this.cameras.main.startFollow(this.boss, true, 0.1, 0.1);
     this.cameras.main.setBounds(0, 0, mapW, mapH);
-    this.physics.world.setBounds(tileSize, tileSize, mapW - tileSize * 2, mapH - tileSize * 2);
+    this.cameras.main.setZoom(0.9);
+    this.physics.world.setBounds(TILE, TILE, mapW - TILE * 2, mapH - TILE * 2);
     this.boss.body.setCollideWorldBounds(true);
 
-    // Listen for agent data from React
+    // Listen for data from React
     this.game.events.on("agents-updated", this.handleAgentsUpdated, this);
     this.game.events.on("runs-updated", this.handleRunsUpdated, this);
     this.game.events.on("agent-state-change", this.handleAgentStateChange, this);
@@ -71,10 +100,11 @@ export class OfficeScene extends Phaser.Scene {
   update() {
     this.boss.update();
 
-    // Update all agent sprites
-    this.agentSprites.forEach((agent) => agent.update());
+    for (const agent of this.agentSprites.values()) {
+      agent.update();
+    }
 
-    // Check proximity for interaction
+    // Proximity check for interaction
     let nearest: AgentSprite | null = null;
     let nearestDist = INTERACT_DISTANCE;
     for (const agent of this.agentSprites.values()) {
@@ -85,33 +115,34 @@ export class OfficeScene extends Phaser.Scene {
       }
     }
 
-    // Show/hide interact icon
     if (nearest !== this.nearestAgent) {
       if (this.nearestAgent) this.nearestAgent.hideInteractIcon();
       if (nearest) nearest.showInteractIcon();
       this.nearestAgent = nearest;
     }
 
-    // Handle interaction
     if (this.nearestAgent && this.boss.interactPressed) {
       this.game.events.emit("assign-task", this.nearestAgent.agentId);
+    }
+
+    // Depth sort all characters by y position
+    this.boss.setDepth(this.boss.y);
+    for (const agent of this.agentSprites.values()) {
+      agent.setDepth(agent.y);
     }
   }
 
   private handleAgentsUpdated = (agents: any[]) => {
     if (!agents) return;
-
     const currentIds = new Set(agents.map((a: any) => a.id));
 
-    // Remove agents no longer present
-    this.agentSprites.forEach((sprite, id) => {
+    for (const [id, sprite] of this.agentSprites) {
       if (!currentIds.has(id)) {
         sprite.destroy();
         this.agentSprites.delete(id);
       }
-    });
+    }
 
-    // Add/update agents
     agents.forEach((agent: any, idx: number) => {
       if (agent.status === "terminated") return;
 
@@ -126,13 +157,12 @@ export class OfficeScene extends Phaser.Scene {
           agent.role ?? "general",
           desk,
           this.mapData.waypoints,
+          idx,
         );
-        sprite.setDepth(5);
         sprite.body.setCollideWorldBounds(true);
         this.agentSprites.set(agent.id, sprite);
       }
 
-      // Map agent status to game state
       const state = this.mapAgentStatus(agent.status);
       sprite.setAgentState(state);
     });
@@ -140,12 +170,12 @@ export class OfficeScene extends Phaser.Scene {
 
   private handleRunsUpdated = (runs: any[]) => {
     if (!runs) return;
-    runs.forEach((run: any) => {
+    for (const run of runs) {
       const sprite = this.agentSprites.get(run.agentId);
-      if (!sprite) return;
+      if (!sprite) continue;
       if (run.status === "running") sprite.setAgentState("working");
       else if (run.status === "queued") sprite.setAgentState("thinking");
-    });
+    }
   };
 
   private handleAgentStateChange = (data: { agentId: string; state: AgentState }) => {
@@ -158,8 +188,6 @@ export class OfficeScene extends Phaser.Scene {
       case "running": return "working";
       case "paused": return "paused";
       case "error": return "error";
-      case "idle":
-      case "active":
       default: return "idle";
     }
   }
