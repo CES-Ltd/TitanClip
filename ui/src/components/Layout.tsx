@@ -18,6 +18,8 @@ import { WorktreeBanner } from "./WorktreeBanner";
 import { DevRestartBanner } from "./DevRestartBanner";
 import { useDialog } from "../context/DialogContext";
 import { GeneralSettingsProvider } from "../context/GeneralSettingsContext";
+import { AdminSessionProvider } from "../context/AdminSessionContext";
+import { AdminGovernanceProvider } from "../context/AdminGovernanceContext";
 import { usePanel } from "../context/PanelContext";
 import { useCompany } from "../context/CompanyContext";
 import { useSidebar } from "../context/SidebarContext";
@@ -266,6 +268,8 @@ export function Layout() {
   }, [location.hash, location.pathname, location.search]);
 
   return (
+    <AdminSessionProvider>
+    <AdminGovernanceProvider>
     <GeneralSettingsProvider value={{ keyboardShortcutsEnabled }}>
       <div
       className={cn(
@@ -446,5 +450,7 @@ export function Layout() {
       <ToastViewport />
       </div>
     </GeneralSettingsProvider>
+    </AdminGovernanceProvider>
+    </AdminSessionProvider>
   );
 }
