@@ -1,4 +1,5 @@
-import { useState, useEffect, useRef, useMemo, useCallback } from "react";
+import { useState, useEffect, useRef, useMemo, useCallback, useContext } from "react";
+import { useAdminGovernance } from "../context/AdminGovernanceContext";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { AGENT_ADAPTER_TYPES } from "@titanclip/shared";
 import type {
@@ -335,7 +336,13 @@ export function AgentConfigForm(props: AgentConfigFormProps) {
     queryFn: () => agentsApi.adapterModels(selectedCompanyId!, adapterType),
     enabled: Boolean(selectedCompanyId),
   });
-  const models = fetchedModels ?? externalModels ?? [];
+  const allModels = fetchedModels ?? externalModels ?? [];
+  // Filter models by admin governance allowlist
+  const governanceForModels = useAdminGovernance();
+  const modelAllowlist = governanceForModels.allowedModelsPerAdapter?.[adapterType];
+  const models = modelAllowlist
+    ? allModels.filter((m) => modelAllowlist.includes(m.id))
+    : allModels;
   const {
     data: detectedModelData,
     refetch: refetchDetectedModel,
@@ -1042,6 +1049,10 @@ function AdapterTypeDropdown({
   value: string;
   onChange: (type: string) => void;
 }) {
+  const governance = useAdminGovernance();
+  const isAdminRestricted = (type: string) =>
+    governance.allowedAdapterTypes !== null && !governance.allowedAdapterTypes.includes(type);
+
   return (
     <Popover>
       <PopoverTrigger asChild>
@@ -1054,30 +1065,37 @@ function AdapterTypeDropdown({
         </button>
       </PopoverTrigger>
       <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-1" align="start">
-        {ADAPTER_DISPLAY_LIST.map((item) => (
-          <button
-            key={item.value}
-            disabled={item.comingSoon}
-            className={cn(
-              "flex items-center justify-between w-full px-2 py-1.5 text-sm rounded",
-              item.comingSoon
-                ? "opacity-40 cursor-not-allowed"
-                : "hover:bg-accent/50",
-              item.value === value && !item.comingSoon && "bg-accent",
-            )}
-            onClick={() => {
-              if (!item.comingSoon) onChange(item.value);
-            }}
-          >
-            <span className="inline-flex items-center gap-1.5">
-              {item.value === "opencode_local" ? <OpenCodeLogoIcon className="h-3.5 w-3.5" /> : null}
-              <span>{item.label}</span>
-            </span>
-            {item.comingSoon && (
-              <span className="text-[10px] text-muted-foreground">Coming soon</span>
-            )}
-          </button>
-        ))}
+        {ADAPTER_DISPLAY_LIST.map((item) => {
+          const restricted = isAdminRestricted(item.value);
+          const disabled = item.comingSoon || restricted;
+          return (
+            <button
+              key={item.value}
+              disabled={disabled}
+              className={cn(
+                "flex items-center justify-between w-full px-2 py-1.5 text-sm rounded",
+                disabled
+                  ? "opacity-40 cursor-not-allowed"
+                  : "hover:bg-accent/50",
+                item.value === value && !disabled && "bg-accent",
+              )}
+              onClick={() => {
+                if (!disabled) onChange(item.value);
+              }}
+            >
+              <span className="inline-flex items-center gap-1.5">
+                {item.value === "opencode_local" ? <OpenCodeLogoIcon className="h-3.5 w-3.5" /> : null}
+                <span>{item.label}</span>
+              </span>
+              {item.comingSoon && (
+                <span className="text-[10px] text-muted-foreground">Coming soon</span>
+              )}
+              {restricted && !item.comingSoon && (
+                <span className="text-[10px] text-muted-foreground">Restricted</span>
+              )}
+            </button>
+          );
+        })}
       </PopoverContent>
     </Popover>
   );

@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
+import { useAdminGovernance } from "../context/AdminGovernanceContext";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useSearchParams } from "@/lib/router";
 import { useCompany } from "../context/CompanyContext";
@@ -74,6 +75,16 @@ export function NewAgent() {
   const [selectedSkillKeys, setSelectedSkillKeys] = useState<string[]>([]);
   const [roleOpen, setRoleOpen] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
+
+  // Filter roles by admin governance
+  const governance = useAdminGovernance();
+  const availableRoles = useMemo(
+    () =>
+      governance.allowedRoles
+        ? AGENT_ROLES.filter((r) => governance.allowedRoles!.includes(r))
+        : [...AGENT_ROLES],
+    [governance.allowedRoles],
+  );
 
   const { data: agents } = useQuery({
     queryKey: queryKeys.agents.list(selectedCompanyId!),
@@ -257,7 +268,7 @@ export function NewAgent() {
               </button>
             </PopoverTrigger>
             <PopoverContent className="w-36 p-1" align="start">
-              {AGENT_ROLES.map((r) => (
+              {availableRoles.map((r) => (
                 <button
                   key={r}
                   className={cn(
