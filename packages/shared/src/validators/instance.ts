@@ -32,13 +32,13 @@ export const patchInstanceAdminSettingsSchema = instanceAdminSettingsSchema
   .partial();
 
 export const changePinSchema = z.object({
-  currentPin: z.string().min(4).max(32),
-  newPin: z.string().min(4).max(32),
-}).strict();
+  currentPin: z.string().min(1).max(128),
+  newPin: z.string().min(1).max(128),
+});
 
 export const verifyPinSchema = z.object({
-  pin: z.string().min(1).max(32),
-}).strict();
+  pin: z.string().min(1).max(128),
+});
 
 export type InstanceGeneralSettings = z.infer<typeof instanceGeneralSettingsSchema>;
 export type PatchInstanceGeneralSettings = z.infer<typeof patchInstanceGeneralSettingsSchema>;

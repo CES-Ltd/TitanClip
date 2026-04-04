@@ -508,7 +508,10 @@ export async function startServer(): Promise<StartedServer> {
     authReady = true;
   }
   
-  const listenPort = await detectPort(config.port);
+  // In Electron mode, use the exact configured port (Electron expects it)
+  const listenPort = process.env.TITANCLIP_ELECTRON === "1"
+    ? config.port
+    : await detectPort(config.port);
   if (listenPort !== config.port) {
     config.port = listenPort;
   }

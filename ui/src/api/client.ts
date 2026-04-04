@@ -12,6 +12,17 @@ export class ApiError extends Error {
   }
 }
 
+interface RequestOptions {
+  headers?: Record<string, string>;
+}
+
+function buildInit(method: string, body?: string | FormData, opts?: RequestOptions): RequestInit {
+  const init: RequestInit = { method };
+  if (body !== undefined) init.body = body;
+  if (opts?.headers) init.headers = opts.headers;
+  return init;
+}
+
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const headers = new Headers(init?.headers ?? undefined);
   const body = init?.body;
@@ -19,10 +30,11 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     headers.set("Content-Type", "application/json");
   }
 
+  const { headers: _h, ...rest } = init ?? {};
   const res = await fetch(`${BASE}${path}`, {
     headers,
     credentials: "include",
-    ...init,
+    ...rest,
   });
   if (!res.ok) {
     const errorBody = await res.json().catch(() => null);
@@ -36,21 +48,26 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   return res.json();
 }
 
-interface RequestOptions {
-  headers?: Record<string, string>;
-}
-
 export const api = {
   get: <T>(path: string, opts?: RequestOptions) =>
-    request<T>(path, { headers: opts?.headers }),
+    request<T>(path, buildInit("GET", undefined, opts)),
   post: <T>(path: string, body: unknown, opts?: RequestOptions) =>
-    request<T>(path, { method: "POST", body: JSON.stringify(body), headers: opts?.headers }),
+    request<T>(path, buildInit("POST", JSON.stringify(body), opts)),
   postForm: <T>(path: string, body: FormData) =>
     request<T>(path, { method: "POST", body }),
   put: <T>(path: string, body: unknown, opts?: RequestOptions) =>
-    request<T>(path, { method: "PUT", body: JSON.stringify(body), headers: opts?.headers }),
+    request<T>(path, buildInit("PUT", JSON.stringify(body), opts)),
   patch: <T>(path: string, body: unknown, opts?: RequestOptions) =>
-    request<T>(path, { method: "PATCH", body: JSON.stringify(body), headers: opts?.headers }),
+    request<T>(path, buildInit("PATCH", JSON.stringify(body), opts)),
   delete: <T>(path: string, opts?: RequestOptions) =>
-    request<T>(path, { method: "DELETE", headers: opts?.headers }),
+    request<T>(path, buildInit("DELETE", undefined, opts)),
 };
+
+/** SHA-256 hash a string, returns hex. Used for PIN transport protection. */
+export async function sha256(input: string): Promise<string> {
+  const encoded = new TextEncoder().encode(input);
+  const hashBuffer = await crypto.subtle.digest("SHA-256", encoded);
+  return Array.from(new Uint8Array(hashBuffer))
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
+}

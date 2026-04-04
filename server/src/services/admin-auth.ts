@@ -9,12 +9,16 @@ const SCRYPT_PARALLELIZATION = 1;
 // Per-process signing key — server restart invalidates all admin sessions
 const SIGNING_KEY = crypto.randomBytes(32);
 
-// Pre-computed hash of default PIN "1234"
+// The client sends SHA-256(pin) so plaintext never appears in requests.
+// Default PIN "1234" → SHA-256("1234") = this hex string.
+const DEFAULT_PIN_SHA256 = crypto.createHash("sha256").update("1234").digest("hex");
+
+// Pre-computed scrypt hash of SHA-256("1234")
 let defaultPinHash: string | null = null;
 
 async function computeDefaultPinHash(): Promise<string> {
   if (!defaultPinHash) {
-    defaultPinHash = await hashPin("1234");
+    defaultPinHash = await hashPin(DEFAULT_PIN_SHA256);
   }
   return defaultPinHash;
 }

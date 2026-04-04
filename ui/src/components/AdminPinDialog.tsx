@@ -43,7 +43,8 @@ export function AdminPinDialog({ open, onOpenChange }: AdminPinDialogProps) {
       unlock(result.token, result.expiresAt);
       onOpenChange(false);
     } catch (err: any) {
-      setError(err?.message ?? "Incorrect PIN");
+      const msg = err?.body?.error ?? err?.message ?? "Incorrect PIN";
+      setError(msg);
       setPin("");
       inputRef.current?.focus();
     } finally {
@@ -70,8 +71,6 @@ export function AdminPinDialog({ open, onOpenChange }: AdminPinDialogProps) {
               ref={inputRef}
               id="admin-pin"
               type="password"
-              inputMode="numeric"
-              pattern="[0-9]*"
               placeholder="Enter PIN"
               value={pin}
               onChange={(e) => setPin(e.target.value)}
