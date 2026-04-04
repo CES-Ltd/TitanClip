@@ -31,11 +31,28 @@ AI Company Orchestration Platform — a standalone Electron desktop app for mana
 | `PATCH` | `/api/instance/settings/admin` | Update governance settings |
 | `POST` | `/api/instance/settings/admin/change-pin` | Change admin PIN |
 
+## Gamified Workplace (Phase 7)
+
+A retro pixel-art office world powered by **Phaser 3** where you walk around as the "Boss" and interact with your AI agents as employees.
+
+- **Boss character** — WASD/arrow movement with crown sprite, camera follow
+- **Agent sprites** — role-colored characters (CEO gold, CTO blue, Engineer green, etc.)
+- **Thought bubbles** — real-time status: thinking, coding, error, success, paused
+- **Wander AI** — idle agents walk between desks, break room, whiteboard
+- **RPG task assignment** — walk up to an agent, press E, assign issues from quest menu
+- **Live updates** — agent states sync from WebSocket events in real-time
+- **Sparkle particles** — celebration effect when tasks complete
+- **HUD overlay** — agent count, working/idle/error stats, controls hint
+- **Procedural art** — all sprites generated at runtime (no external image files)
+
+Navigate to **Workplace** in the sidebar to enter the office.
+
 ## Tech Stack
 
 | Layer | Technology |
 |-------|-----------|
 | Desktop | Electron 33 |
+| Game Engine | Phaser 3 (pixel-art workplace) |
 | Backend | Node.js 20+ / Express 5 / TypeScript |
 | Frontend | React 19 / Vite 6 / TailwindCSS 4 / Radix UI |
 | Database | PostgreSQL (embedded) / Drizzle ORM |
