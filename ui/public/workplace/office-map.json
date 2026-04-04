@@ -1,0 +1,32 @@
+{
+  "width": 30,
+  "height": 22,
+  "tileSize": 32,
+  "spawnX": 480,
+  "spawnY": 608,
+  "deskPositions": [
+    { "index": 0, "x": 208, "y": 192 },
+    { "index": 1, "x": 400, "y": 192 },
+    { "index": 2, "x": 592, "y": 192 },
+    { "index": 3, "x": 208, "y": 352 },
+    { "index": 4, "x": 400, "y": 352 },
+    { "index": 5, "x": 592, "y": 352 },
+    { "index": 6, "x": 208, "y": 512 },
+    { "index": 7, "x": 400, "y": 512 },
+    { "index": 8, "x": 592, "y": 512 }
+  ],
+  "waypoints": [
+    { "name": "breakRoom", "x": 800, "y": 96 },
+    { "name": "waterCooler", "x": 864, "y": 256 },
+    { "name": "whiteboard", "x": 464, "y": 48 },
+    { "name": "entrance", "x": 480, "y": 640 },
+    { "name": "serverRoom", "x": 864, "y": 576 },
+    { "name": "ceoOffice", "x": 128, "y": 128 }
+  ],
+  "walls": {
+    "top": 0,
+    "bottom": 21,
+    "left": 0,
+    "right": 29
+  }
+}

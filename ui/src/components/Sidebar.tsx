@@ -2,6 +2,7 @@ import {
   Inbox,
   CircleDot,
   Target,
+  Gamepad2,
   LayoutDashboard,
   DollarSign,
   History,
@@ -80,6 +81,7 @@ export function Sidebar() {
             <span className="truncate">New Issue</span>
           </button>
           <SidebarNavItem to="/dashboard" label="Dashboard" icon={LayoutDashboard} liveCount={liveRunCount} />
+          <SidebarNavItem to="/workplace" label="Workplace" icon={Gamepad2} />
           <SidebarNavItem
             to="/inbox"
             label="Inbox"
