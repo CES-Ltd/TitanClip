@@ -1,0 +1,27 @@
+{
+  "name": "titanclip",
+  "version": "1.0.0",
+  "description": "TitanClip - AI Company Orchestration Platform",
+  "main": "dist/main.js",
+  "scripts": {
+    "dev": "tsc -p tsconfig.electron.json && electron .",
+    "build": "pnpm -r build",
+    "build:electron": "tsc -p tsconfig.electron.json",
+    "start": "electron .",
+    "typecheck": "pnpm -r typecheck"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "packageManager": "pnpm@9.15.4",
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "electron": "^33.0.0",
+    "typescript": "^5.7.3"
+  },
+  "pnpm": {
+    "patchedDependencies": {
+      "embedded-postgres@18.1.0-beta.16": "patches/embedded-postgres@18.1.0-beta.16.patch"
+    }
+  }
+}
