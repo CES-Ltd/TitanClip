@@ -59,6 +59,10 @@ function normalizeAdminSettings(raw: unknown): InstanceAdminSettings {
       allowedRoles: parsed.data.allowedRoles ?? null,
       pinSessionTimeoutSec: parsed.data.pinSessionTimeoutSec ?? 1800,
       agentTemplates: parsed.data.agentTemplates ?? [],
+      retentionRunLogsDays: parsed.data.retentionRunLogsDays ?? 90,
+      retentionActivityDays: parsed.data.retentionActivityDays ?? 365,
+      retentionCostEventsDays: parsed.data.retentionCostEventsDays ?? 365,
+      retentionTokenAuditDays: parsed.data.retentionTokenAuditDays ?? 180,
     };
   }
   return {
@@ -68,6 +72,10 @@ function normalizeAdminSettings(raw: unknown): InstanceAdminSettings {
     allowedRoles: null,
     pinSessionTimeoutSec: 1800,
     agentTemplates: [],
+    retentionRunLogsDays: 90,
+    retentionActivityDays: 365,
+    retentionCostEventsDays: 365,
+    retentionTokenAuditDays: 180,
   };
 }
 

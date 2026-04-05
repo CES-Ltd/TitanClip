@@ -48,6 +48,10 @@ export const instanceAdminSettingsSchema = z.object({
   allowedRoles: z.array(z.string()).nullable().default(null),
   pinSessionTimeoutSec: z.number().int().min(60).max(86400).default(1800),
   agentTemplates: z.array(agentTemplateSchema).default([]),
+  retentionRunLogsDays: z.number().int().min(0).max(3650).default(90),
+  retentionActivityDays: z.number().int().min(0).max(3650).default(365),
+  retentionCostEventsDays: z.number().int().min(0).max(3650).default(365),
+  retentionTokenAuditDays: z.number().int().min(0).max(3650).default(180),
 }).strict();
 
 export const patchInstanceAdminSettingsSchema = instanceAdminSettingsSchema

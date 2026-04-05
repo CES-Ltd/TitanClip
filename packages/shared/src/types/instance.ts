@@ -38,6 +38,11 @@ export interface InstanceAdminSettings {
   pinSessionTimeoutSec: number;
   /** Pre-configured agent templates */
   agentTemplates: AgentTemplate[];
+  /** Data retention policies (days, 0 = keep forever) */
+  retentionRunLogsDays: number;
+  retentionActivityDays: number;
+  retentionCostEventsDays: number;
+  retentionTokenAuditDays: number;
 }
 
 /** Public version of admin settings (PIN hash stripped) */

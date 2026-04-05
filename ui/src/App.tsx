@@ -38,6 +38,7 @@ import { InstanceExperimentalSettings } from "./pages/InstanceExperimentalSettin
 import { InstanceAdminSettings } from "./pages/InstanceAdminSettings";
 import { InstancePolicies } from "./pages/InstancePolicies";
 import { VaultManagement } from "./pages/VaultManagement";
+import { Compliance } from "./pages/Compliance";
 import { PluginManager } from "./pages/PluginManager";
 import { PluginSettings } from "./pages/PluginSettings";
 import { PluginPage } from "./pages/PluginPage";
@@ -130,6 +131,7 @@ function boardRoutes() {
       <Route path="workplace" element={<Suspense fallback={<div className="flex items-center justify-center h-full text-muted-foreground">Loading Workplace...</div>}><Workplace /></Suspense>} />
       <Route path="chat" element={<CommandCenter />} />
       <Route path="vault" element={<VaultManagement />} />
+      <Route path="compliance" element={<Compliance />} />
       <Route path="onboarding" element={<OnboardingRoutePage />} />
       <Route path="companies" element={<Companies />} />
       <Route path="company/settings" element={<CompanySettings />} />

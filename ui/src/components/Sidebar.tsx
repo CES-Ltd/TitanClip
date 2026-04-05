@@ -5,6 +5,7 @@ import {
   Gamepad2,
   LayoutDashboard,
   KeyRound,
+  Shield,
   Terminal,
   DollarSign,
   History,
@@ -118,6 +119,7 @@ export function Sidebar() {
           <SidebarNavItem to="/costs" label="Costs" icon={DollarSign} />
           <SidebarNavItem to="/activity" label="Activity" icon={History} />
           <SidebarNavItem to="/vault" label="Vault" icon={KeyRound} />
+          <SidebarNavItem to="/compliance" label="Compliance" icon={Shield} />
           <SidebarNavItem to="/company/settings" label="Settings" icon={Settings} />
         </SidebarSection>
 
