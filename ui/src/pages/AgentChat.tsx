@@ -8,7 +8,8 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useParams, Link } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Send, Bot, User, Loader2, Plus, Settings, StopCircle } from "lucide-react";
+import { Send, Bot, User, Plus, Settings, StopCircle } from "lucide-react";
+import { ThinkingIndicator } from "../components/chat/ThinkingIndicator";
 import { useCompany } from "../context/CompanyContext";
 import { conversationsApi, type ConversationMessage } from "../api/conversations";
 import { agentsApi } from "../api/agents";
@@ -160,14 +161,16 @@ export function AgentChat() {
             </div>
           )}
           {messages.map((m) => <ChatBubble key={m.id} message={m} />)}
-          {isStreaming && (
+          {isStreaming && !streamingContent && (
+            <ThinkingIndicator />
+          )}
+          {isStreaming && streamingContent && (
             <div className="flex gap-3">
               <div className="w-8 h-8 rounded-full bg-indigo-500/10 flex items-center justify-center shrink-0">
                 <Bot className="h-4 w-4 text-indigo-500" />
               </div>
               <div className="flex-1 max-w-[80%] rounded-lg bg-card border border-border p-3 text-sm">
-                {streamingContent ? <div className="whitespace-pre-wrap">{streamingContent}<span className="animate-pulse">|</span></div>
-                  : <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
+                <div className="whitespace-pre-wrap">{streamingContent}<span className="animate-pulse">|</span></div>
               </div>
             </div>
           )}
