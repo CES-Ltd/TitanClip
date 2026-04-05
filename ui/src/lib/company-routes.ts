@@ -30,6 +30,7 @@ const BOARD_ROUTE_ROOTS = new Set([
   "skill-routing",
   "analytics",
   "lifecycle",
+  "agent-gallery",
 ]);
 
 const GLOBAL_ROUTE_ROOTS = new Set(["auth", "invite", "board-claim", "cli-auth", "docs", "instance", "help"]);

@@ -7,34 +7,50 @@ directories:
 files:
   - dist/**/*
 
+# IMPORTANT: asar must be false for the server child process to work.
+# The server process (ELECTRON_RUN_AS_NODE) needs real filesystem access
+# to its node_modules, migration files, and onboarding assets.
+# The original TitanClip also uses asar: false.
 asar: false
 
 extraResources:
+  # UI static files
   - from: ui/dist
     to: ui-dist
+  # Server compiled JS
   - from: server/dist
     to: server-dist
+  # Server onboarding assets
   - from: server/src/onboarding-assets
     to: server-dist/onboarding-assets
+  # Server node_modules (pre-bundled)
   - from: /tmp/titanclip-server-modules
     to: server-dist/node_modules
+  # Server package.json (needed by server/dist/version.js -> require("../package.json"))
   - from: server/package.json
     to: server-dist/package.json
+  # Also at Resources root for the "../package.json" require
   - from: server/package.json
     to: package.json
+  # Skills directory
   - from: skills
     to: skills
+  # SQLite migrations
+  - from: packages/db/src/migrations-sqlite
+    to: migrations-sqlite
 
 mac:
+  hardenedRuntime: true
+  gatekeeperAssess: false
+  entitlements: build/entitlements.mac.plist
+  entitlementsInherit: build/entitlements.mac.inherit.plist
   target:
     - target: dmg
       arch:
         - arm64
-        - x64
     - target: zip
       arch:
         - arm64
-        - x64
   icon: assets/logo.png
   category: public.app-category.developer-tools
   darkModeSupport: true
@@ -45,17 +61,36 @@ dmg:
 
 win:
   target:
-    - nsis
-    - zip
+    - target: nsis
+      arch:
+        - x64
+    - target: zip
+      arch:
+        - x64
   icon: assets/logo.png
 
 linux:
   target:
-    - AppImage
-    - deb
+    - target: AppImage
+      arch:
+        - x64
+    - target: deb
+      arch:
+        - x64
   icon: assets/logo.png
   category: Development
 
 nsis:
   oneClick: false
   allowToChangeInstallationDirectory: true
+
+protocols:
+  - name: TitanClip
+    schemes:
+      - titanclip
+
+publish:
+  provider: github
+  owner: paperclipai
+  repo: paperclip
+  releaseType: release

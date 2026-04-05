@@ -1,6 +1,7 @@
 import crypto from "node:crypto";
 import type { Db } from "@titanclip/db";
 import { companies, instanceSettings } from "@titanclip/db";
+import { DEFAULT_DELIVERY_POD_TEMPLATES } from "../default-templates.js";
 import {
   DEFAULT_FEEDBACK_DATA_SHARING_PREFERENCE,
   instanceGeneralSettingsSchema,
@@ -116,12 +117,17 @@ export function instanceSettingsService(db: Db) {
     if (existing) return existing;
 
     const now = new Date();
+    // Seed default delivery pod templates on first creation
+    const defaultAdmin = {
+      agentTemplates: DEFAULT_DELIVERY_POD_TEMPLATES,
+    };
     const [created] = await db
       .insert(instanceSettings)
       .values({
         singletonKey: DEFAULT_SINGLETON_KEY,
         general: {},
         experimental: {},
+        admin: defaultAdmin as any,
         createdAt: now,
         updatedAt: now,
       })

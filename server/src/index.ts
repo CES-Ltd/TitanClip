@@ -28,6 +28,7 @@ import { createApp } from "./app.js";
 import { loadConfig } from "./config.js";
 import { logger } from "./middleware/logger.js";
 import { setupLiveEventsWebSocketServer } from "./realtime/live-events-ws.js";
+import { seedFirstTeamAndAgent } from "./seed-first-team.js";
 import {
   feedbackService,
   heartbeatService,
@@ -466,6 +467,7 @@ export async function startServer(): Promise<StartedServer> {
     | undefined;
   if (config.deploymentMode === "local_trusted") {
     await ensureLocalTrustedBoardPrincipal(db as any);
+    await seedFirstTeamAndAgent(db as any);
   }
   if (config.deploymentMode === "authenticated") {
     const {

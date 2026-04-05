@@ -4,5 +4,13 @@
     "outDir": "dist",
     "rootDir": "src"
   },
-  "include": ["src"], "exclude": ["src/**/*.test.ts"]
+  "include": ["src"],
+  "exclude": [
+    "src/**/*.test.ts",
+    "src/schema-sqlite/**",
+    "src/sqlite-client.ts",
+    "src/pg-to-sqlite.ts",
+    "src/generate-sqlite-schema.ts",
+    "src/migrations-sqlite/**"
+  ]
 }

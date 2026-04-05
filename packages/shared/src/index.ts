@@ -651,6 +651,16 @@ export {
 } from "./validators/permission-policy.js";
 
 export { API_PREFIX, API } from "./api.js";
+
+// IPC channel types for Electron native rewrite
+export type {
+  IpcChannelMap,
+  IpcChannel,
+  IpcArgs,
+  IpcResult,
+  IpcPushEventMap,
+  IpcPushEvent,
+} from "./ipc-channels.js";
 export { normalizeAgentUrlKey, deriveAgentUrlKey, isUuidLike } from "./agent-url-key.js";
 export { deriveProjectUrlKey, normalizeProjectUrlKey, hasNonAsciiContent } from "./project-url-key.js";
 export {

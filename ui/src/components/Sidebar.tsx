@@ -24,6 +24,7 @@ import {
   Crosshair,
   TrendingUp,
   UserPlus,
+  Store,
 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { SidebarSection } from "./SidebarSection";
@@ -93,6 +94,7 @@ export function Sidebar() {
             <span className="truncate">New Issue</span>
           </button>
           <SidebarNavItem to="/dashboard" label="Dashboard" icon={LayoutDashboard} liveCount={liveRunCount} />
+          <SidebarNavItem to="/agent-gallery" label="Agent Gallery" icon={Store} />
           <SidebarNavItem to="/workplace" label="Workplace" icon={Gamepad2} />
           <SidebarNavItem to="/chat" label="Command Center" icon={Terminal} />
           <SidebarNavItem

@@ -45,11 +45,13 @@
   },
   "dependencies": {
     "@titanclip/shared": "workspace:*",
+    "better-sqlite3": "^11.7.0",
     "drizzle-orm": "^0.38.4",
     "embedded-postgres": "^18.1.0-beta.16",
     "postgres": "^3.4.5"
   },
   "devDependencies": {
+    "@types/better-sqlite3": "^7.6.12",
     "@types/node": "^24.6.0",
     "drizzle-kit": "^0.31.9",
     "tsx": "^4.19.2",

@@ -10,8 +10,12 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,
-    "sourceMap": true
+    "sourceMap": true,
+    "declaration": false
   },
-  "include": ["src/**/*"],
-  "exclude": ["node_modules", "dist", "server", "ui", "packages"]
+  "include": [
+    "src/main/**/*",
+    "src/preload/**/*"
+  ],
+  "exclude": ["node_modules", "dist", "server", "ui", "packages", "src/**/__tests__/**", "src/**/*.test.ts"]
 }

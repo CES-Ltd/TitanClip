@@ -56,6 +56,7 @@ import { Workflows } from "./pages/Workflows";
 import { SkillRouting } from "./pages/SkillRouting";
 import { Analytics } from "./pages/Analytics";
 import { Lifecycle } from "./pages/Lifecycle";
+import { AgentGallery } from "./pages/AgentGallery";
 import { AppTitleBar } from "./components/AppTitleBar";
 import { NewAgent } from "./pages/NewAgent";
 import { AuthPage } from "./pages/Auth";
@@ -155,6 +156,7 @@ function boardRoutes() {
       <Route path="skill-routing" element={<SkillRouting />} />
       <Route path="analytics" element={<Analytics />} />
       <Route path="lifecycle" element={<Lifecycle />} />
+      <Route path="agent-gallery" element={<AgentGallery />} />
       <Route path="onboarding" element={<OnboardingRoutePage />} />
       <Route path="companies" element={<Companies />} />
       <Route path="company/settings" element={<CompanySettings />} />

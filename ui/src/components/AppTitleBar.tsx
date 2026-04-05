@@ -1,11 +1,13 @@
 import { useState, useEffect } from "react";
-import { ChevronLeft, ChevronRight, BookOpen, Settings, Sun, Moon } from "lucide-react";
+import { ChevronLeft, ChevronRight, BookOpen, Settings, Sun, Moon, Power } from "lucide-react";
 import { useLocation, useNavigate, Link } from "react-router-dom";
 import { useTheme } from "../context/ThemeContext";
 import { cn } from "../lib/utils";
+import { isElectron } from "../api/ipc-client";
 
 const electronAPI = (window as any).electronAPI;
-const isMac = electronAPI?.getPlatform?.() === "darwin" || navigator.platform?.startsWith("Mac");
+const platform = electronAPI?.getPlatform?.() ?? (navigator.platform?.startsWith("Mac") ? "darwin" : "other");
+const isMac = platform === "darwin";
 
 export function AppTitleBar() {
   const [canGoBack, setCanGoBack] = useState(false);
@@ -20,9 +22,10 @@ export function AppTitleBar() {
     electronAPI?.setTheme?.(theme);
   }, [theme]);
 
+  // Update nav button state on route change
   useEffect(() => {
     const update = async () => {
-      if (electronAPI?.navCanGoBack) {
+      if (isElectron && electronAPI?.navCanGoBack) {
         setCanGoBack(await electronAPI.navCanGoBack());
         setCanGoForward(await electronAPI.navCanGoForward());
       } else {
@@ -34,13 +37,25 @@ export function AppTitleBar() {
   }, [location.pathname]);
 
   const handleBack = () => {
-    if (electronAPI?.navBack) electronAPI.navBack();
-    else navigate(-1);
+    if (isElectron && electronAPI?.navBack) {
+      electronAPI.navBack();
+    } else {
+      navigate(-1);
+    }
   };
 
   const handleForward = () => {
-    if (electronAPI?.navForward) electronAPI.navForward();
-    else navigate(1);
+    if (isElectron && electronAPI?.navForward) {
+      electronAPI.navForward();
+    } else {
+      navigate(1);
+    }
+  };
+
+  const handleQuit = () => {
+    if (electronAPI?.quit) {
+      electronAPI.quit();
+    }
   };
 
   const btnClass = "w-7 h-7 rounded-md flex items-center justify-center transition-colors text-muted-foreground hover:text-foreground hover:bg-accent/50";
@@ -71,7 +86,7 @@ export function AppTitleBar() {
         <span className="text-[11px] text-muted-foreground/60 font-medium tracking-wide">TitanClip</span>
       </div>
 
-      {/* Right actions: Help, Settings, Theme */}
+      {/* Right actions: Help, Settings, Theme, Quit */}
       <div className="flex items-center gap-0.5 px-2" style={{ WebkitAppRegion: "no-drag" } as any}>
         <Link to="/help" className={cn(btnClass, "gap-1 w-auto px-2")} title="Help & Documentation">
           <BookOpen className="h-3.5 w-3.5" />
@@ -86,6 +101,13 @@ export function AppTitleBar() {
           title={`Switch to ${nextTheme} mode`}>
           {theme === "dark" ? <Sun className="h-3.5 w-3.5" /> : <Moon className="h-3.5 w-3.5" />}
         </button>
+
+        {isElectron && (
+          <button onClick={handleQuit} className={cn(btnClass, "hover:text-red-400 hover:bg-red-500/10")}
+            title="Quit TitanClip">
+            <Power className="h-3.5 w-3.5" />
+          </button>
+        )}
       </div>
 
       {/* Windows title bar overlay spacer */}

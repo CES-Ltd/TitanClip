@@ -1,35 +1,68 @@
 import { useEffect, useRef } from "react";
 
-const CHARS = [" ", ".", "·", "▪", "▫", "○"] as const;
+/**
+ * Enterprise Security-themed animation for the TitanClip onboarding panel.
+ * Features: floating shield icons, lock symbols, encrypted data streams,
+ * hexagonal grid, and security key particles.
+ */
+
 const TARGET_FPS = 24;
 const FRAME_INTERVAL_MS = 1000 / TARGET_FPS;
 
-const TITANCLIP_SPRITES = [
+// Security-themed ASCII sprites
+const SHIELD_SPRITES = [
   [
-    "  ╭────╮ ",
-    " ╭╯╭──╮│ ",
-    " │ │  ││ ",
-    " │ │  ││ ",
-    " │ │  ││ ",
-    " │ │  ││ ",
-    " │ ╰──╯│ ",
-    " ╰─────╯ ",
+    "  ╭───╮  ",
+    " ╭╯ ✦ ╰╮ ",
+    " │ ╭─╮ │ ",
+    " │ │✓│ │ ",
+    " │ ╰─╯ │ ",
+    " ╰╮   ╭╯ ",
+    "  ╰─┬─╯  ",
+    "    ▼    ",
   ],
   [
-    " ╭─────╮ ",
-    " │╭──╮╰╮ ",
-    " ││  │ │ ",
-    " ││  │ │ ",
-    " ││  │ │ ",
-    " ││  │ │ ",
-    " │╰──╯ │ ",
-    " ╰────╯  ",
+    "  ╭───╮  ",
+    " ╭╯ ◈ ╰╮ ",
+    " │     │ ",
+    " │ ◆◇◆ │ ",
+    " │     │ ",
+    " ╰╮   ╭╯ ",
+    "  ╰───╯  ",
+    "         ",
   ],
 ] as const;
 
-type TitanClipSprite = (typeof TITANCLIP_SPRITES)[number];
+const LOCK_SPRITES = [
+  [
+    " ╭──╮ ",
+    " │  │ ",
+    "╭╯  ╰╮",
+    "│ ●● │",
+    "│ ▼  │",
+    "╰────╯",
+  ],
+  [
+    "  ┌┐  ",
+    " ╭╯╰╮ ",
+    " │🔑│ ",
+    " ╰──╯ ",
+  ],
+] as const;
 
-interface Clip {
+const KEY_SPRITES = [
+  [
+    "○──┤",
+    "   │",
+  ],
+  [
+    "◇━━┥",
+  ],
+] as const;
+
+type Sprite = readonly string[];
+
+interface Particle {
   x: number;
   y: number;
   vx: number;
@@ -37,10 +70,15 @@ interface Clip {
   life: number;
   maxLife: number;
   drift: number;
-  sprite: TitanClipSprite;
+  sprite: Sprite;
   width: number;
   height: number;
+  kind: "shield" | "lock" | "key" | "data";
 }
+
+// Hex grid chars for background
+const HEX_CHARS = [" ", "·", "∙", "⬡", "⬢"] as const;
+const DATA_CHARS = "0123456789ABCDEFabcdef";
 
 function measureChar(container: HTMLElement): { w: number; h: number } {
   const span = document.createElement("span");
@@ -53,7 +91,7 @@ function measureChar(container: HTMLElement): { w: number; h: number } {
   return { w: rect.width, h: rect.height };
 }
 
-function spriteSize(sprite: TitanClipSprite): { width: number; height: number } {
+function spriteSize(sprite: Sprite): { width: number; height: number } {
   let width = 0;
   for (const row of sprite) width = Math.max(width, row.length);
   return { width, height: sprite.length };
@@ -78,14 +116,16 @@ export function AsciiArtAnimation() {
     let trail = new Float32Array(0);
     let colWave = new Float32Array(0);
     let rowWave = new Float32Array(0);
-    let clipMask = new Uint16Array(0);
-    let clips: Clip[] = [];
+    let spriteMask = new Uint16Array(0);
+    let particles: Particle[] = [];
     let lastOutput = "";
+    // Data stream columns — random hex data flowing down
+    let dataColumns: { col: number; speed: number; offset: number; len: number }[] = [];
 
     function toGlyph(value: number): string {
       const clamped = Math.max(0, Math.min(0.999, value));
-      const idx = Math.floor(clamped * CHARS.length);
-      return CHARS[idx] ?? " ";
+      const idx = Math.floor(clamped * HEX_CHARS.length);
+      return HEX_CHARS[idx] ?? " ";
     }
 
     function rebuildGrid() {
@@ -99,15 +139,21 @@ export function AsciiArtAnimation() {
       trail = new Float32Array(cellCount);
       colWave = new Float32Array(cols);
       rowWave = new Float32Array(rows);
-      clipMask = new Uint16Array(cellCount);
-      clips = clips.filter((clip) => {
-        return (
-          clip.x > -clip.width - 2 &&
-          clip.x < cols + 2 &&
-          clip.y > -clip.height - 2 &&
-          clip.y < rows + 2
-        );
-      });
+      spriteMask = new Uint16Array(cellCount);
+      particles = particles.filter((p) =>
+        p.x > -p.width - 2 && p.x < cols + 2 && p.y > -p.height - 2 && p.y < rows + 2
+      );
+      // Reinitialize data streams
+      dataColumns = [];
+      const streamCount = Math.max(3, Math.floor(cols / 12));
+      for (let i = 0; i < streamCount; i++) {
+        dataColumns.push({
+          col: Math.floor(Math.random() * cols),
+          speed: 0.15 + Math.random() * 0.25,
+          offset: Math.random() * rows * 2,
+          len: 4 + Math.floor(Math.random() * 8),
+        });
+      }
       lastOutput = "";
     }
 
@@ -116,21 +162,23 @@ export function AsciiArtAnimation() {
         preEl.textContent = "";
         return;
       }
-
       const grid = Array.from({ length: rows }, () => Array.from({ length: cols }, () => " "));
+
+      // Hexagonal grid background
       for (let r = 0; r < rows; r++) {
         for (let c = 0; c < cols; c++) {
-          const ambient = (Math.sin(c * 0.11 + r * 0.04) + Math.cos(r * 0.08 - c * 0.02)) * 0.18 + 0.22;
-          grid[r][c] = toGlyph(ambient);
+          const hexVal = (Math.sin(c * 0.15 + r * 0.08) + Math.cos(r * 0.12 - c * 0.05)) * 0.14 + 0.18;
+          grid[r][c] = toGlyph(hexVal);
         }
       }
 
-      const gapX = 18;
-      const gapY = 13;
-      for (let baseRow = 1; baseRow < rows - 9; baseRow += gapY) {
-        const startX = Math.floor(baseRow / gapY) % 2 === 0 ? 2 : 10;
+      // Stamp shields in a pattern
+      const gapX = 20;
+      const gapY = 14;
+      for (let baseRow = 2; baseRow < rows - 9; baseRow += gapY) {
+        const startX = Math.floor(baseRow / gapY) % 2 === 0 ? 3 : 13;
         for (let baseCol = startX; baseCol < cols - 10; baseCol += gapX) {
-          const sprite = TITANCLIP_SPRITES[(baseCol + baseRow) % TITANCLIP_SPRITES.length]!;
+          const sprite = SHIELD_SPRITES[(baseCol + baseRow) % SHIELD_SPRITES.length]!;
           for (let sr = 0; sr < sprite.length; sr++) {
             const line = sprite[sr]!;
             for (let sc = 0; sc < line.length; sc++) {
@@ -138,8 +186,9 @@ export function AsciiArtAnimation() {
               if (ch === " ") continue;
               const row = baseRow + sr;
               const col = baseCol + sc;
-              if (row < 0 || row >= rows || col < 0 || col >= cols) continue;
-              grid[row]![col] = ch;
+              if (row >= 0 && row < rows && col >= 0 && col < cols) {
+                grid[row]![col] = ch;
+              }
             }
           }
         }
@@ -150,46 +199,59 @@ export function AsciiArtAnimation() {
       lastOutput = output;
     }
 
-    function spawnClip() {
-      const sprite = TITANCLIP_SPRITES[Math.floor(Math.random() * TITANCLIP_SPRITES.length)]!;
+    function spawnParticle() {
+      const kindRoll = Math.random();
+      let sprite: Sprite;
+      let kind: Particle["kind"];
+
+      if (kindRoll < 0.45) {
+        sprite = SHIELD_SPRITES[Math.floor(Math.random() * SHIELD_SPRITES.length)]!;
+        kind = "shield";
+      } else if (kindRoll < 0.7) {
+        sprite = LOCK_SPRITES[Math.floor(Math.random() * LOCK_SPRITES.length)]!;
+        kind = "lock";
+      } else if (kindRoll < 0.85) {
+        sprite = KEY_SPRITES[Math.floor(Math.random() * KEY_SPRITES.length)]!;
+        kind = "key";
+      } else {
+        // Data fragment — a short hex string
+        const len = 3 + Math.floor(Math.random() * 5);
+        let frag = "";
+        for (let i = 0; i < len; i++) frag += DATA_CHARS[Math.floor(Math.random() * DATA_CHARS.length)];
+        sprite = [frag];
+        kind = "data";
+      }
+
       const size = spriteSize(sprite);
       const edge = Math.random();
-      let x = 0;
-      let y = 0;
-      let vx = 0;
-      let vy = 0;
+      let x = 0, y = 0, vx = 0, vy = 0;
 
-      if (edge < 0.68) {
+      if (edge < 0.6) {
         x = Math.random() < 0.5 ? -size.width - 1 : cols + 1;
         y = Math.random() * Math.max(1, rows - size.height);
-        vx = x < 0 ? 0.04 + Math.random() * 0.05 : -(0.04 + Math.random() * 0.05);
-        vy = (Math.random() - 0.5) * 0.014;
+        vx = x < 0 ? 0.03 + Math.random() * 0.04 : -(0.03 + Math.random() * 0.04);
+        vy = (Math.random() - 0.5) * 0.01;
       } else {
         x = Math.random() * Math.max(1, cols - size.width);
         y = Math.random() < 0.5 ? -size.height - 1 : rows + 1;
-        vx = (Math.random() - 0.5) * 0.014;
-        vy = y < 0 ? 0.028 + Math.random() * 0.034 : -(0.028 + Math.random() * 0.034);
+        vx = (Math.random() - 0.5) * 0.01;
+        vy = y < 0 ? 0.02 + Math.random() * 0.03 : -(0.02 + Math.random() * 0.03);
       }
 
-      clips.push({
-        x,
-        y,
-        vx,
-        vy,
+      particles.push({
+        x, y, vx, vy,
         life: 0,
-        maxLife: 260 + Math.random() * 220,
-        drift: (Math.random() - 0.5) * 1.2,
-        sprite,
-        width: size.width,
-        height: size.height,
+        maxLife: 300 + Math.random() * 250,
+        drift: (Math.random() - 0.5) * 1.0,
+        sprite, width: size.width, height: size.height, kind,
       });
     }
 
-    function stampClip(clip: Clip, alpha: number) {
-      const baseCol = Math.round(clip.x);
-      const baseRow = Math.round(clip.y);
-      for (let sr = 0; sr < clip.sprite.length; sr++) {
-        const line = clip.sprite[sr]!;
+    function stampParticle(p: Particle, alpha: number) {
+      const baseCol = Math.round(p.x);
+      const baseRow = Math.round(p.y);
+      for (let sr = 0; sr < p.sprite.length; sr++) {
+        const line = p.sprite[sr]!;
         const row = baseRow + sr;
         if (row < 0 || row >= rows) continue;
         for (let sc = 0; sc < line.length; sc++) {
@@ -198,9 +260,9 @@ export function AsciiArtAnimation() {
           const col = baseCol + sc;
           if (col < 0 || col >= cols) continue;
           const idx = row * cols + col;
-          const stroke = ch === "│" || ch === "─" ? 0.8 : 0.92;
-          trail[idx] = Math.max(trail[idx] ?? 0, alpha * stroke);
-          clipMask[idx] = ch.charCodeAt(0);
+          const intensity = ch === "│" || ch === "─" || ch === "━" ? 0.75 : 0.9;
+          trail[idx] = Math.max(trail[idx] ?? 0, alpha * intensity);
+          spriteMask[idx] = ch.charCodeAt(0);
         }
       }
     }
@@ -215,54 +277,70 @@ export function AsciiArtAnimation() {
       tick += delta;
 
       const cellCount = cols * rows;
-      const targetCount = Math.max(3, Math.floor(cellCount / 2200));
-      while (clips.length < targetCount) spawnClip();
+      const targetCount = Math.max(4, Math.floor(cellCount / 1800));
+      while (particles.length < targetCount) spawnParticle();
 
-      for (let i = 0; i < trail.length; i++) trail[i] *= 0.92;
-      clipMask.fill(0);
+      // Decay trails
+      for (let i = 0; i < trail.length; i++) trail[i] *= 0.93;
+      spriteMask.fill(0);
 
-      for (let i = clips.length - 1; i >= 0; i--) {
-        const clip = clips[i]!;
-        clip.life += delta;
+      // Update particles
+      for (let i = particles.length - 1; i >= 0; i--) {
+        const p = particles[i]!;
+        p.life += delta;
 
-        const wobbleX = Math.sin((clip.y + clip.drift + tick * 0.12) * 0.09) * 0.0018;
-        const wobbleY = Math.cos((clip.x - clip.drift - tick * 0.09) * 0.08) * 0.0014;
-        clip.vx = (clip.vx + wobbleX) * 0.998;
-        clip.vy = (clip.vy + wobbleY) * 0.998;
+        const wobbleX = Math.sin((p.y + p.drift + tick * 0.1) * 0.07) * 0.0015;
+        const wobbleY = Math.cos((p.x - p.drift - tick * 0.08) * 0.06) * 0.001;
+        p.vx = (p.vx + wobbleX) * 0.998;
+        p.vy = (p.vy + wobbleY) * 0.998;
+        p.x += p.vx * delta;
+        p.y += p.vy * delta;
 
-        clip.x += clip.vx * delta;
-        clip.y += clip.vy * delta;
-
-        if (
-          clip.life >= clip.maxLife ||
-          clip.x < -clip.width - 2 ||
-          clip.x > cols + 2 ||
-          clip.y < -clip.height - 2 ||
-          clip.y > rows + 2
-        ) {
-          clips.splice(i, 1);
+        if (p.life >= p.maxLife || p.x < -p.width - 2 || p.x > cols + 2 || p.y < -p.height - 2 || p.y > rows + 2) {
+          particles.splice(i, 1);
           continue;
         }
 
-        const life = clip.life / clip.maxLife;
-        const alpha = life < 0.12 ? life / 0.12 : life > 0.88 ? (1 - life) / 0.12 : 1;
-        stampClip(clip, alpha);
+        const life = p.life / p.maxLife;
+        const alpha = life < 0.1 ? life / 0.1 : life > 0.9 ? (1 - life) / 0.1 : 1;
+        stampParticle(p, alpha);
       }
 
-      for (let c = 0; c < cols; c++) colWave[c] = Math.sin(c * 0.08 + tick * 0.06);
-      for (let r = 0; r < rows; r++) rowWave[r] = Math.cos(r * 0.1 - tick * 0.05);
+      // Waves
+      for (let c = 0; c < cols; c++) colWave[c] = Math.sin(c * 0.06 + tick * 0.04);
+      for (let r = 0; r < rows; r++) rowWave[r] = Math.cos(r * 0.08 - tick * 0.035);
 
+      // Render
       let output = "";
       for (let r = 0; r < rows; r++) {
         for (let c = 0; c < cols; c++) {
           const idx = r * cols + c;
-          const clipChar = clipMask[idx];
-          if (clipChar > 0) {
-            output += String.fromCharCode(clipChar);
+          const maskChar = spriteMask[idx];
+          if (maskChar > 0) {
+            output += String.fromCharCode(maskChar);
             continue;
           }
-          const ambient = (colWave[c] + rowWave[r]) * 0.08 + 0.1;
-          const intensity = Math.max(trail[idx] ?? 0, ambient * 0.45);
+
+          // Data stream overlay
+          let isDataStream = false;
+          for (const ds of dataColumns) {
+            if (c === ds.col) {
+              const streamPos = (r + ds.offset + tick * ds.speed) % (rows + ds.len);
+              if (streamPos >= 0 && streamPos < ds.len) {
+                const streamAlpha = streamPos < 1 ? streamPos : streamPos > ds.len - 1 ? ds.len - streamPos : 1;
+                if (streamAlpha > 0.3) {
+                  output += DATA_CHARS[Math.floor((tick * 3 + r * 7 + c) % DATA_CHARS.length)];
+                  isDataStream = true;
+                  break;
+                }
+              }
+            }
+          }
+          if (isDataStream) continue;
+
+          // Hexagonal grid background with waves
+          const ambient = (colWave[c] + rowWave[r]) * 0.06 + 0.08;
+          const intensity = Math.max(trail[idx] ?? 0, ambient * 0.4);
           output += toGlyph(intensity);
         }
         if (r < rows - 1) output += "\n";
@@ -285,7 +363,6 @@ export function AsciiArtAnimation() {
         if (canRender) drawStaticFrame();
         return;
       }
-
       if (!isVisible || !canRender) {
         if (loopActive) {
           loopActive = false;
@@ -294,7 +371,6 @@ export function AsciiArtAnimation() {
         }
         return;
       }
-
       if (!loopActive) {
         loopActive = true;
         lastRenderAt = 0;
@@ -317,9 +393,7 @@ export function AsciiArtAnimation() {
     };
     document.addEventListener("visibilitychange", onVisibilityChange);
 
-    const onMotionChange = () => {
-      syncLoop();
-    };
+    const onMotionChange = () => syncLoop();
     motionMedia.addEventListener("change", onMotionChange);
 
     const charSize = measureChar(preEl);
@@ -340,7 +414,7 @@ export function AsciiArtAnimation() {
   return (
     <pre
       ref={preRef}
-      className="w-full h-full m-0 p-0 overflow-hidden text-muted-foreground/60 select-none leading-none"
+      className="w-full h-full m-0 p-0 overflow-hidden text-emerald-500/40 select-none leading-none"
       style={{ fontSize: "11px", fontFamily: "monospace" }}
       aria-hidden="true"
     />

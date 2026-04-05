@@ -2,15 +2,18 @@
   "name": "titanclip",
   "version": "1.0.0",
   "description": "TitanClip - AI Company Orchestration Platform",
-  "main": "dist/main.js",
+  "main": "dist/main/index.js",
   "scripts": {
     "dev": "tsc -p tsconfig.electron.json && electron .",
+    "dev:native": "tsc -p tsconfig.electron.json && TITANCLIP_STARTUP_MODE=native electron .",
     "build": "pnpm -r build",
+    "build:ui-electron": "cd ui && ELECTRON_BUILD=true pnpm run build",
     "build:electron": "tsc -p tsconfig.electron.json",
+    "build:all": "pnpm run build && pnpm run build:ui-electron && pnpm run build:electron",
     "start": "electron .",
-    "dist": "pnpm run build && tsc -p tsconfig.electron.json && electron-builder --mac",
-    "dist:win": "pnpm run build && tsc -p tsconfig.electron.json && electron-builder --win",
-    "dist:linux": "pnpm run build && tsc -p tsconfig.electron.json && electron-builder --linux",
+    "dist": "pnpm run build:all && bash scripts/patch-server-modules.sh && electron-builder --mac && bash scripts/sign-mac.sh",
+    "dist:win": "pnpm run build:all && electron-builder --win",
+    "dist:linux": "pnpm run build:all && electron-builder --linux",
     "typecheck": "pnpm -r typecheck"
   },
   "engines": {

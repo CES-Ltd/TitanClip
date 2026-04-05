@@ -1545,6 +1545,7 @@ export function agentRoutes(db: Db) {
         name: agent.name,
         role: agent.role,
         desiredSkills: desiredSkillAssignment.desiredSkills,
+        ...(req.body.hireSource === "agent-gallery" ? { approvalMethod: "auto approved direct hire", source: "agent-gallery" } : {}),
       },
     });
     const telemetryClient = getTelemetryClient();
