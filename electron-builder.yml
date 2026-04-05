@@ -1,0 +1,59 @@
+appId: com.titanclip.app
+productName: TitanClip
+directories:
+  output: release
+  buildResources: assets
+
+files:
+  - dist/**/*
+
+asar: false
+
+extraResources:
+  - from: ui/dist
+    to: ui-dist
+  - from: server/dist
+    to: server-dist
+  - from: server/src/onboarding-assets
+    to: server-dist/onboarding-assets
+  - from: .build-server/node_modules
+    to: server-dist/node_modules
+  - from: server/package.json
+    to: server-dist/package.json
+  - from: skills
+    to: skills
+
+mac:
+  target:
+    - target: dmg
+      arch:
+        - arm64
+        - x64
+    - target: zip
+      arch:
+        - arm64
+        - x64
+  icon: assets/logo.png
+  category: public.app-category.developer-tools
+  darkModeSupport: true
+
+dmg:
+  title: TitanClip
+  artifactName: TitanClip-${version}-${arch}.${ext}
+
+win:
+  target:
+    - nsis
+    - zip
+  icon: assets/logo.png
+
+linux:
+  target:
+    - AppImage
+    - deb
+  icon: assets/logo.png
+  category: Development
+
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true

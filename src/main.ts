@@ -91,12 +91,28 @@ function waitForServer(port: number, timeoutMs = 120000): Promise<void> {
 }
 
 function startServer(): void {
-  // Use tsx to run the server in dev mode (handles TypeScript workspace imports)
-  const serverEntry = path.join(__dirname, "../server/src/index.ts");
-  const tsxBin = path.join(__dirname, "../server/node_modules/.bin/tsx");
-  console.log("[TitanClip] Starting server from:", serverEntry);
+  const isDev = !app.isPackaged;
+  const resourcesPath = (process as any).resourcesPath as string;
 
-  serverProcess = spawn(tsxBin, [serverEntry], {
+  let command: string;
+  let args: string[];
+
+  if (isDev) {
+    // Dev mode: use tsx to run TypeScript directly
+    const serverEntry = path.join(__dirname, "../server/src/index.ts");
+    const tsxBin = path.join(__dirname, "../server/node_modules/.bin/tsx");
+    command = tsxBin;
+    args = [serverEntry];
+    console.log("[TitanClip] Starting server (dev) from:", serverEntry);
+  } else {
+    // Production: use compiled JS from extraResources
+    const serverEntry = path.join(resourcesPath, "server-dist", "index.js");
+    command = "node";
+    args = [serverEntry];
+    console.log("[TitanClip] Starting server (prod) from:", serverEntry);
+  }
+
+  serverProcess = spawn(command, args, {
     stdio: ["ignore", "pipe", "pipe"],
     env: {
       ...process.env,
