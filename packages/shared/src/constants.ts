@@ -33,6 +33,7 @@ export const AGENT_ADAPTER_TYPES = [
   "openclaw_gateway",
   "hermes_local",
   "universal_llm",
+  "openai_compatible",
 ] as const;
 export type AgentAdapterType = (typeof AGENT_ADAPTER_TYPES)[number];
 

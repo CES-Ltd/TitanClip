@@ -190,24 +190,40 @@ const hermesLocalAdapter: ServerAdapterModule = {
   detectModel: () => detectModelFromHermes(),
 };
 
-// Universal LLM adapter: lazy-loaded to avoid static import of @titanclip/adapter-universal-llm
+// OpenAI-compatible HTTP endpoint adapter (also registered as universal_llm for backward compat)
+const lazyExecute = async (ctx: any) => {
+  const mod = await (Function("p", "return import(p)")("@titanclip/adapter-universal-llm/server") as Promise<any>);
+  return mod.execute(ctx);
+};
+const lazyTest = async (ctx: any) => {
+  const mod = await (Function("p", "return import(p)")("@titanclip/adapter-universal-llm/server") as Promise<any>);
+  return mod.testEnvironment(ctx);
+};
+const openaiCompatModels = [
+  { id: "gpt-4o", label: "GPT-4o (OpenAI)" },
+  { id: "claude-sonnet-4-20250514", label: "Claude Sonnet 4 (Anthropic)" },
+  { id: "gemini-2.5-pro", label: "Gemini 2.5 Pro (Google)" },
+  { id: "llama3", label: "Llama 3 (Ollama)" },
+];
+const openaiCompatDoc = "OpenAI-compatible HTTP endpoint adapter — supports OpenAI, Anthropic, Gemini, Azure, Vertex AI, Ollama, OpenRouter, and custom endpoints. Select a provider preset to auto-configure the endpoint URL.";
+
+const openaiCompatibleAdapter: ServerAdapterModule = {
+  type: "openai_compatible",
+  execute: lazyExecute,
+  testEnvironment: lazyTest,
+  models: openaiCompatModels,
+  supportsLocalAgentJwt: false,
+  agentConfigurationDoc: openaiCompatDoc,
+};
+
+// Backward compat alias
 const universalLlmAdapter: ServerAdapterModule = {
   type: "universal_llm",
-  async execute(ctx) {
-    const mod = await (Function("p", "return import(p)")("@titanclip/adapter-universal-llm/server") as Promise<any>);
-    return mod.execute(ctx);
-  },
-  async testEnvironment(ctx) {
-    const mod = await (Function("p", "return import(p)")("@titanclip/adapter-universal-llm/server") as Promise<any>);
-    return mod.testEnvironment(ctx);
-  },
-  models: [
-    { id: "openai/gpt-4o", label: "GPT-4o (OpenAI)" },
-    { id: "anthropic/claude-sonnet-4-20250514", label: "Claude Sonnet 4 (Anthropic)" },
-    { id: "ollama/llama3", label: "Llama 3 (Ollama)" },
-  ],
+  execute: lazyExecute,
+  testEnvironment: lazyTest,
+  models: openaiCompatModels,
   supportsLocalAgentJwt: false,
-  agentConfigurationDoc: "Universal LLM adapter — supports OpenAI, Anthropic, OpenRouter, Ollama. Set provider and model in adapter config.",
+  agentConfigurationDoc: openaiCompatDoc,
 };
 
 const adaptersByType = new Map<string, ServerAdapterModule>(
@@ -221,6 +237,7 @@ const adaptersByType = new Map<string, ServerAdapterModule>(
     openclawGatewayAdapter,
     hermesLocalAdapter,
     universalLlmAdapter,
+    openaiCompatibleAdapter,
     processAdapter,
     httpAdapter,
   ].map((a) => [a.type, a]),

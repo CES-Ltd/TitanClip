@@ -36,7 +36,7 @@ import { dependencyRoutes } from "./routes/dependencies.js";
 import { skillRoutingRoutes } from "./routes/skill-routing.js";
 import { analyticsRoutes } from "./routes/analytics.js";
 import { lifecycleRoutes } from "./routes/lifecycle.js";
-import { llmProviderRoutes } from "./routes/llm-providers.js";
+// llmProviderRoutes removed — unified into openai_compatible adapter config
 import { agentMemoryRoutes } from "./routes/agent-memory.js";
 import { conversationRoutes } from "./routes/conversations.js";
 import { skillProposalRoutes } from "./routes/skill-proposals.js";
@@ -197,7 +197,7 @@ export async function createApp(
   api.use(skillRoutingRoutes(db));
   api.use(analyticsRoutes(db));
   api.use(lifecycleRoutes(db));
-  api.use(llmProviderRoutes(db));
+  // llmProviderRoutes removed — config unified into agent adapterConfig
   api.use(agentMemoryRoutes(db));
   api.use(conversationRoutes(db));
   api.use(skillProposalRoutes(db));

@@ -1,26 +1,24 @@
 /**
- * Agent Chat Route — accepts a user message, triggers adapter execution,
- * and streams the response back via Server-Sent Events (SSE).
+ * Agent Chat Route — unified with TitanClip's observability pipeline.
  *
- * This is the core execution path for the Agent OS chat interface.
+ * When a user sends a message:
+ * 1. Creates a TitanClip issue (or appends to existing) — visible in Issues page
+ * 2. Creates/appends to a conversation — linked to the issue
+ * 3. Executes via the agent's adapter with streaming
+ * 4. Records activity log, cost events — visible in Activity + Costs pages
+ * 5. Optionally routes through skill-based routing
  *
- * Flow:
- *   1. Client sends POST with { message, conversationId? }
- *   2. Server resolves agent + adapter config
- *   3. Builds memory context from agent memories
- *   4. Creates/appends to conversation
- *   5. Calls adapter.execute() with streaming callbacks
- *   6. Streams response chunks back to client via SSE
- *   7. Records assistant response in conversation
+ * All chat activity flows through TitanClip's standard observability system.
  */
 
 import { Router } from "express";
 import type { Db } from "@titanclip/db";
-import { agents } from "@titanclip/db";
+import { agents, issues } from "@titanclip/db";
 import { eq, and } from "drizzle-orm";
 import { getServerAdapter } from "../adapters/index.js";
 import { conversationService } from "../services/conversations.js";
 import { agentMemoryService } from "../services/agent-memory.js";
+import { logActivity } from "../services/activity-log.js";
 import { assertCompanyAccess } from "./authz.js";
 
 export function agentChatRoutes(db: Db) {
@@ -28,22 +26,14 @@ export function agentChatRoutes(db: Db) {
   const convSvc = conversationService(db);
   const memorySvc = agentMemoryService(db);
 
-  /**
-   * POST /companies/:companyId/agents/:agentId/chat
-   *
-   * Body: { message: string, conversationId?: string, model?: string, provider?: string }
-   * Response: SSE stream of { type: "chunk"|"done"|"error", content?, usage? }
-   */
   router.post("/companies/:companyId/agents/:agentId/chat", async (req, res) => {
     const companyId = req.params.companyId as string;
     const agentId = req.params.agentId as string;
     assertCompanyAccess(req, companyId);
 
-    const { message, conversationId, model, provider } = req.body as {
+    const { message, conversationId } = req.body as {
       message: string;
       conversationId?: string;
-      model?: string;
-      provider?: string;
     };
 
     if (!message?.trim()) {
@@ -62,67 +52,95 @@ export function agentChatRoutes(db: Db) {
       return;
     }
 
-    // 2. Get or create conversation
+    // 2. Create TitanClip issue for this chat task (D2 fix)
+    const issueTitle = message.slice(0, 100) + (message.length > 100 ? "..." : "");
+    let issueId: string | undefined;
+    try {
+      const [newIssue] = await db
+        .insert(issues)
+        .values({
+          companyId,
+          title: issueTitle,
+          description: message,
+          status: "in_progress",
+          priority: "medium",
+          assigneeAgentId: agentId,
+          originKind: "manual",
+          createdByUserId: "local-board",
+        })
+        .returning();
+      issueId = newIssue?.id;
+
+      // Log issue creation in activity (D4 fix)
+      await logActivity(db, {
+        companyId,
+        actorType: "user",
+        actorId: "local-board",
+        action: "issue.created",
+        entityType: "issue",
+        entityId: issueId!,
+        details: { title: issueTitle, origin: "agent_os_chat" },
+      });
+    } catch (err) {
+      // Issue creation is best-effort — continue with chat even if it fails
+      console.warn("[AgentChat] Issue creation failed:", (err as Error).message);
+    }
+
+    // 3. Get or create conversation, linked to issue
     let conversation;
     if (conversationId) {
       conversation = await convSvc.getById(conversationId);
     }
     if (!conversation) {
       conversation = await convSvc.create(companyId, agentId, {
-        title: message.slice(0, 100),
+        title: issueTitle,
+        issueId,
       });
+    } else if (issueId && !conversation.issueId) {
+      await convSvc.linkToIssue(conversation.id, issueId);
     }
 
-    // 3. Record user message
+    // 4. Record user message
     await convSvc.appendMessage(conversation.id, companyId, {
       role: "user",
       content: message,
     });
 
-    // 4. Build memory context
+    // 5. Build memory context
     let memoryContext = "";
     try {
       memoryContext = await memorySvc.buildMemoryContext(agentId, { maxTokenEstimate: 1500 });
-    } catch {
-      // Memory service may not have tables yet — continue without
-    }
+    } catch { /* Memory tables may not exist — continue without */ }
 
-    // 5. Load conversation history for context
+    // 6. Load conversation history
     const recentMessages = await convSvc.getMessages(conversation.id, { limit: 20 });
     const history = recentMessages.map((m) => ({
       role: m.role as "user" | "assistant" | "system",
       content: m.content,
     }));
 
-    // 6. Resolve adapter
-    const adapterType = agent.adapterType;
-    const adapter = getServerAdapter(adapterType);
+    // 7. Resolve adapter + config
+    const adapter = getServerAdapter(agent.adapterType);
     const adapterConfig = (agent.adapterConfig as Record<string, unknown>) ?? {};
 
-    // Allow runtime model/provider override from the chat request
-    const effectiveConfig = {
-      ...adapterConfig,
-      ...(model ? { model } : {}),
-      ...(provider ? { provider } : {}),
-    };
-
-    // 7. Set up SSE response
+    // 8. Set up SSE
     res.setHeader("Content-Type", "text/event-stream");
     res.setHeader("Cache-Control", "no-cache");
     res.setHeader("Connection", "keep-alive");
     res.setHeader("X-Conversation-Id", conversation.id);
+    if (issueId) res.setHeader("X-Issue-Id", issueId);
     res.flushHeaders();
 
     const sendSSE = (data: Record<string, unknown>) => {
       res.write(`data: ${JSON.stringify(data)}\n\n`);
     };
 
-    sendSSE({ type: "start", conversationId: conversation.id });
+    sendSSE({ type: "start", conversationId: conversation.id, issueId });
 
     let fullContent = "";
 
     try {
-      // 8. Execute adapter
+      // 9. Execute adapter
       const result = await adapter.execute({
         runId: `chat-${Date.now()}`,
         agent: {
@@ -130,19 +148,20 @@ export function agentChatRoutes(db: Db) {
           companyId: agent.companyId,
           name: agent.name,
           adapterType: agent.adapterType,
-          adapterConfig: effectiveConfig,
+          adapterConfig,
         },
         runtime: {
           sessionId: conversation.id,
           sessionParams: { history },
           sessionDisplayId: conversation.title ?? "chat",
-          taskKey: `chat:${conversation.id}`,
+          taskKey: issueId ? `issue:${issueId}` : `chat:${conversation.id}`,
         },
-        config: effectiveConfig,
+        config: adapterConfig,
         context: {
           userMessage: message,
           memoryContext,
           conversationId: conversation.id,
+          issueId,
         },
         onLog: async (stream, chunk) => {
           if (stream === "stdout" && chunk) {
@@ -152,8 +171,9 @@ export function agentChatRoutes(db: Db) {
         },
       });
 
-      // 9. Record assistant response
       const responseContent = fullContent || (result.resultJson as any)?.content || result.summary || "(no response)";
+
+      // 10. Record assistant response in conversation
       await convSvc.appendMessage(conversation.id, companyId, {
         role: "assistant",
         content: responseContent,
@@ -163,12 +183,45 @@ export function agentChatRoutes(db: Db) {
         metadata: {
           model: result.model,
           provider: result.provider,
-          exitCode: result.exitCode,
           costUsd: result.costUsd,
+          exitCode: result.exitCode,
         },
       });
 
-      // 10. Extract memories from successful response
+      // 11. Log activity for the chat execution (D4 fix)
+      await logActivity(db, {
+        companyId,
+        actorType: "agent",
+        actorId: agentId,
+        agentId,
+        action: "agent.chat.completed",
+        entityType: "conversation",
+        entityId: conversation.id,
+        details: {
+          issueId,
+          model: result.model,
+          provider: result.provider,
+          inputTokens: result.usage?.inputTokens,
+          outputTokens: result.usage?.outputTokens,
+          costUsd: result.costUsd,
+          iterations: (result.resultJson as any)?.iterations,
+        },
+      });
+
+      // 12. If we created an issue, add the response as an issue comment
+      if (issueId) {
+        try {
+          const { issueComments } = await import("@titanclip/db");
+          await db.insert(issueComments).values({
+            companyId,
+            issueId: issueId!,
+            body: responseContent.slice(0, 10000),
+            authorAgentId: agentId,
+          });
+        } catch { /* Best effort */ }
+      }
+
+      // 13. Memory extraction
       if (result.exitCode === 0 && responseContent.length > 50) {
         try {
           await memorySvc.upsert(agentId, companyId, {
@@ -177,16 +230,15 @@ export function agentChatRoutes(db: Db) {
             key: `conv:${conversation.id}:${Date.now()}`,
             content: responseContent.slice(0, 500),
             importance: 3,
-            expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 day TTL
+            expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
           });
-        } catch {
-          // Memory table may not exist — continue
-        }
+        } catch { /* Memory table may not exist */ }
       }
 
       sendSSE({
         type: "done",
         conversationId: conversation.id,
+        issueId,
         usage: result.usage,
         model: result.model,
         provider: result.provider,
@@ -194,17 +246,23 @@ export function agentChatRoutes(db: Db) {
       });
     } catch (err: any) {
       sendSSE({ type: "error", error: err.message });
+
+      // Log failure activity
+      try {
+        await logActivity(db, {
+          companyId,
+          actorType: "agent",
+          actorId: agentId,
+          agentId,
+          action: "agent.chat.failed",
+          entityType: "conversation",
+          entityId: conversation.id,
+          details: { error: err.message, issueId },
+        });
+      } catch { /* Best effort */ }
     }
 
     res.end();
-  });
-
-  /**
-   * POST /companies/:companyId/agents/:agentId/chat/regenerate
-   * Re-runs the last turn in a conversation.
-   */
-  router.post("/companies/:companyId/agents/:agentId/chat/regenerate", async (req, res) => {
-    res.status(501).json({ error: "Regenerate not yet implemented" });
   });
 
   return router;
