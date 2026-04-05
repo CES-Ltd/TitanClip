@@ -8,7 +8,7 @@ import {
   type AgentRole,
 } from "@titanclip/shared";
 import type { AgentTemplate, CreateAgentTemplate } from "@titanclip/shared";
-import { Lock, LockOpen, ShieldCheck, KeyRound, Plus, Pencil, Trash2, FileText, Globe, EyeOff } from "lucide-react";
+import { Lock, LockOpen, ShieldCheck, KeyRound, Plus, Pencil, Trash2, FileText, Globe, EyeOff, Shield, Server, Database, AlertTriangle, Users, Bot, Clock } from "lucide-react";
 import { adminSettingsApi } from "@/api/adminSettings";
 import { permissionPoliciesApi } from "../api/permissionPolicies";
 import { agentsApi } from "../api/agents";
@@ -42,6 +42,7 @@ export function InstanceAdminSettings() {
   const { isUnlocked, token, authMode, lock } = useAdminSession();
   const [pinDialogOpen, setPinDialogOpen] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
+  const [activeSection, setActiveSection] = useState("adapters");
 
   // Change PIN state
   const [currentPin, setCurrentPin] = useState("");
@@ -266,8 +267,22 @@ export function InstanceAdminSettings() {
   const isRoleChecked = (role: string) =>
     allRolesAllowed || allowedRoles!.includes(role);
 
+  const SECTIONS = [
+    { id: "adapters", label: "Adapters & Models", icon: Server, group: "Security & Access" },
+    { id: "roles", label: "Allowed Roles", icon: Users, group: "Security & Access" },
+    { id: "pin", label: "Admin PIN", icon: KeyRound, group: "Security & Access" },
+    { id: "templates", label: "Agent Templates", icon: Bot, group: "Agent Governance" },
+    { id: "session-agents", label: "Session Agents", icon: Clock, group: "Agent Governance" },
+    { id: "retention", label: "Data Retention", icon: Database, group: "Data & Retention" },
+    { id: "workspaces", label: "Workspace Governance", icon: Globe, group: "Infrastructure" },
+    { id: "otel", label: "OpenTelemetry", icon: Server, group: "Infrastructure" },
+    { id: "danger", label: "Danger Zone", icon: AlertTriangle, group: "Danger Zone" },
+  ];
+
+  const groups = [...new Set(SECTIONS.map((s) => s.group))];
+
   return (
-    <div className="max-w-4xl space-y-6">
+    <div className="space-y-4">
       {/* Header with lock/unlock */}
       <div className="flex items-center justify-between">
         <div className="space-y-1">
@@ -276,23 +291,16 @@ export function InstanceAdminSettings() {
             Admin Settings
           </h2>
           <p className="text-sm text-muted-foreground">
-            Control which adapters, models, and roles are available for agent creation.
+            Governance, security, and infrastructure configuration.
           </p>
         </div>
         {isUnlocked ? (
           <Button variant="outline" size="sm" onClick={lock} className="gap-2">
-            <LockOpen className="h-4 w-4" />
-            Lock
+            <LockOpen className="h-4 w-4" /> Lock
           </Button>
         ) : (
-          <Button
-            variant="default"
-            size="sm"
-            onClick={() => setPinDialogOpen(true)}
-            className="gap-2"
-          >
-            <Lock className="h-4 w-4" />
-            Unlock
+          <Button variant="default" size="sm" onClick={() => setPinDialogOpen(true)} className="gap-2">
+            <Lock className="h-4 w-4" /> Unlock
           </Button>
         )}
       </div>
@@ -303,9 +311,49 @@ export function InstanceAdminSettings() {
         </div>
       )}
 
-      {/* Locked overlay */}
-      <div className={cn(!isUnlocked && "opacity-50 pointer-events-none select-none")}>
-        {/* Adapters & Models — 2-Pane View */}
+      {/* 2-Pane Layout */}
+      <div className={cn("flex gap-6 min-h-[500px]", !isUnlocked && "opacity-50 pointer-events-none select-none")}>
+
+        {/* Left Pane — Section Menu */}
+        <nav className="w-52 shrink-0 space-y-4">
+          {groups.map((group) => (
+            <div key={group}>
+              <div className={cn(
+                "text-[10px] font-semibold uppercase tracking-wider px-2 py-1",
+                group === "Danger Zone" ? "text-red-500" : "text-muted-foreground/60"
+              )}>
+                {group}
+              </div>
+              {SECTIONS.filter((s) => s.group === group).map((section) => {
+                const Icon = section.icon;
+                const isActive = activeSection === section.id;
+                return (
+                  <button
+                    key={section.id}
+                    onClick={() => setActiveSection(section.id)}
+                    className={cn(
+                      "w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-sm transition-colors text-left",
+                      isActive
+                        ? section.id === "danger"
+                          ? "bg-red-500/10 text-red-500 font-medium"
+                          : "bg-accent text-foreground font-medium"
+                        : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
+                    )}
+                  >
+                    <Icon className="h-3.5 w-3.5 shrink-0" />
+                    {section.label}
+                  </button>
+                );
+              })}
+            </div>
+          ))}
+        </nav>
+
+        {/* Right Pane — Section Content */}
+        <div className="flex-1 min-w-0">
+
+      {/* === Section: Adapters & Models === */}
+      {activeSection === "adapters" && (
         <div className="rounded-lg border overflow-hidden">
           <div className="flex items-center justify-between px-4 py-2 border-b bg-muted/20">
             <h3 className="font-medium text-sm">Adapters & Models</h3>
@@ -392,8 +440,11 @@ export function InstanceAdminSettings() {
           </div>
         </div>
 
-        {/* Allowed Agent Roles */}
-        <div className="space-y-3 rounded-lg border p-4 mt-4">
+      )}
+
+      {/* === Section: Allowed Roles === */}
+      {activeSection === "roles" && (
+        <div className="space-y-3 rounded-lg border p-4">
           <div className="flex items-center justify-between">
             <h3 className="font-medium text-sm">Allowed Agent Roles</h3>
             <Button
@@ -429,9 +480,11 @@ export function InstanceAdminSettings() {
           </div>
         </div>
 
-        {/* Change PIN (hidden in SSO mode) */}
-        {authMode !== "sso" && (
-          <div className="space-y-3 rounded-lg border p-4 mt-4">
+      )}
+
+      {/* === Section: Admin PIN === */}
+      {activeSection === "pin" && authMode !== "sso" && (
+          <div className="space-y-3 rounded-lg border p-4">
             <h3 className="font-medium text-sm flex items-center gap-2">
               <KeyRound className="h-4 w-4" />
               Change Admin PIN
@@ -488,12 +541,45 @@ export function InstanceAdminSettings() {
               </Button>
             </form>
           </div>
-        )}
-      </div>
+      )}
 
-      {/* Agent Templates Section */}
-      <div className={cn(!isUnlocked && "opacity-50 pointer-events-none select-none")}>
-        <div className="space-y-3 rounded-lg border p-4 mt-4">
+      {/* === Section: Session Agents === */}
+      {activeSection === "session-agents" && (
+        <div className="space-y-3 rounded-lg border border-indigo-500/20 p-4">
+          <div className="flex items-start justify-between gap-4">
+            <div className="space-y-1.5">
+              <div className="flex items-center gap-2">
+                <h3 className="text-sm font-semibold">Session Agents</h3>
+                <span className="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full bg-indigo-500/10 text-indigo-500 border border-indigo-500/20">Beta</span>
+              </div>
+              <p className="max-w-2xl text-sm text-muted-foreground">
+                Allow Agent OS to create temporary session agents on-the-fly when no matching template is found.
+                Session agents inherit their parent's IAM permissions, require explicit user approval, and
+                automatically expire after 24 hours.
+              </p>
+            </div>
+            <button
+              type="button"
+              aria-label="Toggle session agents"
+              disabled={updateMutation.isPending}
+              className={cn(
+                "relative inline-flex h-5 w-9 items-center rounded-full transition-colors disabled:cursor-not-allowed disabled:opacity-60",
+                (data as any)?.enableSessionAgents ? "bg-indigo-600" : "bg-muted",
+              )}
+              onClick={() => updateMutation.mutate({ enableSessionAgents: !(data as any)?.enableSessionAgents } as any)}
+            >
+              <span className={cn(
+                "inline-block h-3.5 w-3.5 rounded-full bg-white transition-transform",
+                (data as any)?.enableSessionAgents ? "translate-x-4.5" : "translate-x-0.5",
+              )} />
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* === Section: Agent Templates === */}
+      {activeSection === "templates" && (
+        <div className="space-y-3 rounded-lg border p-4">
           <div className="flex items-center justify-between">
             <h3 className="font-medium text-sm flex items-center gap-2">
               <FileText className="h-4 w-4" />
@@ -626,11 +712,58 @@ export function InstanceAdminSettings() {
             </form>
           )}
         </div>
-      </div>
+      )}
 
-      {/* Danger Zone */}
-      {token && (
-        <div className="space-y-4 pt-6 border-t border-red-500/20">
+      {/* === Section: Data Retention === */}
+      {activeSection === "retention" && (
+        <div className="space-y-4 rounded-lg border p-4">
+          <h3 className="font-medium text-sm flex items-center gap-2">
+            <Database className="h-4 w-4" /> Data Retention
+          </h3>
+          <p className="text-xs text-muted-foreground">Data retention is configured via the admin API. Current policies are shown in the governance settings.</p>
+          <div className="grid grid-cols-2 gap-3 text-sm">
+            <div className="rounded-md border p-3"><span className="text-muted-foreground">Run Logs</span><br/><strong>{data?.retentionRunLogsDays ?? 90} days</strong></div>
+            <div className="rounded-md border p-3"><span className="text-muted-foreground">Activity</span><br/><strong>{data?.retentionActivityDays ?? 365} days</strong></div>
+            <div className="rounded-md border p-3"><span className="text-muted-foreground">Cost Events</span><br/><strong>{data?.retentionCostEventsDays ?? 365} days</strong></div>
+            <div className="rounded-md border p-3"><span className="text-muted-foreground">Token Audit</span><br/><strong>{data?.retentionTokenAuditDays ?? 180} days</strong></div>
+          </div>
+        </div>
+      )}
+
+      {/* === Section: Workspace Governance === */}
+      {activeSection === "workspaces" && (
+        <div className="space-y-4 rounded-lg border p-4">
+          <h3 className="font-medium text-sm flex items-center gap-2">
+            <Globe className="h-4 w-4" /> Workspace Governance
+          </h3>
+          <div className="grid grid-cols-2 gap-3 text-sm">
+            <div className="rounded-md border p-3"><span className="text-muted-foreground">Auto-Cleanup</span><br/><strong>{data?.workspaceAutoCleanupHours ?? 24} hours</strong></div>
+            <div className="rounded-md border p-3"><span className="text-muted-foreground">Max Disk</span><br/><strong>{data?.maxWorkspaceDiskMb ?? 5120} MB</strong></div>
+          </div>
+          <div className="text-sm">
+            <span className="text-muted-foreground">Protected Branches:</span>{" "}
+            <strong>{(data?.protectedBranches ?? ["main", "master"]).join(", ")}</strong>
+          </div>
+        </div>
+      )}
+
+      {/* === Section: OpenTelemetry === */}
+      {activeSection === "otel" && (
+        <div className="space-y-4 rounded-lg border p-4">
+          <h3 className="font-medium text-sm flex items-center gap-2">
+            <Server className="h-4 w-4" /> OpenTelemetry
+          </h3>
+          <div className="grid grid-cols-2 gap-3 text-sm">
+            <div className="rounded-md border p-3"><span className="text-muted-foreground">Enabled</span><br/><strong>{data?.otelEnabled ? "Yes" : "No"}</strong></div>
+            <div className="rounded-md border p-3"><span className="text-muted-foreground">Sample Rate</span><br/><strong>{data?.otelSampleRate ?? 1.0}</strong></div>
+            <div className="rounded-md border p-3 col-span-2"><span className="text-muted-foreground">Endpoint</span><br/><strong className="break-all">{data?.otelEndpoint ?? "http://localhost:4318"}</strong></div>
+          </div>
+        </div>
+      )}
+
+      {/* === Section: Danger Zone === */}
+      {activeSection === "danger" && token && (
+        <div className="space-y-4 pt-2">
           <div className="flex items-center gap-2">
             <h2 className="text-sm font-semibold text-red-500 uppercase tracking-wider">Danger Zone Settings</h2>
             <span className="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full bg-red-500/10 text-red-500 border border-red-500/20">
@@ -682,6 +815,9 @@ export function InstanceAdminSettings() {
           </div>
         </div>
       )}
+
+        </div>{/* end right pane */}
+      </div>{/* end 2-pane flex */}
 
       {/* PIN Dialog */}
       <AdminPinDialog open={pinDialogOpen} onOpenChange={setPinDialogOpen} />
