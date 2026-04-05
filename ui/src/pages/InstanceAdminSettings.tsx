@@ -22,6 +22,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "../lib/utils";
 import { ComplianceDisclaimer } from "../components/ComplianceDisclaimer";
+import { HttpEndpointModelFetcher } from "../components/admin/HttpEndpointModelFetcher";
 
 const ADAPTER_LABELS: Record<string, string> = {
   process: "Process",
@@ -34,6 +35,8 @@ const ADAPTER_LABELS: Record<string, string> = {
   cursor: "Cursor",
   openclaw_gateway: "OpenClaw",
   hermes_local: "Hermes",
+  universal_llm: "Universal LLM",
+  openai_compatible: "OpenAI-Compatible",
 };
 
 export function InstanceAdminSettings() {
@@ -433,7 +436,25 @@ export function InstanceAdminSettings() {
                     );
                   })}
                   {(fetchedAdapterModels ?? []).length === 0 && !adapterModelsLoading && (
-                    <p className="text-xs text-muted-foreground text-center py-4">No models available for this adapter</p>
+                    <p className="text-xs text-muted-foreground text-center py-4">No models available from local adapter metadata</p>
+                  )}
+
+                  {/* HTTP endpoint model discovery for openai_compatible / universal_llm */}
+                  {(selectedAdapterForModels === "openai_compatible" || selectedAdapterForModels === "universal_llm") && (
+                    <div className="mt-4 pt-4 border-t border-border">
+                      <HttpEndpointModelFetcher
+                        allowedModels={allowedModels?.[selectedAdapterForModels] ?? null}
+                        onModelsChange={(models) => {
+                          updateMutation.mutate({
+                            allowedModelsPerAdapter: {
+                              ...(allowedModels ?? {}),
+                              [selectedAdapterForModels!]: models,
+                            },
+                          });
+                        }}
+                        disabled={updateMutation.isPending}
+                      />
+                    </div>
                   )}
                 </div>
               )}
