@@ -271,7 +271,7 @@ export function CompanyRail() {
     <div className="flex flex-col items-center w-[72px] shrink-0 h-full bg-background border-r border-border">
       {/* TitanClip logo - aligned with top sections (implied line, no visible border) */}
       <div className="flex items-center justify-center h-12 w-full shrink-0">
-        <img src="/brands/titanclip-logo.png" alt="TitanClip" className="h-8 w-8 rounded" />
+        <img src="/brands/titanclip-logo.png?v=2" alt="TitanClip" className="h-8 w-8 rounded-lg" />
       </div>
 
       {/* Company list */}
