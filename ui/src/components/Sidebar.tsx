@@ -7,6 +7,7 @@ import {
   KeyRound,
   Shield,
   Terminal,
+  Users,
   DollarSign,
   History,
   Search,
@@ -118,6 +119,7 @@ export function Sidebar() {
           <SidebarNavItem to="/skills" label="Skills" icon={Boxes} />
           <SidebarNavItem to="/costs" label="Costs" icon={DollarSign} />
           <SidebarNavItem to="/activity" label="Activity" icon={History} />
+          <SidebarNavItem to="/members" label="Members" icon={Users} />
           <SidebarNavItem to="/vault" label="Vault" icon={KeyRound} />
           <SidebarNavItem to="/compliance" label="Compliance" icon={Shield} />
           <SidebarNavItem to="/company/settings" label="Settings" icon={Settings} />

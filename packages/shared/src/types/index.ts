@@ -227,3 +227,5 @@ export type {
   VaultCheckoutResult,
 } from "./vault.js";
 export type { PermissionPolicy } from "./permission-policy.js";
+export type { TeamRole, TeamRoleLevel } from "./team-role.js";
+export { TEAM_ROLE_LABELS, TEAM_ROLE_DESCRIPTIONS } from "./team-role.js";

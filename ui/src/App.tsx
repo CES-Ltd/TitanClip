@@ -39,6 +39,7 @@ import { InstanceAdminSettings } from "./pages/InstanceAdminSettings";
 import { InstancePolicies } from "./pages/InstancePolicies";
 import { VaultManagement } from "./pages/VaultManagement";
 import { Compliance } from "./pages/Compliance";
+import { TeamMembers } from "./pages/TeamMembers";
 import { PluginManager } from "./pages/PluginManager";
 import { PluginSettings } from "./pages/PluginSettings";
 import { PluginPage } from "./pages/PluginPage";
@@ -132,6 +133,7 @@ function boardRoutes() {
       <Route path="chat" element={<CommandCenter />} />
       <Route path="vault" element={<VaultManagement />} />
       <Route path="compliance" element={<Compliance />} />
+      <Route path="members" element={<TeamMembers />} />
       <Route path="onboarding" element={<OnboardingRoutePage />} />
       <Route path="companies" element={<Companies />} />
       <Route path="company/settings" element={<CompanySettings />} />

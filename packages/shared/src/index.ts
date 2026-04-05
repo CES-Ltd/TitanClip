@@ -350,7 +350,11 @@ export type {
   CredentialStatus,
   CheckoutStatus,
   PermissionPolicy,
+  TeamRole,
+  TeamRoleLevel,
 } from "./types/index.js";
+
+export { TEAM_ROLE_LABELS, TEAM_ROLE_DESCRIPTIONS } from "./types/team-role.js";
 
 export {
   DEFAULT_FEEDBACK_DATA_SHARING_PREFERENCE,
