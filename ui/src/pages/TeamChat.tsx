@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Bot, User, Send, Sparkles } from "lucide-react";
+import { Bot, User, Send, Sparkles, Trash2 } from "lucide-react";
 import { useCompany } from "../context/CompanyContext";
 import { useBreadcrumbs } from "../context/BreadcrumbContext";
 import { agentsApi } from "../api/agents";
@@ -21,6 +21,25 @@ export function TeamChat() {
   const [input, setInput] = useState("");
   const [isThinking, setIsThinking] = useState(false);
 
+  // Persistence helpers
+  const chatStorageKey = selectedCompanyId ? `titanclip-chat-${selectedCompanyId}` : null;
+
+  function saveMessages(msgs: ChatMessage[]) {
+    if (!chatStorageKey) return;
+    try {
+      localStorage.setItem(chatStorageKey, JSON.stringify(msgs));
+    } catch { /* storage full, ignore */ }
+  }
+
+  function loadMessages(): ChatMessage[] {
+    if (!chatStorageKey) return [];
+    try {
+      const raw = localStorage.getItem(chatStorageKey);
+      if (!raw) return [];
+      return JSON.parse(raw) as ChatMessage[];
+    } catch { return []; }
+  }
+
   useEffect(() => {
     setBreadcrumbs([{ label: "Chat" }]);
   }, [setBreadcrumbs]);
@@ -40,20 +59,27 @@ export function TeamChat() {
     refetchInterval: 15_000,
   });
 
-  // Welcome message
+  // Load persisted history or show welcome
   useEffect(() => {
     if (!leadAgent) return;
-    setMessages([{
-      id: "welcome",
-      role: "system",
-      content: `Connected to **${leadAgent.name}** (${leadAgent.title ?? "Business Unit Head"}). Ask anything — I'm powered by the configured AI model.`,
-      createdAt: new Date().toISOString(),
-    }]);
-  }, [leadAgent?.id]);
+    const saved = loadMessages();
+    if (saved.length > 0) {
+      setMessages(saved);
+    } else {
+      setMessages([{
+        id: "welcome",
+        role: "system",
+        content: `Connected to **${leadAgent.name}** (${leadAgent.title ?? "Business Unit Head"}). Ask anything — I'm powered by the configured AI model.`,
+        createdAt: new Date().toISOString(),
+      }]);
+    }
+  }, [leadAgent?.id, chatStorageKey]);
 
+  // Auto-scroll and persist on message change
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, isThinking]);
+    if (messages.length > 0) saveMessages(messages);
+  }, [messages]);
 
   // Approve/reject mutations
   const approveMutation = useMutation({
@@ -145,6 +171,21 @@ export function TeamChat() {
           )} />
           <span className="text-[11px] text-muted-foreground capitalize">{leadAgent?.status ?? "offline"}</span>
         </div>
+        <button
+          onClick={() => {
+            if (chatStorageKey) localStorage.removeItem(chatStorageKey);
+            setMessages([{
+              id: "welcome",
+              role: "system",
+              content: `Connected to **${leadAgent?.name ?? "Agent"}** (${leadAgent?.title ?? "Business Unit Head"}). Ask anything — I'm powered by the configured AI model.`,
+              createdAt: new Date().toISOString(),
+            }]);
+          }}
+          className="w-8 h-8 rounded-xl flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
+          title="Clear chat history"
+        >
+          <Trash2 className="h-4 w-4" />
+        </button>
       </div>
 
       {/* Messages Area */}

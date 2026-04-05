@@ -25,6 +25,7 @@ export class AgentSprite extends Phaser.GameObjects.Container {
   private sprite: Phaser.GameObjects.Sprite;
   private spriteKey: string;
   private nameLabel: Phaser.GameObjects.Text;
+  private statusTag: Phaser.GameObjects.Text;
   private roleDot: Phaser.GameObjects.Graphics;
   private emoteSprite: Phaser.GameObjects.Sprite | null = null;
   private interactIcon: Phaser.GameObjects.Image | null = null;
@@ -74,6 +75,17 @@ export class AgentSprite extends Phaser.GameObjects.Container {
     }).setOrigin(0.5);
     this.add(this.nameLabel);
 
+    // Status tag below name
+    this.statusTag = scene.add.text(0, 26, "IDLE", {
+      fontSize: "7px",
+      fontFamily: "monospace",
+      color: "#94a3b8",
+      align: "center",
+      backgroundColor: "rgba(15, 23, 42, 0.7)",
+      padding: { x: 4, y: 1 },
+    }).setOrigin(0.5);
+    this.add(this.statusTag);
+
     // Role color dot
     this.roleDot = scene.add.graphics();
     this.roleDot.fillStyle(ROLE_COLORS[role] ?? 0x6b7280);
@@ -96,6 +108,7 @@ export class AgentSprite extends Phaser.GameObjects.Container {
     if (this.agentState === state) return;
     this.agentState = state;
     this.clearEmote();
+    this.updateStatusTag(state);
 
     switch (state) {
       case "working":
@@ -152,6 +165,20 @@ export class AgentSprite extends Phaser.GameObjects.Container {
         this.startWandering();
         break;
     }
+  }
+
+  private updateStatusTag(state: AgentState) {
+    const labels: Record<AgentState, { text: string; color: string }> = {
+      idle: { text: "IDLE", color: "#94a3b8" },
+      working: { text: "WORKING", color: "#22c55e" },
+      thinking: { text: "THINKING", color: "#6366f1" },
+      error: { text: "ERROR", color: "#ef4444" },
+      paused: { text: "PAUSED", color: "#f59e0b" },
+      completed: { text: "DONE", color: "#22c55e" },
+    };
+    const { text, color } = labels[state] ?? labels.idle;
+    this.statusTag.setText(text);
+    this.statusTag.setColor(color);
   }
 
   showEmote(animKey: string) {
