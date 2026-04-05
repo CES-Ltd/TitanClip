@@ -23,6 +23,24 @@ function formatTokens(count: number): string {
   return String(count);
 }
 
+// Cloud provider pricing per 1M tokens (input / output) — approximate averages as of 2026
+const CLOUD_PRICING: {
+  id: string; name: string; inputPer1M: number; outputPer1M: number; note: string;
+}[] = [
+  { id: "claude-sonnet", name: "Claude Sonnet 4", inputPer1M: 3.00, outputPer1M: 15.00, note: "Anthropic API" },
+  { id: "claude-opus", name: "Claude Opus 4", inputPer1M: 15.00, outputPer1M: 75.00, note: "Anthropic API" },
+  { id: "claude-haiku", name: "Claude Haiku 3.5", inputPer1M: 0.80, outputPer1M: 4.00, note: "Anthropic API" },
+  { id: "gpt-4o", name: "GPT-4o", inputPer1M: 2.50, outputPer1M: 10.00, note: "OpenAI API" },
+  { id: "gpt-4o-mini", name: "GPT-4o Mini", inputPer1M: 0.15, outputPer1M: 0.60, note: "OpenAI API" },
+  { id: "gemini-pro", name: "Gemini 2.5 Pro", inputPer1M: 1.25, outputPer1M: 10.00, note: "Google AI" },
+  { id: "gemini-flash", name: "Gemini 2.5 Flash", inputPer1M: 0.15, outputPer1M: 0.60, note: "Google AI" },
+  { id: "deepseek-v3", name: "DeepSeek V3", inputPer1M: 0.27, outputPer1M: 1.10, note: "DeepSeek API" },
+];
+
+function estimateCost(inputTokens: number, outputTokens: number, pricing: typeof CLOUD_PRICING[0]): number {
+  return (inputTokens / 1_000_000) * pricing.inputPer1M + (outputTokens / 1_000_000) * pricing.outputPer1M;
+}
+
 export function Chargeback() {
   const { selectedCompanyId, selectedCompany } = useCompany();
   const { setBreadcrumbs } = useBreadcrumbs();
@@ -197,6 +215,99 @@ export function Chargeback() {
             </div>
           ))}
         </div>
+      </div>
+
+      {/* Cloud Cost Estimator */}
+      <div className="rounded-2xl border border-amber-500/20 bg-amber-500/5 p-5 space-y-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-sm font-semibold flex items-center gap-1.5">
+              <TrendingUp className="h-4 w-4 text-amber-400" /> Cloud Cost Estimate
+            </h2>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Estimated cost if this token usage was billed at cloud API rates. Not actual charges — for comparison only.
+            </p>
+          </div>
+          <span className="text-[9px] px-2 py-1 rounded-full bg-amber-500/10 text-amber-400 font-medium">ESTIMATE</span>
+        </div>
+
+        {(() => {
+          // Aggregate total tokens across all agents
+          const totalInput = sortedAgentCosts.reduce((sum: number, ac: any) => sum + (ac.inputTokens ?? 0), 0);
+          const totalOutput = sortedAgentCosts.reduce((sum: number, ac: any) => sum + (ac.outputTokens ?? 0), 0);
+          const totalCached = sortedAgentCosts.reduce((sum: number, ac: any) => sum + (ac.cachedInputTokens ?? 0), 0);
+
+          if (totalInput === 0 && totalOutput === 0) {
+            return <p className="text-xs text-muted-foreground text-center py-4">No token usage data to estimate</p>;
+          }
+
+          return (
+            <>
+              {/* Token summary */}
+              <div className="grid grid-cols-3 gap-3">
+                <div className="rounded-xl bg-background/50 border border-border/30 p-3 text-center">
+                  <p className="text-lg font-semibold tabular-nums">{formatTokens(totalInput)}</p>
+                  <p className="text-[10px] text-muted-foreground">Input Tokens</p>
+                </div>
+                <div className="rounded-xl bg-background/50 border border-border/30 p-3 text-center">
+                  <p className="text-lg font-semibold tabular-nums">{formatTokens(totalOutput)}</p>
+                  <p className="text-[10px] text-muted-foreground">Output Tokens</p>
+                </div>
+                <div className="rounded-xl bg-background/50 border border-border/30 p-3 text-center">
+                  <p className="text-lg font-semibold tabular-nums">{formatTokens(totalCached)}</p>
+                  <p className="text-[10px] text-muted-foreground">Cached Input</p>
+                </div>
+              </div>
+
+              {/* Provider pricing comparison table */}
+              <div className="rounded-xl bg-background/50 border border-border/30 overflow-hidden">
+                <div className="grid grid-cols-5 gap-0 text-[10px] font-medium text-muted-foreground px-3 py-2 border-b border-border/20 bg-muted/10">
+                  <span className="col-span-2">Model</span>
+                  <span className="text-right">Input $/1M</span>
+                  <span className="text-right">Output $/1M</span>
+                  <span className="text-right font-semibold text-foreground">Estimated Cost</span>
+                </div>
+                {CLOUD_PRICING.map((p) => {
+                  const est = estimateCost(totalInput, totalOutput, p);
+                  const isLowest = est === Math.min(...CLOUD_PRICING.map((pp) => estimateCost(totalInput, totalOutput, pp)));
+                  const isHighest = est === Math.max(...CLOUD_PRICING.map((pp) => estimateCost(totalInput, totalOutput, pp)));
+                  return (
+                    <div key={p.id} className={cn(
+                      "grid grid-cols-5 gap-0 px-3 py-2.5 border-b border-border/10 last:border-0 items-center",
+                      isLowest && "bg-emerald-500/5",
+                    )}>
+                      <div className="col-span-2">
+                        <p className="text-xs font-medium">{p.name}</p>
+                        <p className="text-[9px] text-muted-foreground">{p.note}</p>
+                      </div>
+                      <p className="text-xs text-right tabular-nums text-muted-foreground">${p.inputPer1M.toFixed(2)}</p>
+                      <p className="text-xs text-right tabular-nums text-muted-foreground">${p.outputPer1M.toFixed(2)}</p>
+                      <div className="text-right">
+                        <p className={cn("text-xs font-semibold tabular-nums",
+                          isLowest ? "text-emerald-400" : isHighest ? "text-red-400" : "text-foreground"
+                        )}>
+                          ${est.toFixed(2)}
+                        </p>
+                        {isLowest && <p className="text-[8px] text-emerald-400">Lowest</p>}
+                        {isHighest && <p className="text-[8px] text-red-400">Highest</p>}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Range summary */}
+              <div className="flex items-center justify-between text-xs px-1">
+                <span className="text-muted-foreground">Estimated range:</span>
+                <span className="font-semibold">
+                  ${Math.min(...CLOUD_PRICING.map((p) => estimateCost(totalInput, totalOutput, p))).toFixed(2)}
+                  {" — "}
+                  ${Math.max(...CLOUD_PRICING.map((p) => estimateCost(totalInput, totalOutput, p))).toFixed(2)}
+                </span>
+              </div>
+            </>
+          );
+        })()}
       </div>
     </div>
   );
