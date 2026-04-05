@@ -229,3 +229,4 @@ export type {
 export type { PermissionPolicy } from "./permission-policy.js";
 export type { TeamRole, TeamRoleLevel } from "./team-role.js";
 export { TEAM_ROLE_LABELS, TEAM_ROLE_DESCRIPTIONS } from "./team-role.js";
+export type { ChatterMessage, ChatterMessageType } from "./chatter.js";

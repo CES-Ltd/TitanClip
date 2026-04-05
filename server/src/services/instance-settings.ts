@@ -67,6 +67,10 @@ function normalizeAdminSettings(raw: unknown): InstanceAdminSettings {
       protectedBranches: parsed.data.protectedBranches ?? ["main", "master"],
       workspaceAutoCleanupHours: parsed.data.workspaceAutoCleanupHours ?? 24,
       maxWorkspaceDiskMb: parsed.data.maxWorkspaceDiskMb ?? 5120,
+      otelEnabled: parsed.data.otelEnabled ?? false,
+      otelEndpoint: parsed.data.otelEndpoint ?? "http://localhost:4318",
+      otelServiceName: parsed.data.otelServiceName ?? "titanclip",
+      otelSampleRate: parsed.data.otelSampleRate ?? 1.0,
     };
   }
   return {
@@ -84,6 +88,10 @@ function normalizeAdminSettings(raw: unknown): InstanceAdminSettings {
     protectedBranches: ["main", "master"],
     workspaceAutoCleanupHours: 24,
     maxWorkspaceDiskMb: 5120,
+    otelEnabled: false,
+    otelEndpoint: "http://localhost:4318",
+    otelServiceName: "titanclip",
+    otelSampleRate: 1.0,
   };
 }
 

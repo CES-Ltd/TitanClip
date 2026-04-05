@@ -57,6 +57,10 @@ export const instanceAdminSettingsSchema = z.object({
   protectedBranches: z.array(z.string()).default(["main", "master"]),
   workspaceAutoCleanupHours: z.number().int().min(0).max(720).default(24),
   maxWorkspaceDiskMb: z.number().int().min(0).max(102400).default(5120),
+  otelEnabled: z.boolean().default(false),
+  otelEndpoint: z.string().default("http://localhost:4318"),
+  otelServiceName: z.string().default("titanclip"),
+  otelSampleRate: z.number().min(0).max(1).default(1.0),
 }).strict();
 
 export const patchInstanceAdminSettingsSchema = instanceAdminSettingsSchema

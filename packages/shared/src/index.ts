@@ -355,6 +355,7 @@ export type {
 } from "./types/index.js";
 
 export { TEAM_ROLE_LABELS, TEAM_ROLE_DESCRIPTIONS } from "./types/team-role.js";
+export type { ChatterMessage, ChatterMessageType } from "./types/chatter.js";
 
 export {
   DEFAULT_FEEDBACK_DATA_SHARING_PREFERENCE,

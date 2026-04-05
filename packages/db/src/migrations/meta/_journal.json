@@ -379,6 +379,13 @@
       "when": 1775577600000,
       "tag": "0053_agent_policy",
       "breakpoints": true
+    },
+    {
+      "idx": 54,
+      "version": "7",
+      "when": 1775664000000,
+      "tag": "0054_chatter",
+      "breakpoints": true
     }
   ]
 }

@@ -48,6 +48,7 @@ import { RunTranscriptUxLab } from "./pages/RunTranscriptUxLab";
 import { OrgChart } from "./pages/OrgChart";
 import { InstanceWorkspaceGovernance } from "./pages/InstanceWorkspaceGovernance";
 import { Help } from "./pages/Help";
+import { Chatter } from "./pages/Chatter";
 import { AppTitleBar } from "./components/AppTitleBar";
 import { NewAgent } from "./pages/NewAgent";
 import { AuthPage } from "./pages/Auth";
@@ -139,6 +140,7 @@ function boardRoutes() {
       <Route path="compliance" element={<Compliance />} />
       <Route path="members" element={<TeamMembers />} />
       <Route path="chargeback" element={<Chargeback />} />
+      <Route path="chatter" element={<Chatter />} />
       <Route path="onboarding" element={<OnboardingRoutePage />} />
       <Route path="companies" element={<Companies />} />
       <Route path="company/settings" element={<CompanySettings />} />

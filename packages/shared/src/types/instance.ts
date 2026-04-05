@@ -49,6 +49,11 @@ export interface InstanceAdminSettings {
   protectedBranches: string[];
   workspaceAutoCleanupHours: number;
   maxWorkspaceDiskMb: number;
+  /** OpenTelemetry */
+  otelEnabled: boolean;
+  otelEndpoint: string;
+  otelServiceName: string;
+  otelSampleRate: number;
 }
 
 /** Public version of admin settings (PIN hash stripped) */
