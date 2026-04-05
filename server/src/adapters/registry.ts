@@ -81,14 +81,8 @@ import {
 } from "hermes-paperclip-adapter";
 import { processAdapter } from "./process/index.js";
 import { httpAdapter } from "./http/index.js";
-import {
-  execute as universalLlmExecute,
-  testEnvironment as universalLlmTestEnvironment,
-} from "@titanclip/adapter-universal-llm/server";
-import {
-  agentConfigurationDoc as universalLlmAgentConfigurationDoc,
-  models as universalLlmModels,
-} from "@titanclip/adapter-universal-llm";
+// Universal LLM adapter — placeholder that loads dynamically on first use
+// to avoid static import issues during server compilation
 
 const claudeLocalAdapter: ServerAdapterModule = {
   type: "claude_local",
@@ -196,13 +190,24 @@ const hermesLocalAdapter: ServerAdapterModule = {
   detectModel: () => detectModelFromHermes(),
 };
 
+// Universal LLM adapter: lazy-loaded to avoid static import of @titanclip/adapter-universal-llm
 const universalLlmAdapter: ServerAdapterModule = {
   type: "universal_llm",
-  execute: universalLlmExecute,
-  testEnvironment: universalLlmTestEnvironment,
-  models: universalLlmModels,
+  async execute(ctx) {
+    const mod = await (Function("p", "return import(p)")("@titanclip/adapter-universal-llm/server") as Promise<any>);
+    return mod.execute(ctx);
+  },
+  async testEnvironment(ctx) {
+    const mod = await (Function("p", "return import(p)")("@titanclip/adapter-universal-llm/server") as Promise<any>);
+    return mod.testEnvironment(ctx);
+  },
+  models: [
+    { id: "openai/gpt-4o", label: "GPT-4o (OpenAI)" },
+    { id: "anthropic/claude-sonnet-4-20250514", label: "Claude Sonnet 4 (Anthropic)" },
+    { id: "ollama/llama3", label: "Llama 3 (Ollama)" },
+  ],
   supportsLocalAgentJwt: false,
-  agentConfigurationDoc: universalLlmAgentConfigurationDoc,
+  agentConfigurationDoc: "Universal LLM adapter — supports OpenAI, Anthropic, OpenRouter, Ollama. Set provider and model in adapter config.",
 };
 
 const adaptersByType = new Map<string, ServerAdapterModule>(

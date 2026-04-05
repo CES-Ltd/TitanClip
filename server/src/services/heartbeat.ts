@@ -2663,12 +2663,20 @@ export function heartbeatService(db: Db) {
           "local agent jwt secret missing or invalid; running without injected TITANCLIP_API_KEY",
         );
       }
+      // ── Agent OS: Pre-execution hook (memory injection) ──────────────
+      // Safe: wrapped in try/catch, feature-flagged, 5s timeout
+      let agentOsContext = context;
+      try {
+        const { preExecutionHook } = await import("./agent-os-hooks.js");
+        agentOsContext = await preExecutionHook({ db, agentId: agent.id, companyId: agent.companyId, context, config: runtimeConfig });
+      } catch { /* Agent OS hooks unavailable or failed — continue normally */ }
+
       const adapterResult = await adapter.execute({
         runId: run.id,
         agent,
         runtime: runtimeForAdapter,
         config: runtimeConfig,
-        context,
+        context: agentOsContext,
         onLog,
         onMeta: onAdapterMeta,
         onSpawn: async (meta) => {
@@ -2866,6 +2874,25 @@ export function heartbeatService(db: Db) {
         }
       }
       await finalizeAgentStatus(agent.id, outcome);
+
+      // ── Agent OS: Post-execution hook (conversation, memory, skills) ──
+      // Safe: fire-and-forget, individually try/caught, feature-flagged
+      try {
+        const { postExecutionHook } = await import("./agent-os-hooks.js");
+        postExecutionHook({
+          db,
+          agentId: agent.id,
+          companyId: agent.companyId,
+          runId: run.id,
+          issueId: issueRef?.id,
+          issueTitle: issueRef?.title,
+          exitCode: adapterResult.exitCode,
+          summary: adapterResult.summary ?? undefined,
+          resultContent: (adapterResult.resultJson as any)?.content ?? undefined,
+          usage: normalizedUsage ? { inputTokens: normalizedUsage.inputTokens ?? 0, outputTokens: normalizedUsage.outputTokens ?? 0 } : undefined,
+        }).catch(() => {}); // Fire-and-forget, errors already logged inside
+      } catch { /* Agent OS hooks unavailable — continue normally */ }
+
     } catch (err) {
       const message = redactCurrentUserText(
         err instanceof Error ? err.message : "Unknown adapter failure",

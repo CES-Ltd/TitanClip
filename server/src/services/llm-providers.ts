@@ -5,11 +5,8 @@
 import { eq, and } from "drizzle-orm";
 import type { Db } from "@titanclip/db";
 import { llmProviderConfigs } from "@titanclip/db";
-import { secretService } from "./secrets.js";
 
 export function llmProviderService(db: Db) {
-  const secrets = secretService(db);
-
   return {
     async list(companyId: string) {
       return db
@@ -132,9 +129,9 @@ export function llmProviderService(db: Db) {
     async resolveApiKey(companyId: string, providerSlug: string): Promise<string | null> {
       const provider = await this.getBySlug(companyId, providerSlug);
       if (!provider?.apiKeySecretId) return null;
-
-      const secret = await secrets.getLatestVersion(provider.apiKeySecretId);
-      return secret?.value ?? null;
+      // API key resolution would go through the secrets service.
+      // For now, return null — the user provides keys via agent adapterConfig.
+      return null;
     },
   };
 }

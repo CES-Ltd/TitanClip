@@ -2,7 +2,6 @@ import { Router } from "express";
 import type { Db } from "@titanclip/db";
 import { llmProviderService } from "../services/llm-providers.js";
 import { assertCompanyAccess } from "./authz.js";
-import { listProviders as listAvailableProviders } from "@titanclip/adapter-universal-llm/server";
 
 export function llmProviderRoutes(db: Db) {
   const router = Router();
@@ -10,7 +9,12 @@ export function llmProviderRoutes(db: Db) {
 
   // List available provider types (static)
   router.get("/llm-providers/available", (_req, res) => {
-    res.json(listAvailableProviders());
+    res.json([
+      { slug: "openai", label: "OpenAI" },
+      { slug: "anthropic", label: "Anthropic" },
+      { slug: "openrouter", label: "OpenRouter" },
+      { slug: "ollama", label: "Ollama (Local)" },
+    ]);
   });
 
   // List configured providers for a company
@@ -73,7 +77,8 @@ export function llmProviderRoutes(db: Db) {
     }
     assertCompanyAccess(req, existing.companyId);
 
-    const { getProvider } = await import("@titanclip/adapter-universal-llm/server");
+    const adapterMod = await (Function("p", "return import(p)")("@titanclip/adapter-universal-llm/server") as Promise<any>);
+    const getProvider = adapterMod.getProvider;
     const provider = getProvider(existing.providerSlug);
     const apiKey = await svc.resolveApiKey(existing.companyId, existing.providerSlug);
     const result = await provider.testConnection({
@@ -92,7 +97,8 @@ export function llmProviderRoutes(db: Db) {
     }
     assertCompanyAccess(req, existing.companyId);
 
-    const { getProvider } = await import("@titanclip/adapter-universal-llm/server");
+    const adapterMod = await (Function("p", "return import(p)")("@titanclip/adapter-universal-llm/server") as Promise<any>);
+    const getProvider = adapterMod.getProvider;
     const provider = getProvider(existing.providerSlug);
     const apiKey = await svc.resolveApiKey(existing.companyId, existing.providerSlug);
     const models = await provider.listModels({
