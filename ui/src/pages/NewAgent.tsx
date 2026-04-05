@@ -7,6 +7,7 @@ import { useNavigate, useSearchParams } from "@/lib/router";
 import { useCompany } from "../context/CompanyContext";
 import { useBreadcrumbs } from "../context/BreadcrumbContext";
 import { agentsApi } from "../api/agents";
+import { permissionPoliciesApi } from "../api/permissionPolicies";
 import { companySkillsApi } from "../api/companySkills";
 import { queryKeys } from "../lib/queryKeys";
 import { AGENT_ROLES } from "@titanclip/shared";
@@ -78,6 +79,7 @@ export function NewAgent() {
   const [roleOpen, setRoleOpen] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null);
+  const [selectedPolicyId, setSelectedPolicyId] = useState<string | null>(null);
 
   // Fetch available templates
   const { data: availableTemplates = [] } = useQuery({
@@ -85,14 +87,28 @@ export function NewAgent() {
     queryFn: () => adminSettingsApi.listAvailableTemplates(),
   });
 
+  // Fetch permission policies
+  const { data: allPolicies = [] } = useQuery({
+    queryKey: ["permission-policies"],
+    queryFn: () => permissionPoliciesApi.list(),
+  });
+
   function selectTemplate(template: AgentTemplate) {
     setSelectedTemplateId(template.id);
     setName(template.name);
     setRole(template.role);
+    setSelectedPolicyId(template.permissionPolicyId ?? null);
   }
 
-  // Filter roles by admin governance
+  // Filter roles and default adapter by admin governance
   const governance = useAdminGovernance();
+
+  // Default to first enabled adapter
+  useEffect(() => {
+    if (!presetAdapterType && governance.allowedAdapterTypes?.length) {
+      setConfigValues((prev) => ({ ...prev, adapterType: governance.allowedAdapterTypes![0] }));
+    }
+  }, [governance.allowedAdapterTypes]); // eslint-disable-line react-hooks/exhaustive-deps
   const availableRoles = useMemo(
     () =>
       governance.allowedRoles
@@ -223,6 +239,7 @@ export function NewAgent() {
       },
       budgetMonthlyCents: 0,
       ...(selectedTemplateId ? { templateId: selectedTemplateId } : {}),
+      ...(selectedPolicyId ? { metadata: { permissionPolicyId: selectedPolicyId } } : {}),
     });
   }
 
@@ -273,6 +290,21 @@ export function NewAgent() {
               Template sets the role and instructions. Configure adapter and model below.
             </p>
           )}
+        </div>
+      )}
+
+      {/* Permission Policy */}
+      {allPolicies.length > 0 && (
+        <div className="space-y-2">
+          <h2 className="text-sm font-medium">Permission Policy</h2>
+          <select
+            value={selectedPolicyId ?? ""}
+            onChange={(e) => setSelectedPolicyId(e.target.value || null)}
+            className="w-full rounded-xl border bg-background px-3 py-2.5 text-sm"
+          >
+            <option value="">No policy (full access)</option>
+            {allPolicies.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+          </select>
         </div>
       )}
 

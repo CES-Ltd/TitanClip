@@ -11,7 +11,9 @@ import type { AgentTemplate, CreateAgentTemplate } from "@titanclip/shared";
 import { Lock, LockOpen, ShieldCheck, KeyRound, Plus, Pencil, Trash2, FileText, Globe, EyeOff } from "lucide-react";
 import { adminSettingsApi } from "@/api/adminSettings";
 import { permissionPoliciesApi } from "../api/permissionPolicies";
+import { agentsApi } from "../api/agents";
 import { useAdminSession } from "../context/AdminSessionContext";
+import { useCompany } from "../context/CompanyContext";
 import { AdminPinDialog } from "../components/AdminPinDialog";
 import { useBreadcrumbs } from "../context/BreadcrumbContext";
 import { queryKeys } from "../lib/queryKeys";
@@ -35,6 +37,7 @@ const ADAPTER_LABELS: Record<string, string> = {
 
 export function InstanceAdminSettings() {
   const { setBreadcrumbs } = useBreadcrumbs();
+  const { selectedCompanyId } = useCompany();
   const queryClient = useQueryClient();
   const { isUnlocked, token, authMode, lock } = useAdminSession();
   const [pinDialogOpen, setPinDialogOpen] = useState(false);
@@ -55,6 +58,7 @@ export function InstanceAdminSettings() {
   const [tplRole, setTplRole] = useState("general");
   const [tplBudget, setTplBudget] = useState(0);
   const [tplPolicyId, setTplPolicyId] = useState<string | null>(null);
+  const [selectedAdapterForModels, setSelectedAdapterForModels] = useState<string | null>(null);
   const [tplStatus, setTplStatus] = useState<"available" | "draft">("draft");
   const [tplSoul, setTplSoul] = useState("");
   const [tplHeartbeat, setTplHeartbeat] = useState("");
@@ -186,8 +190,16 @@ export function InstanceAdminSettings() {
   const data = adminQuery.data;
   const allowedAdapters = data?.allowedAdapterTypes ?? null;
   const allowedRoles = data?.allowedRoles ?? null;
+  const allowedModels = data?.allowedModelsPerAdapter ?? null;
   const allAdaptersAllowed = allowedAdapters === null;
   const allRolesAllowed = allowedRoles === null;
+
+  // Fetch models for selected adapter in 2-pane view
+  const { data: fetchedAdapterModels, isLoading: adapterModelsLoading } = useQuery({
+    queryKey: ["adapter-models-admin", selectedAdapterForModels],
+    queryFn: () => agentsApi.adapterModels(selectedCompanyId!, selectedAdapterForModels!),
+    enabled: !!selectedAdapterForModels && !!selectedCompanyId,
+  });
 
   function toggleAdapter(type: string) {
     if (!isUnlocked) return;
@@ -293,40 +305,90 @@ export function InstanceAdminSettings() {
 
       {/* Locked overlay */}
       <div className={cn(!isUnlocked && "opacity-50 pointer-events-none select-none")}>
-        {/* Allowed Adapter Types */}
-        <div className="space-y-3 rounded-lg border p-4">
-          <div className="flex items-center justify-between">
-            <h3 className="font-medium text-sm">Allowed Adapter Types</h3>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={toggleAllAdapters}
-              disabled={updateMutation.isPending}
-            >
-              {allAdaptersAllowed ? "Restrict" : "Allow All"}
+        {/* Adapters & Models — 2-Pane View */}
+        <div className="rounded-lg border overflow-hidden">
+          <div className="flex items-center justify-between px-4 py-2 border-b bg-muted/20">
+            <h3 className="font-medium text-sm">Adapters & Models</h3>
+            <Button variant="ghost" size="sm" onClick={toggleAllAdapters} disabled={updateMutation.isPending}>
+              {allAdaptersAllowed ? "Restrict All" : "Enable All"}
             </Button>
           </div>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-            {AGENT_ADAPTER_TYPES.map((type) => (
-              <label
-                key={type}
-                className={cn(
-                  "flex items-center gap-2 rounded-md border px-3 py-2 text-sm cursor-pointer transition-colors",
-                  isAdapterChecked(type)
-                    ? "bg-primary/5 border-primary/30"
-                    : "bg-muted/30 border-border text-muted-foreground",
-                )}
-              >
-                <input
-                  type="checkbox"
-                  checked={isAdapterChecked(type)}
-                  onChange={() => toggleAdapter(type)}
-                  disabled={updateMutation.isPending}
-                  className="rounded"
-                />
-                {ADAPTER_LABELS[type] ?? type}
-              </label>
-            ))}
+          <div className="flex" style={{ minHeight: "280px" }}>
+            {/* Left: Adapter list */}
+            <div className="w-[200px] border-r overflow-y-auto">
+              {AGENT_ADAPTER_TYPES.map((type) => {
+                const enabled = isAdapterChecked(type);
+                const selected = selectedAdapterForModels === type;
+                return (
+                  <div key={type} className={cn(
+                    "flex items-center justify-between px-3 py-2.5 cursor-pointer border-b border-border/20 transition-colors",
+                    selected ? "bg-primary/5 border-l-2 border-l-primary" : "hover:bg-muted/20",
+                  )} onClick={() => setSelectedAdapterForModels(type)}>
+                    <span className={cn("text-xs", enabled ? "text-foreground font-medium" : "text-muted-foreground")}>
+                      {ADAPTER_LABELS[type] ?? type}
+                    </span>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); toggleAdapter(type); }}
+                      className={cn("w-8 h-4 rounded-full transition-colors relative",
+                        enabled ? "bg-emerald-500" : "bg-zinc-600"
+                      )}
+                    >
+                      <span className={cn("absolute top-0.5 w-3 h-3 rounded-full bg-white transition-transform",
+                        enabled ? "left-4" : "left-0.5"
+                      )} />
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+            {/* Right: Models for selected adapter */}
+            <div className="flex-1 overflow-y-auto p-3">
+              {!selectedAdapterForModels ? (
+                <p className="text-xs text-muted-foreground text-center py-8">Select an adapter to manage its models</p>
+              ) : (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between mb-2">
+                    <h4 className="text-xs font-medium">Models for {ADAPTER_LABELS[selectedAdapterForModels]}</h4>
+                    <Button variant="ghost" size="sm" onClick={() => {
+                      const current = allowedModels?.[selectedAdapterForModels];
+                      if (current === null || current === undefined) {
+                        updateMutation.mutate({ allowedModelsPerAdapter: { ...(allowedModels ?? {}), [selectedAdapterForModels]: [] } });
+                      } else {
+                        updateMutation.mutate({ allowedModelsPerAdapter: { ...(allowedModels ?? {}), [selectedAdapterForModels]: null } });
+                      }
+                    }} className="text-xs h-6">
+                      {(allowedModels?.[selectedAdapterForModels] === null || allowedModels?.[selectedAdapterForModels] === undefined) ? "Restrict" : "Allow All"}
+                    </Button>
+                  </div>
+                  {adapterModelsLoading && <p className="text-xs text-muted-foreground">Loading models...</p>}
+                  {(fetchedAdapterModels ?? []).map((m: any) => {
+                    const modelList = allowedModels?.[selectedAdapterForModels];
+                    const checked = modelList === null || modelList === undefined || modelList.includes(m.id);
+                    return (
+                      <label key={m.id} className={cn(
+                        "flex items-center gap-2 rounded-md border px-3 py-2 text-xs cursor-pointer transition-colors",
+                        checked ? "bg-primary/5 border-primary/30" : "bg-muted/20 border-border text-muted-foreground",
+                      )}>
+                        <input type="checkbox" checked={checked} onChange={() => {
+                          const current = allowedModels?.[selectedAdapterForModels] ?? null;
+                          let next: string[] | null;
+                          if (current === null || current === undefined) {
+                            next = (fetchedAdapterModels ?? []).filter((x: any) => x.id !== m.id).map((x: any) => x.id);
+                          } else {
+                            next = checked ? current.filter((x: string) => x !== m.id) : [...current, m.id];
+                          }
+                          updateMutation.mutate({ allowedModelsPerAdapter: { ...(allowedModels ?? {}), [selectedAdapterForModels]: next.length === (fetchedAdapterModels ?? []).length ? null : next } });
+                        }} className="rounded" />
+                        <span>{m.label ?? m.id}</span>
+                      </label>
+                    );
+                  })}
+                  {(fetchedAdapterModels ?? []).length === 0 && !adapterModelsLoading && (
+                    <p className="text-xs text-muted-foreground text-center py-4">No models available for this adapter</p>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
         </div>
 

@@ -47,9 +47,14 @@ export function TeamMembers() {
   const activeAgents = agents.filter((a) => a.status !== "terminated");
   const policyMap = new Map<string, PermissionPolicy>(policies.map((p) => [p.id, p]));
 
-  // For now, policy assignment is shown per agent but updates go through
-  // the agent's metadata. In future, this writes to agents.permission_policy_id.
-  // Currently display-only showing which template policy the agent inherited.
+  const assignPolicyMut = useMutation({
+    mutationFn: ({ agentId, policyId }: { agentId: string; policyId: string | null }) =>
+      agentsApi.assignPolicy(agentId, policyId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.agents.list(cid) });
+      pushToast({ title: "Policy updated", tone: "success", ttlMs: 2000 });
+    },
+  });
 
   if (!selectedCompanyId) return <div className="p-8 text-sm text-muted-foreground">Select a team first.</div>;
 
@@ -119,15 +124,15 @@ export function TeamMembers() {
                     {agent.adapterType} · {agent.status}
                   </p>
                 </div>
-                <div className="shrink-0">
-                  {policy ? (
-                    <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-indigo-500/10 border border-indigo-500/20">
-                      <Lock className="h-3 w-3 text-indigo-400" />
-                      <span className="text-[11px] text-indigo-400 font-medium">{policy.name}</span>
-                    </div>
-                  ) : (
-                    <span className="text-[10px] text-muted-foreground/50 px-2.5 py-1 rounded-lg bg-muted/30">No policy</span>
-                  )}
+                <div className="shrink-0" onClick={(e) => e.preventDefault()}>
+                  <select
+                    value={policyId ?? ""}
+                    onChange={(e) => { e.preventDefault(); e.stopPropagation(); assignPolicyMut.mutate({ agentId: agent.id, policyId: e.target.value || null }); }}
+                    className="rounded-lg border bg-background px-2 py-1 text-[11px] min-w-[140px]"
+                  >
+                    <option value="">No policy</option>
+                    {policies.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+                  </select>
                 </div>
                 <div className="flex items-center gap-2 ml-2">
                   {policy ? (

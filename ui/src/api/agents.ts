@@ -195,6 +195,8 @@ export const agentsApi = {
     api.post<ClaudeLoginResult>(agentPath(id, companyId, "/claude-login"), {}),
   availableSkills: () =>
     api.get<{ skills: AvailableSkill[] }>("/skills/available"),
+  assignPolicy: (agentId: string, permissionPolicyId: string | null) =>
+    api.patch<{ ok: boolean }>(`/agents/${encodeURIComponent(agentId)}/policy`, { permissionPolicyId }),
 };
 
 export interface AvailableSkill {

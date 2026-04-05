@@ -1065,37 +1065,24 @@ function AdapterTypeDropdown({
         </button>
       </PopoverTrigger>
       <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-1" align="start">
-        {ADAPTER_DISPLAY_LIST.map((item) => {
-          const restricted = isAdminRestricted(item.value);
-          const disabled = item.comingSoon || restricted;
-          return (
+        {ADAPTER_DISPLAY_LIST
+          .filter((item) => !item.comingSoon && !isAdminRestricted(item.value))
+          .map((item) => (
             <button
               key={item.value}
-              disabled={disabled}
               className={cn(
-                "flex items-center justify-between w-full px-2 py-1.5 text-sm rounded",
-                disabled
-                  ? "opacity-40 cursor-not-allowed"
-                  : "hover:bg-accent/50",
-                item.value === value && !disabled && "bg-accent",
+                "flex items-center gap-1.5 w-full px-2 py-1.5 text-sm rounded hover:bg-accent/50",
+                item.value === value && "bg-accent",
               )}
-              onClick={() => {
-                if (!disabled) onChange(item.value);
-              }}
+              onClick={() => onChange(item.value)}
             >
-              <span className="inline-flex items-center gap-1.5">
-                {item.value === "opencode_local" ? <OpenCodeLogoIcon className="h-3.5 w-3.5" /> : null}
-                <span>{item.label}</span>
-              </span>
-              {item.comingSoon && (
-                <span className="text-[10px] text-muted-foreground">Coming soon</span>
-              )}
-              {restricted && !item.comingSoon && (
-                <span className="text-[10px] text-muted-foreground">Restricted</span>
-              )}
+              {item.value === "opencode_local" ? <OpenCodeLogoIcon className="h-3.5 w-3.5" /> : null}
+              <span>{item.label}</span>
             </button>
-          );
-        })}
+          ))}
+        {ADAPTER_DISPLAY_LIST.filter((i) => !i.comingSoon && !isAdminRestricted(i.value)).length === 0 && (
+          <p className="px-2 py-3 text-xs text-muted-foreground text-center">No adapters enabled</p>
+        )}
       </PopoverContent>
     </Popover>
   );

@@ -2120,6 +2120,26 @@ export function agentRoutes(db: Db) {
     res.json({ ok: true });
   });
 
+  // Assign permission policy to an agent
+  router.patch("/agents/:id/policy", async (req, res) => {
+    const id = req.params.id as string;
+    const agent = await svc.getById(id);
+    if (!agent) { res.status(404).json({ error: "Agent not found" }); return; }
+    assertCompanyAccess(req, agent.companyId);
+    const { permissionPolicyId } = req.body;
+    await db.update(agentsTable).set({
+      metadata: { ...(agent.metadata as any ?? {}), permissionPolicyId: permissionPolicyId ?? null },
+    }).where(eq(agentsTable.id, id));
+    const actor = getActorInfo(req);
+    await logActivity(db, {
+      companyId: agent.companyId, actorType: actor.actorType, actorId: actor.actorId,
+      agentId: actor.agentId, runId: actor.runId,
+      action: "agent.policy_assigned", entityType: "agent", entityId: id,
+      details: { permissionPolicyId, agentName: agent.name },
+    });
+    res.json({ ok: true, permissionPolicyId });
+  });
+
   router.post("/agents/:id/wakeup", validate(wakeAgentSchema), async (req, res) => {
     const id = req.params.id as string;
     const agent = await svc.getById(id);
