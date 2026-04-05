@@ -49,6 +49,10 @@ import { OrgChart } from "./pages/OrgChart";
 import { InstanceWorkspaceGovernance } from "./pages/InstanceWorkspaceGovernance";
 import { Help } from "./pages/Help";
 import { Chatter } from "./pages/Chatter";
+import { Performance } from "./pages/Performance";
+import { SlaManagement } from "./pages/SlaManagement";
+import { EscalationRules } from "./pages/EscalationRules";
+import { Workflows } from "./pages/Workflows";
 import { AppTitleBar } from "./components/AppTitleBar";
 import { NewAgent } from "./pages/NewAgent";
 import { AuthPage } from "./pages/Auth";
@@ -141,6 +145,10 @@ function boardRoutes() {
       <Route path="members" element={<TeamMembers />} />
       <Route path="chargeback" element={<Chargeback />} />
       <Route path="chatter" element={<Chatter />} />
+      <Route path="performance" element={<Performance />} />
+      <Route path="sla" element={<SlaManagement />} />
+      <Route path="escalation" element={<EscalationRules />} />
+      <Route path="workflows" element={<Workflows />} />
       <Route path="onboarding" element={<OnboardingRoutePage />} />
       <Route path="companies" element={<Companies />} />
       <Route path="company/settings" element={<CompanySettings />} />

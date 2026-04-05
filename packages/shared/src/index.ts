@@ -356,6 +356,16 @@ export type {
 
 export { TEAM_ROLE_LABELS, TEAM_ROLE_DESCRIPTIONS } from "./types/team-role.js";
 export type { ChatterMessage, ChatterMessageType } from "./types/chatter.js";
+export type {
+  SlaPolicy, SlaPriority, SlaBreachAction, SlaStatus, SlaClockState,
+  SlaTracking, SlaDashboardSummary,
+  EscalationRule, EscalationTrigger, EscalationAction,
+} from "./types/sla.js";
+export type {
+  DependencyType, IssueDependency,
+  WorkflowTemplate, WorkflowStep, WorkflowInstance,
+  CriticalPathNode, CriticalPathResult,
+} from "./types/dependencies.js";
 
 export {
   DEFAULT_FEEDBACK_DATA_SHARING_PREFERENCE,

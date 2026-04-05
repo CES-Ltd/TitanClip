@@ -19,6 +19,8 @@ import { Tabs } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Bot, Plus, List, GitBranch, SlidersHorizontal } from "lucide-react";
 import { AGENT_ROLE_LABELS, type Agent } from "@titanclip/shared";
+import { performanceApi } from "../api/performance";
+import { Heart } from "lucide-react";
 
 const adapterLabels: Record<string, string> = {
   claude_local: "Claude",
@@ -96,6 +98,19 @@ export function Agents() {
     enabled: !!selectedCompanyId,
     refetchInterval: 15_000,
   });
+
+  const { data: perfMetrics } = useQuery({
+    queryKey: queryKeys.performance.metrics(selectedCompanyId!, 30),
+    queryFn: () => performanceApi.getMetrics(selectedCompanyId!, 30),
+    enabled: !!selectedCompanyId,
+    refetchInterval: 120_000,
+  });
+
+  const healthByAgent = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const m of perfMetrics ?? []) map.set(m.agentId, m.healthScore);
+    return map;
+  }, [perfMetrics]);
 
   // Map agentId -> first live run + live run count
   const liveRunByAgent = useMemo(() => {
@@ -263,6 +278,18 @@ export function Agents() {
                           runId={liveRunByAgent.get(agent.id)!.runId}
                           liveCount={liveRunByAgent.get(agent.id)!.liveCount}
                         />
+                      )}
+                      {healthByAgent.has(agent.id) && (
+                        <span className={cn(
+                          "inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-semibold border",
+                          (healthByAgent.get(agent.id)! >= 80) ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20" :
+                          (healthByAgent.get(agent.id)! >= 60) ? "bg-amber-500/10 text-amber-400 border-amber-500/20" :
+                          (healthByAgent.get(agent.id)! >= 40) ? "bg-orange-500/10 text-orange-400 border-orange-500/20" :
+                          "bg-red-500/10 text-red-400 border-red-500/20"
+                        )}>
+                          <Heart className="h-2.5 w-2.5" />
+                          {healthByAgent.get(agent.id)}
+                        </span>
                       )}
                       <span className="text-xs text-muted-foreground font-mono w-14 text-right">
                         {adapterLabels[agent.adapterType] ?? agent.adapterType}

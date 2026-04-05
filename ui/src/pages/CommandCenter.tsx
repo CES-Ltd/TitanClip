@@ -1,9 +1,9 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   Terminal, Users, Zap, ClipboardList, Shield, Activity,
   CheckCircle, XCircle, AlertTriangle, Clock, DollarSign,
-  ShieldAlert, ArrowRight, Play, KeyRound, Lock,
+  ShieldAlert, ArrowRight, Play, KeyRound, Lock, Heart,
 } from "lucide-react";
 import { useCompany } from "../context/CompanyContext";
 import { useBreadcrumbs } from "../context/BreadcrumbContext";
@@ -19,6 +19,8 @@ import { budgetsApi } from "../api/budgets";
 import { queryKeys } from "../lib/queryKeys";
 import { ApprovalCard as ApprovalActionCard } from "../components/ApprovalActionCard";
 import { vaultApi } from "../api/vault";
+import { performanceApi } from "../api/performance";
+import { slaApi } from "../api/sla";
 import { Link } from "@/lib/router";
 import { Button } from "@/components/ui/button";
 import { cn } from "../lib/utils";
@@ -99,6 +101,17 @@ export function CommandCenter() {
   const { data: tasks = [] } = useQuery({ queryKey: [...queryKeys.issues.list(cid), "active"], queryFn: () => issuesApi.list(cid, { status: "in_progress,todo" }), enabled: !!cid, refetchInterval: 10_000 });
   const { data: costSummary } = useQuery({ queryKey: queryKeys.costs(cid), queryFn: () => costsApi.summary(cid), enabled: !!cid, refetchInterval: 30_000 });
   const { data: budgetOverview } = useQuery({ queryKey: ["budgets", cid], queryFn: () => budgetsApi.overview(cid), enabled: !!cid, refetchInterval: 30_000 });
+
+  // Performance metrics
+  const { data: perfMetrics } = useQuery({ queryKey: queryKeys.performance.metrics(cid, 30), queryFn: () => performanceApi.getMetrics(cid, 30), enabled: !!cid, refetchInterval: 120_000 });
+  const healthByAgent = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const m of perfMetrics ?? []) map.set(m.agentId, m.healthScore);
+    return map;
+  }, [perfMetrics]);
+
+  // SLA dashboard
+  const { data: slaDashboard } = useQuery({ queryKey: queryKeys.sla.dashboard(cid), queryFn: () => slaApi.getDashboard(cid), enabled: !!cid, refetchInterval: 30_000 });
 
   // Vault / IAM queries
   const { data: vaultCreds = [] } = useQuery({ queryKey: ["vault", cid], queryFn: () => vaultApi.list(cid), enabled: !!cid && activeView === "iam", refetchInterval: 15_000 });
@@ -330,6 +343,18 @@ export function CommandCenter() {
                     <div className="flex items-center gap-2">
                       <span className="text-sm font-medium truncate">{agent.name}</span>
                       <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-primary/10 text-primary">{roleLabels[agent.role] ?? agent.role}</span>
+                      {healthByAgent.has(agent.id) && (
+                        <span className={cn(
+                          "inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[10px] font-semibold border",
+                          (healthByAgent.get(agent.id)! >= 80) ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20" :
+                          (healthByAgent.get(agent.id)! >= 60) ? "bg-amber-500/10 text-amber-400 border-amber-500/20" :
+                          (healthByAgent.get(agent.id)! >= 40) ? "bg-orange-500/10 text-orange-400 border-orange-500/20" :
+                          "bg-red-500/10 text-red-400 border-red-500/20"
+                        )}>
+                          <Heart className="h-2.5 w-2.5" />
+                          {healthByAgent.get(agent.id)}
+                        </span>
+                      )}
                     </div>
                     <p className="text-[11px] text-muted-foreground">
                       {agent.status === "running" ? "Working" : agent.status}
@@ -445,6 +470,28 @@ export function CommandCenter() {
             </div>
             <p className="text-[10px] text-muted-foreground mt-1">{utilPct}% utilized</p>
           </div>
+
+          {/* SLA Compliance Widget */}
+          {slaDashboard && slaDashboard.totalTracked > 0 && (
+            <Link to="/sla" className="block px-4 py-3 border-b border-border hover:bg-muted/10 transition-colors">
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-[11px] text-muted-foreground font-medium flex items-center gap-1"><Clock className="h-3 w-3" /> SLA Compliance</span>
+                <span className={cn("text-xs font-semibold", slaDashboard.complianceRate >= 90 ? "text-emerald-400" : slaDashboard.complianceRate >= 70 ? "text-amber-400" : "text-red-400")}>
+                  {slaDashboard.complianceRate}%
+                </span>
+              </div>
+              <div className="h-1.5 rounded-full bg-muted/30 overflow-hidden">
+                <div className={cn("h-full rounded-full transition-all",
+                  slaDashboard.complianceRate >= 90 ? "bg-emerald-500" : slaDashboard.complianceRate >= 70 ? "bg-amber-500" : "bg-red-500"
+                )} style={{ width: `${slaDashboard.complianceRate}%` }} />
+              </div>
+              <div className="flex items-center gap-3 mt-1.5 text-[10px] text-muted-foreground">
+                <span className="text-emerald-400">{slaDashboard.onTrack} on track</span>
+                {slaDashboard.atRisk > 0 && <span className="text-amber-400">{slaDashboard.atRisk} at risk</span>}
+                {slaDashboard.breached > 0 && <span className="text-red-400">{slaDashboard.breached} breached</span>}
+              </div>
+            </Link>
+          )}
 
           {/* Budget Health */}
           <div className="px-4 py-2.5 border-b border-border">

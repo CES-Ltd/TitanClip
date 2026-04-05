@@ -148,4 +148,26 @@ export const queryKeys = {
     dashboard: (pluginId: string) => ["plugins", pluginId, "dashboard"] as const,
     logs: (pluginId: string) => ["plugins", pluginId, "logs"] as const,
   },
+  performance: {
+    metrics: (companyId: string, sinceDays?: number) =>
+      ["performance", companyId, sinceDays ?? 30] as const,
+  },
+  sla: {
+    policies: (companyId: string) => ["sla", "policies", companyId] as const,
+    tracking: (companyId: string, status?: string) => ["sla", "tracking", companyId, status] as const,
+    trackingForIssue: (companyId: string, issueId: string) => ["sla", "tracking", companyId, "issue", issueId] as const,
+    dashboard: (companyId: string) => ["sla", "dashboard", companyId] as const,
+  },
+  escalation: {
+    rules: (companyId: string) => ["escalation", "rules", companyId] as const,
+  },
+  dependencies: {
+    forCompany: (companyId: string) => ["dependencies", companyId] as const,
+    forIssue: (companyId: string, issueId: string) => ["dependencies", companyId, "issue", issueId] as const,
+    criticalPath: (companyId: string) => ["dependencies", companyId, "critical-path"] as const,
+  },
+  workflows: {
+    list: (companyId: string) => ["workflows", companyId] as const,
+    detail: (companyId: string, id: string) => ["workflows", companyId, id] as const,
+  },
 };

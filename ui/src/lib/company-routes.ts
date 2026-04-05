@@ -23,6 +23,10 @@ const BOARD_ROUTE_ROOTS = new Set([
   "members",
   "chargeback",
   "chatter",
+  "performance",
+  "sla",
+  "escalation",
+  "workflows",
 ]);
 
 const GLOBAL_ROUTE_ROOTS = new Set(["auth", "invite", "board-claim", "cli-auth", "docs", "instance", "help"]);

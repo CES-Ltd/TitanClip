@@ -36,6 +36,7 @@ import { relativeTime, cn, formatTokens, visibleRunCostUsd } from "../lib/utils"
 import { InlineEditor } from "../components/InlineEditor";
 import { CommentThread } from "../components/CommentThread";
 import { IssueDocumentsSection } from "../components/IssueDocumentsSection";
+import { IssueDependencies } from "../components/IssueDependencies";
 import { IssueProperties } from "../components/IssueProperties";
 import { IssueWorkspaceCard } from "../components/IssueWorkspaceCard";
 import { LiveRunWidget } from "../components/LiveRunWidget";
@@ -1359,6 +1360,8 @@ export function IssueDetail() {
         itemClassName="rounded-lg border border-border p-3"
         missingBehavior="placeholder"
       />
+
+      <IssueDependencies issueId={issue.id} />
 
       <IssueDocumentsSection
         issue={issue}

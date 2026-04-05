@@ -386,6 +386,20 @@
       "when": 1775664000000,
       "tag": "0054_chatter",
       "breakpoints": true
+    },
+    {
+      "idx": 55,
+      "version": "7",
+      "when": 1775750400000,
+      "tag": "0055_sla_management",
+      "breakpoints": true
+    },
+    {
+      "idx": 56,
+      "version": "7",
+      "when": 1775836800000,
+      "tag": "0056_task_dependencies",
+      "breakpoints": true
     }
   ]
 }

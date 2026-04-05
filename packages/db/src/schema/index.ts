@@ -62,3 +62,8 @@ export { vaultCredentials, vaultTokenCheckouts } from "./vault_credentials.js";
 export { permissionPolicies } from "./permission_policies.js";
 export { teamRoles } from "./team_roles.js";
 export { chatterMessages } from "./chatter_messages.js";
+export { slaPolicies } from "./sla_policies.js";
+export { slaTracking } from "./sla_tracking.js";
+export { escalationRules } from "./escalation_rules.js";
+export { issueDependencies } from "./issue_dependencies.js";
+export { workflowTemplates } from "./workflow_templates.js";
