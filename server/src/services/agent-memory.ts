@@ -136,21 +136,41 @@ export function agentMemoryService(db: Db) {
      * Returns the top memories sorted by importance.
      */
     async buildMemoryContext(agentId: string, opts?: { maxTokenEstimate?: number }): Promise<string> {
-      const maxChars = (opts?.maxTokenEstimate ?? 2000) * 4; // rough char estimate
+      const maxChars = (opts?.maxTokenEstimate ?? 2000) * 4;
 
       const memories = await db
         .select()
         .from(agentMemories)
         .where(eq(agentMemories.agentId, agentId))
         .orderBy(desc(agentMemories.importance), desc(agentMemories.updatedAt))
-        .limit(50);
+        .limit(100); // fetch more, then rank with time decay
 
       if (memories.length === 0) return "";
+
+      // Apply ZeroClaw-style time decay: non-core memories lose importance over time
+      const now = Date.now();
+      const ONE_WEEK_MS = 7 * 24 * 60 * 60 * 1000;
+
+      const scored = memories.map((mem) => {
+        let effectiveImportance = mem.importance;
+
+        // Core memories (user_profile, preference) don't decay
+        if (mem.memoryType !== "user_profile" && mem.memoryType !== "preference") {
+          const ageMs = now - new Date(mem.updatedAt).getTime();
+          const weeksOld = Math.floor(ageMs / ONE_WEEK_MS);
+          effectiveImportance = Math.max(1, mem.importance - weeksOld);
+        }
+
+        return { ...mem, effectiveImportance };
+      });
+
+      // Sort by effective importance (decayed)
+      scored.sort((a, b) => b.effectiveImportance - a.effectiveImportance);
 
       const sections: Record<string, string[]> = {};
       let totalChars = 0;
 
-      for (const mem of memories) {
+      for (const mem of scored) {
         if (totalChars >= maxChars) break;
         const section = mem.memoryType;
         if (!sections[section]) sections[section] = [];

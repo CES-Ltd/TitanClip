@@ -36,6 +36,13 @@ export const AGENT_ADAPTER_TYPES = [
 ] as const;
 export type AgentAdapterType = (typeof AGENT_ADAPTER_TYPES)[number];
 
+export const AGENT_AUTONOMY_LEVELS = [
+  "sandboxed",   // Read-only. No tool execution. All side effects blocked.
+  "supervised",  // Default. Non-destructive tools auto-execute. Destructive tools blocked.
+  "autonomous",  // Full tool execution. Budget limits and security policies still enforced.
+] as const;
+export type AgentAutonomyLevel = (typeof AGENT_AUTONOMY_LEVELS)[number];
+
 export const AGENT_ROLES = [
   "ceo",
   "cto",
