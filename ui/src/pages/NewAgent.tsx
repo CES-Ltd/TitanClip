@@ -89,11 +89,6 @@ export function NewAgent() {
     setSelectedTemplateId(template.id);
     setName(template.name);
     setRole(template.role);
-    setConfigValues((prev) => ({
-      ...prev,
-      adapterType: template.adapterType,
-      ...(template.model ? { model: template.model } : {}),
-    }));
   }
 
   // Filter roles by admin governance
@@ -251,47 +246,37 @@ export function NewAgent() {
         </p>
       </div>
 
-      {/* Template picker (shown when templates are available) */}
+      {/* Template selection (required when templates exist) */}
       {availableTemplates.length > 0 && !isFirstAgent && (
         <div className="space-y-2">
-          <h2 className="text-sm font-medium">Start from a template</h2>
-          <div className="grid grid-cols-2 gap-2">
+          <h2 className="text-sm font-medium">Agent Template</h2>
+          <p className="text-xs text-muted-foreground">Select a pre-configured template for this agent.</p>
+          <select
+            value={selectedTemplateId ?? ""}
+            onChange={(e) => {
+              const tpl = availableTemplates.find((t) => t.id === e.target.value);
+              if (tpl) selectTemplate(tpl);
+            }}
+            className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+          >
+            <option value="" disabled>Choose a template...</option>
             {availableTemplates.map((t) => (
-              <button
-                key={t.id}
-                onClick={() => selectTemplate(t)}
-                className={cn(
-                  "text-left rounded-lg border p-3 transition-all",
-                  selectedTemplateId === t.id
-                    ? "border-primary bg-primary/5 ring-1 ring-primary"
-                    : "border-border hover:border-primary/50 hover:bg-accent/30",
-                )}
-              >
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-medium">{t.name}</span>
-                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-primary/10 text-primary">
-                    {roleLabels[t.role] ?? t.role}
-                  </span>
-                </div>
-                {t.description && <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{t.description}</p>}
-              </button>
+              <option key={t.id} value={t.id}>
+                {t.name} ({roleLabels[t.role] ?? t.role})
+              </option>
             ))}
-            <button
-              onClick={() => { setSelectedTemplateId(null); }}
-              className={cn(
-                "text-left rounded-lg border p-3 transition-all",
-                selectedTemplateId === null
-                  ? "border-primary bg-primary/5 ring-1 ring-primary"
-                  : "border-border hover:border-primary/50 hover:bg-accent/30",
-              )}
-            >
-              <span className="text-sm font-medium">Custom Configuration</span>
-              <p className="text-xs text-muted-foreground mt-1">Configure adapter, model, and role manually</p>
-            </button>
-          </div>
+          </select>
           {selectedTemplateId && (
-            <p className="text-xs text-muted-foreground">Template will configure role, adapter, model, and instructions. You can still edit the agent name.</p>
+            <p className="text-xs text-muted-foreground">
+              Template sets the role and instructions. Select adapter and model below.
+            </p>
           )}
+        </div>
+      )}
+      {availableTemplates.length === 0 && !isFirstAgent && (
+        <div className="rounded-lg border border-border bg-muted/20 p-6 text-center">
+          <p className="text-sm text-muted-foreground">No agent templates configured.</p>
+          <p className="text-xs text-muted-foreground mt-1">Contact your admin to create agent templates.</p>
         </div>
       )}
 

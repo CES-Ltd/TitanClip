@@ -16,8 +16,6 @@ export interface AgentTemplate {
   name: string;
   description: string;
   role: string;
-  adapterType: string;
-  model: string;
   soulMd: string;
   heartbeatMd: string;
   agentsMd: string;

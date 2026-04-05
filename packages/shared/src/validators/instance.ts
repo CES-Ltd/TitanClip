@@ -24,8 +24,6 @@ export const agentTemplateSchema = z.object({
   name: z.string().min(1).max(200),
   description: z.string().max(2000).default(""),
   role: z.string().min(1),
-  adapterType: z.string().min(1),
-  model: z.string().max(200).default(""),
   soulMd: z.string().max(100_000).default(""),
   heartbeatMd: z.string().max(100_000).default(""),
   agentsMd: z.string().max(100_000).default(""),

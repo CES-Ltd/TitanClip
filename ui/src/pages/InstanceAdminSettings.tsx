@@ -52,8 +52,6 @@ export function InstanceAdminSettings() {
   const [tplName, setTplName] = useState("");
   const [tplDescription, setTplDescription] = useState("");
   const [tplRole, setTplRole] = useState("general");
-  const [tplAdapter, setTplAdapter] = useState("claude_local");
-  const [tplModel, setTplModel] = useState("");
   const [tplBudget, setTplBudget] = useState(0);
   const [tplStatus, setTplStatus] = useState<"available" | "draft">("draft");
   const [tplSoul, setTplSoul] = useState("");
@@ -134,15 +132,15 @@ export function InstanceAdminSettings() {
   function resetTemplateForm() {
     setShowTemplateForm(false);
     setEditingTemplate(null);
-    setTplName(""); setTplDescription(""); setTplRole("general"); setTplAdapter("claude_local");
-    setTplModel(""); setTplBudget(0); setTplStatus("draft");
+    setTplName(""); setTplDescription(""); setTplRole("general");
+    setTplBudget(0); setTplStatus("draft");
     setTplSoul(""); setTplHeartbeat(""); setTplAgents(""); setTplError(null);
   }
 
   function openEditTemplate(t: AgentTemplate) {
     setEditingTemplate(t);
     setTplName(t.name); setTplDescription(t.description); setTplRole(t.role);
-    setTplAdapter(t.adapterType); setTplModel(t.model); setTplBudget(t.defaultBudgetMonthlyCents);
+    setTplBudget(t.defaultBudgetMonthlyCents);
     setTplStatus(t.status); setTplSoul(t.soulMd); setTplHeartbeat(t.heartbeatMd); setTplAgents(t.agentsMd);
     setShowTemplateForm(true);
   }
@@ -152,8 +150,8 @@ export function InstanceAdminSettings() {
     setTplError(null);
     if (!tplName.trim()) { setTplError("Name is required."); return; }
     const payload = {
-      name: tplName.trim(), description: tplDescription, role: tplRole, adapterType: tplAdapter,
-      model: tplModel, soulMd: tplSoul, heartbeatMd: tplHeartbeat, agentsMd: tplAgents,
+      name: tplName.trim(), description: tplDescription, role: tplRole,
+      soulMd: tplSoul, heartbeatMd: tplHeartbeat, agentsMd: tplAgents,
       defaultBudgetMonthlyCents: tplBudget, status: tplStatus,
     };
     if (editingTemplate) {
@@ -454,7 +452,6 @@ export function InstanceAdminSettings() {
                     <span className="text-[10px] px-1.5 py-0.5 rounded bg-primary/10 text-primary">
                       {AGENT_ROLE_LABELS[t.role as AgentRole] ?? t.role}
                     </span>
-                    <span className="text-[10px] text-muted-foreground">{ADAPTER_LABELS[t.adapterType] ?? t.adapterType}</span>
                   </div>
                   {t.description && <p className="text-xs text-muted-foreground mt-0.5 truncate">{t.description}</p>}
                 </div>
@@ -484,16 +481,6 @@ export function InstanceAdminSettings() {
                   <select value={tplRole} onChange={(e) => setTplRole(e.target.value)} className="w-full rounded-md border bg-background px-2 py-1.5 text-sm">
                     {AGENT_ROLES.map((r) => <option key={r} value={r}>{AGENT_ROLE_LABELS[r]}</option>)}
                   </select>
-                </div>
-                <div className="space-y-1">
-                  <Label className="text-xs">Adapter Type</Label>
-                  <select value={tplAdapter} onChange={(e) => setTplAdapter(e.target.value)} className="w-full rounded-md border bg-background px-2 py-1.5 text-sm">
-                    {AGENT_ADAPTER_TYPES.map((t) => <option key={t} value={t}>{ADAPTER_LABELS[t] ?? t}</option>)}
-                  </select>
-                </div>
-                <div className="space-y-1">
-                  <Label className="text-xs">Model</Label>
-                  <Input value={tplModel} onChange={(e) => setTplModel(e.target.value)} placeholder="e.g. claude-sonnet-4-6" />
                 </div>
                 <div className="space-y-1">
                   <Label className="text-xs">Default Budget ($/month)</Label>

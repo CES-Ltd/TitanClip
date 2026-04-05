@@ -1291,13 +1291,8 @@ export function agentRoutes(db: Db) {
       const template = await instanceSettings.getAgentTemplate(templateId);
       if (!template) throw badRequest("Agent template not found.");
       if (template.status !== "available") throw badRequest("Agent template is not available (draft).");
-      // Apply template defaults where hire input doesn't override
+      // Apply template defaults (role, budget — adapter/model come from user selection)
       if (!req.body.role) req.body.role = template.role;
-      if (!req.body.adapterType) req.body.adapterType = template.adapterType;
-      if (!req.body.adapterConfig) req.body.adapterConfig = {};
-      if (template.model && !(req.body.adapterConfig as any).model) {
-        (req.body.adapterConfig as any).model = template.model;
-      }
       if (!req.body.budgetMonthlyCents && template.defaultBudgetMonthlyCents) {
         req.body.budgetMonthlyCents = template.defaultBudgetMonthlyCents;
       }

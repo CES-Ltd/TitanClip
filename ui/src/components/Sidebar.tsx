@@ -4,6 +4,7 @@ import {
   Target,
   Gamepad2,
   LayoutDashboard,
+  MessageCircle,
   DollarSign,
   History,
   Search,
@@ -82,6 +83,7 @@ export function Sidebar() {
           </button>
           <SidebarNavItem to="/dashboard" label="Dashboard" icon={LayoutDashboard} liveCount={liveRunCount} />
           <SidebarNavItem to="/workplace" label="Workplace" icon={Gamepad2} />
+          <SidebarNavItem to="/chat" label="Chat" icon={MessageCircle} />
           <SidebarNavItem
             to="/inbox"
             label="Inbox"
