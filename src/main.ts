@@ -131,6 +131,18 @@ ipcMain.handle("get-platform", () => process.platform);
 ipcMain.handle("open-external", async (_event, url: string) => {
   await shell.openExternal(url);
 });
+ipcMain.handle("nav-back", () => {
+  mainWindow?.webContents.goBack();
+});
+ipcMain.handle("nav-forward", () => {
+  mainWindow?.webContents.goForward();
+});
+ipcMain.handle("nav-can-go-back", () => {
+  return mainWindow?.webContents.canGoBack() ?? false;
+});
+ipcMain.handle("nav-can-go-forward", () => {
+  return mainWindow?.webContents.canGoForward() ?? false;
+});
 
 // App lifecycle
 app.whenReady().then(async () => {

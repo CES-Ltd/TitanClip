@@ -48,6 +48,7 @@ import { RunTranscriptUxLab } from "./pages/RunTranscriptUxLab";
 import { OrgChart } from "./pages/OrgChart";
 import { InstanceWorkspaceGovernance } from "./pages/InstanceWorkspaceGovernance";
 import { Help } from "./pages/Help";
+import { AppTitleBar } from "./components/AppTitleBar";
 import { NewAgent } from "./pages/NewAgent";
 import { AuthPage } from "./pages/Auth";
 import { BoardClaimPage } from "./pages/BoardClaim";
@@ -321,6 +322,7 @@ function NoCompaniesStartPage() {
 export function App() {
   return (
     <>
+      <AppTitleBar />
       <Routes>
         <Route path="auth" element={<AuthPage />} />
         <Route path="help" element={<Help />} />
