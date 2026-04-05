@@ -93,7 +93,7 @@ export function Help() {
   }
 
   return (
-    <div className="flex h-screen bg-background">
+    <div className="flex h-[calc(100vh-2.25rem)] bg-background">
       {/* Left: Navigation */}
       <div className="w-[260px] border-r border-border flex flex-col shrink-0">
         {/* Header */}

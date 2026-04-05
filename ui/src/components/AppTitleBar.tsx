@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { ChevronLeft, ChevronRight, BookOpen, Settings, Sun, Moon } from "lucide-react";
-import { Link, useLocation, useNavigate } from "@/lib/router";
+import { useLocation, useNavigate, Link } from "react-router-dom";
 import { useTheme } from "../context/ThemeContext";
 import { cn } from "../lib/utils";
 
@@ -35,12 +35,12 @@ export function AppTitleBar() {
 
   const handleBack = () => {
     if (electronAPI?.navBack) electronAPI.navBack();
-    else navigate(-1 as any);
+    else navigate(-1);
   };
 
   const handleForward = () => {
     if (electronAPI?.navForward) electronAPI.navForward();
-    else navigate(1 as any);
+    else navigate(1);
   };
 
   const btnClass = "w-7 h-7 rounded-md flex items-center justify-center transition-colors text-muted-foreground hover:text-foreground hover:bg-accent/50";
