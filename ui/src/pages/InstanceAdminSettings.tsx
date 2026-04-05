@@ -8,7 +8,7 @@ import {
   type AgentRole,
 } from "@titanclip/shared";
 import type { AgentTemplate, CreateAgentTemplate } from "@titanclip/shared";
-import { Lock, LockOpen, ShieldCheck, KeyRound, Plus, Pencil, Trash2, FileText } from "lucide-react";
+import { Lock, LockOpen, ShieldCheck, KeyRound, Plus, Pencil, Trash2, FileText, Globe, EyeOff } from "lucide-react";
 import { adminSettingsApi } from "@/api/adminSettings";
 import { useAdminSession } from "../context/AdminSessionContext";
 import { AdminPinDialog } from "../components/AdminPinDialog";
@@ -126,6 +126,16 @@ export function InstanceAdminSettings() {
 
   const deleteTemplateMutation = useMutation({
     mutationFn: (id: string) => adminSettingsApi.deleteTemplate(id, token!),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: queryKeys.instance.adminTemplates }),
+  });
+
+  const publishTemplateMutation = useMutation({
+    mutationFn: (id: string) => adminSettingsApi.updateTemplate(id, { status: "available" } as any, token!),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: queryKeys.instance.adminTemplates }),
+  });
+
+  const unpublishTemplateMutation = useMutation({
+    mutationFn: (id: string) => adminSettingsApi.updateTemplate(id, { status: "draft" } as any, token!),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: queryKeys.instance.adminTemplates }),
   });
 
@@ -456,6 +466,19 @@ export function InstanceAdminSettings() {
                   {t.description && <p className="text-xs text-muted-foreground mt-0.5 truncate">{t.description}</p>}
                 </div>
                 <div className="flex items-center gap-1 ml-2">
+                  {t.status === "draft" ? (
+                    <Button variant="ghost" size="sm" onClick={() => publishTemplateMutation.mutate(t.id)}
+                      disabled={publishTemplateMutation.isPending}
+                      className="h-7 px-2 gap-1 text-emerald-500 hover:text-emerald-400 text-xs">
+                      <Globe className="h-3 w-3" /> Publish
+                    </Button>
+                  ) : (
+                    <Button variant="ghost" size="sm" onClick={() => unpublishTemplateMutation.mutate(t.id)}
+                      disabled={unpublishTemplateMutation.isPending}
+                      className="h-7 px-2 gap-1 text-amber-500 hover:text-amber-400 text-xs">
+                      <EyeOff className="h-3 w-3" /> Unpublish
+                    </Button>
+                  )}
                   <Button variant="ghost" size="sm" onClick={() => openEditTemplate(t)} className="h-7 w-7 p-0">
                     <Pencil className="h-3 w-3" />
                   </Button>

@@ -202,9 +202,11 @@ export function Agents() {
               </button>
             </div>
           )}
-          <Button size="sm" variant="outline" onClick={openNewAgent}>
-            <Plus className="h-3.5 w-3.5 mr-1.5" />
-            New Agent
+          <Button size="sm" variant="outline" asChild>
+            <Link to="/agents/new">
+              <Plus className="h-3.5 w-3.5 mr-1.5" />
+              New Agent
+            </Link>
           </Button>
         </div>
       </div>
@@ -220,7 +222,7 @@ export function Agents() {
           icon={Bot}
           message="Create your first agent to get started."
           action="New Agent"
-          onAction={openNewAgent}
+          onAction={() => navigate("/agents/new")}
         />
       )}
 
