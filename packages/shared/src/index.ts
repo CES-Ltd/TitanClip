@@ -342,6 +342,13 @@ export type {
   PluginWebhookDeliveryRecord,
   QuotaWindow,
   ProviderQuotaResult,
+  VaultCredential,
+  VaultTokenCheckout,
+  VaultCheckoutResult,
+  CredentialType,
+  CredentialProvider,
+  CredentialStatus,
+  CheckoutStatus,
 } from "./types/index.js";
 
 export {
@@ -601,6 +608,14 @@ export {
   type SetPluginState,
   type ListPluginState,
 } from "./validators/index.js";
+
+export {
+  createVaultCredentialSchema,
+  updateVaultCredentialSchema,
+  rotateVaultCredentialSchema,
+  type CreateVaultCredential,
+  type UpdateVaultCredential,
+} from "./validators/vault.js";
 
 export { API_PREFIX, API } from "./api.js";
 export { normalizeAgentUrlKey, deriveAgentUrlKey, isUuidLike } from "./agent-url-key.js";

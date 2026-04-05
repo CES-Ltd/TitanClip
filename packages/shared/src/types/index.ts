@@ -217,3 +217,12 @@ export type {
   PluginJobRunRecord,
   PluginWebhookDeliveryRecord,
 } from "./plugin.js";
+export type {
+  CredentialType,
+  CredentialProvider,
+  CredentialStatus,
+  CheckoutStatus,
+  VaultCredential,
+  VaultTokenCheckout,
+  VaultCheckoutResult,
+} from "./vault.js";

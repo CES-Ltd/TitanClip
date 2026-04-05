@@ -1,9 +1,9 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   Terminal, Users, Zap, ClipboardList, Shield, Activity,
   CheckCircle, XCircle, AlertTriangle, Clock, DollarSign,
-  ShieldAlert, ArrowRight, Play,
+  ShieldAlert, ArrowRight, Play, KeyRound, Lock,
 } from "lucide-react";
 import { useCompany } from "../context/CompanyContext";
 import { useBreadcrumbs } from "../context/BreadcrumbContext";
@@ -18,6 +18,7 @@ import { costsApi } from "../api/costs";
 import { budgetsApi } from "../api/budgets";
 import { queryKeys } from "../lib/queryKeys";
 import { ApprovalCard as ApprovalActionCard } from "../components/ApprovalActionCard";
+import { vaultApi } from "../api/vault";
 import { Link } from "@/lib/router";
 import { Button } from "@/components/ui/button";
 import { cn } from "../lib/utils";
@@ -86,6 +87,7 @@ export function CommandCenter() {
 
   useEffect(() => { setBreadcrumbs([{ label: "Command Center" }]); }, [setBreadcrumbs]);
 
+  const [activeView, setActiveView] = useState<"ops" | "iam">("ops");
   const cid = selectedCompanyId!;
 
   // Data queries
@@ -97,6 +99,11 @@ export function CommandCenter() {
   const { data: tasks = [] } = useQuery({ queryKey: [...queryKeys.issues.list(cid), "active"], queryFn: () => issuesApi.list(cid, { status: "in_progress,todo" }), enabled: !!cid, refetchInterval: 10_000 });
   const { data: costSummary } = useQuery({ queryKey: queryKeys.costs(cid), queryFn: () => costsApi.summary(cid), enabled: !!cid, refetchInterval: 30_000 });
   const { data: budgetOverview } = useQuery({ queryKey: ["budgets", cid], queryFn: () => budgetsApi.overview(cid), enabled: !!cid, refetchInterval: 30_000 });
+
+  // Vault / IAM queries
+  const { data: vaultCreds = [] } = useQuery({ queryKey: ["vault", cid], queryFn: () => vaultApi.list(cid), enabled: !!cid && activeView === "iam", refetchInterval: 15_000 });
+  const { data: activeCheckouts = [] } = useQuery({ queryKey: ["vault", cid, "active-checkouts"], queryFn: () => vaultApi.activeCheckouts(cid), enabled: !!cid && activeView === "iam", refetchInterval: 5_000 });
+  const { data: recentCheckouts = [] } = useQuery({ queryKey: ["vault", cid, "recent-checkouts"], queryFn: () => vaultApi.recentCheckouts(cid), enabled: !!cid && activeView === "iam", refetchInterval: 10_000 });
 
   const approveMut = useMutation({
     mutationFn: (id: string) => approvalsApi.approve(id),
@@ -143,7 +150,15 @@ export function CommandCenter() {
           <Terminal className="h-4 w-4 text-white" />
         </div>
         <h2 className="text-sm font-semibold tracking-tight">Command Center</h2>
-        <span className="text-xs text-muted-foreground">{selectedCompany?.name}</span>
+        <div className="flex items-center gap-0.5 ml-2 bg-muted/30 rounded-lg p-0.5">
+          <button onClick={() => setActiveView("ops")} className={cn("px-3 py-1 text-xs font-medium rounded-md transition-colors", activeView === "ops" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground")}>
+            Operations
+          </button>
+          <button onClick={() => setActiveView("iam")} className={cn("px-3 py-1 text-xs font-medium rounded-md transition-colors flex items-center gap-1", activeView === "iam" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground")}>
+            <KeyRound className="h-3 w-3" /> IAM
+          </button>
+        </div>
+        <span className="text-xs text-muted-foreground ml-2">{selectedCompany?.name}</span>
 
         <div className="ml-auto flex items-center gap-3">
           {/* Agent count */}
@@ -169,7 +184,134 @@ export function CommandCenter() {
         </div>
       </div>
 
+      {/* IAM View */}
+      {activeView === "iam" && (
+        <div className="flex-1 overflow-hidden flex">
+          {/* Credential Inventory */}
+          <div className="w-[45%] border-r border-border overflow-y-auto p-4 space-y-4">
+            <div>
+              <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3 flex items-center gap-1.5">
+                <KeyRound className="h-3 w-3" /> Credential Vault ({vaultCreds.length})
+              </h3>
+              {vaultCreds.length === 0 ? (
+                <div className="text-center py-8 border border-dashed border-border/50 rounded-xl">
+                  <Lock className="h-8 w-8 mx-auto mb-2 text-muted-foreground/30" />
+                  <p className="text-xs text-muted-foreground">No credentials in vault</p>
+                  <p className="text-[10px] text-muted-foreground/60 mt-1">Add credentials via the API or Team Settings</p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {vaultCreds.map((cred) => (
+                    <div key={cred.id} className="rounded-xl border border-border/50 p-3 hover:bg-muted/20 transition-colors">
+                      <div className="flex items-center gap-2">
+                        <KeyRound className="h-3.5 w-3.5 text-indigo-400 shrink-0" />
+                        <span className="text-sm font-medium flex-1 truncate">{cred.name}</span>
+                        <span className={cn("text-[10px] px-1.5 py-0.5 rounded-full font-medium",
+                          cred.status === "active" ? "bg-emerald-500/10 text-emerald-400" :
+                          cred.status === "expired" ? "bg-red-500/10 text-red-400" :
+                          cred.status === "revoked" ? "bg-zinc-500/10 text-zinc-400" :
+                          "bg-amber-500/10 text-amber-400"
+                        )}>{cred.status}</span>
+                      </div>
+                      <div className="flex items-center gap-3 mt-1.5 text-[11px] text-muted-foreground">
+                        <span className="px-1.5 py-0.5 rounded bg-muted/30">{cred.provider}</span>
+                        <span>{cred.credentialType.replace(/_/g, " ")}</span>
+                        <span>TTL: {cred.tokenTtlSeconds < 3600 ? `${cred.tokenTtlSeconds / 60}m` : `${cred.tokenTtlSeconds / 3600}h`}</span>
+                      </div>
+                      <div className="flex items-center gap-3 mt-1 text-[10px] text-muted-foreground/60">
+                        <span>{cred.totalCheckouts} checkouts</span>
+                        {cred.lastCheckedOutAt && <span>Last: {timeAgo(cred.lastCheckedOutAt)}</span>}
+                        {cred.expiresAt && <span>Expires: {new Date(cred.expiresAt).toLocaleDateString()}</span>}
+                        {cred.rotationPolicy === "auto" && cred.rotationIntervalDays && (
+                          <span className="text-amber-400">Rotate every {cred.rotationIntervalDays}d</span>
+                        )}
+                      </div>
+                      {cred.allowedAgentIds && (
+                        <div className="mt-1 text-[10px] text-muted-foreground/50">
+                          Scoped to {cred.allowedAgentIds.length} agent{cred.allowedAgentIds.length > 1 ? "s" : ""}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Active Checkouts */}
+            <div>
+              <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                <Zap className="h-3 w-3" /> Active Checkouts ({activeCheckouts.length})
+              </h3>
+              {activeCheckouts.length === 0 ? (
+                <p className="text-xs text-muted-foreground text-center py-4 border border-dashed border-border/50 rounded-xl">No active token checkouts</p>
+              ) : (
+                <div className="space-y-1.5">
+                  {activeCheckouts.map((co) => {
+                    const ttlRemaining = Math.max(0, Math.floor((new Date(co.expiresAt).getTime() - Date.now()) / 1000));
+                    const ttlMin = Math.floor(ttlRemaining / 60);
+                    return (
+                      <div key={co.id} className="flex items-center gap-2 px-3 py-2 rounded-xl border border-cyan-500/20 bg-cyan-500/5">
+                        <div className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 text-xs">
+                            <span className="font-medium">{co.envVarName}</span>
+                            <span className="text-muted-foreground">→ {agents.find((a) => a.id === co.agentId)?.name ?? "Agent"}</span>
+                          </div>
+                          <p className="text-[10px] text-cyan-400/60">{ttlMin > 0 ? `${ttlMin}m remaining` : "Expiring..."}</p>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Token Audit Trail */}
+          <div className="flex-1 overflow-y-auto flex flex-col">
+            <div className="px-4 py-3 border-b border-border">
+              <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+                <Activity className="h-3 w-3" /> Token Activity
+              </h3>
+            </div>
+            <div className="flex-1 overflow-y-auto">
+              {recentCheckouts.length === 0 ? (
+                <p className="text-xs text-muted-foreground text-center py-8">No token activity yet</p>
+              ) : recentCheckouts.map((co) => {
+                const isActive = co.status === "active";
+                const isExpired = co.status === "expired";
+                const icon = isActive ? Zap : isExpired ? AlertTriangle : co.status === "checked_in" ? CheckCircle : XCircle;
+                const Icon = icon;
+                const color = isActive ? "text-cyan-400" : isExpired ? "text-red-400" : co.status === "checked_in" ? "text-emerald-400" : "text-zinc-400";
+                return (
+                  <div key={co.id} className="flex items-start gap-2.5 px-4 py-2.5 border-b border-border/20 hover:bg-muted/20 transition-colors">
+                    <Icon className={cn("h-3.5 w-3.5 shrink-0 mt-0.5", color)} />
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 text-[11px]">
+                        <span className="font-medium">{co.envVarName}</span>
+                        <span className={cn("px-1 py-0.5 rounded text-[9px]",
+                          isActive ? "bg-cyan-500/10 text-cyan-400" :
+                          isExpired ? "bg-red-500/10 text-red-400" :
+                          co.status === "checked_in" ? "bg-emerald-500/10 text-emerald-400" :
+                          "bg-zinc-500/10 text-zinc-400"
+                        )}>{co.status.replace(/_/g, " ")}</span>
+                      </div>
+                      <p className="text-[10px] text-muted-foreground mt-0.5">
+                        {agents.find((a) => a.id === co.agentId)?.name ?? "Agent"}
+                        {co.checkedInAt && ` · returned ${timeAgo(co.checkedInAt)}`}
+                      </p>
+                    </div>
+                    <span className="text-[9px] text-muted-foreground/50 shrink-0">{timeAgo(co.issuedAt)}</span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* 3-Zone Layout */}
+      {activeView === "ops" && (
       <div className="flex-1 overflow-hidden flex">
 
         {/* ZONE 1: Live Operations */}
@@ -347,6 +489,7 @@ export function CommandCenter() {
           </div>
         </div>
       </div>
+      )}
     </div>
   );
 }

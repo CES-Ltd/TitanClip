@@ -26,6 +26,7 @@ import { dashboardRoutes } from "./routes/dashboard.js";
 import { sidebarBadgeRoutes } from "./routes/sidebar-badges.js";
 import { instanceSettingsRoutes } from "./routes/instance-settings.js";
 import { adminSettingsRoutes } from "./routes/admin-settings.js";
+import { vaultRoutes } from "./routes/vault.js";
 import { llmRoutes } from "./routes/llms.js";
 import { assetRoutes } from "./routes/assets.js";
 import { accessRoutes } from "./routes/access.js";
@@ -171,6 +172,7 @@ export async function createApp(
   api.use(adminSettingsRoutes(db, {
     ssoClientId: opts.ssoClientId,
   } as any));
+  api.use(vaultRoutes(db));
   const hostServicesDisposers = new Map<string, () => void>();
   const workerManager = createPluginWorkerManager();
   const pluginRegistry = pluginRegistryService(db);
