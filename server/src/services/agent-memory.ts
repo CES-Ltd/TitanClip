@@ -9,7 +9,16 @@ import { eq, and, desc, ilike, sql } from "drizzle-orm";
 import type { Db } from "@titanclip/db";
 import { agentMemories } from "@titanclip/db";
 
-export type MemoryType = "user_profile" | "preference" | "project_context" | "learned_fact" | "entity";
+export type MemoryType =
+  | "user_profile"
+  | "preference"
+  | "project_context"
+  | "learned_fact"
+  | "entity"
+  // Enterprise workflow memory types
+  | "todo_list"       // Persistent task backlog maintained across sessions
+  | "work_summary"    // Last completed work summary (auto-generated)
+  | "shift_context";  // Shift handoff notes (in-progress, follow-ups)
 
 export interface UpsertMemoryInput {
   memoryType: MemoryType;
@@ -186,10 +195,21 @@ export function agentMemoryService(db: Db) {
         project_context: "Project Context",
         learned_fact: "Learned Facts",
         entity: "Known Entities",
+        todo_list: "Active Todo List",
+        work_summary: "Last Work Summary",
+        shift_context: "Shift Context",
       };
 
-      for (const [type, lines] of Object.entries(sections)) {
-        parts.push(`### ${typeLabels[type] ?? type}\n${lines.join("\n")}`);
+      // Enterprise workflow memories go FIRST (highest visibility)
+      const priorityOrder = ["todo_list", "work_summary", "shift_context"];
+      const orderedTypes = [
+        ...priorityOrder.filter((t) => sections[t]),
+        ...Object.keys(sections).filter((t) => !priorityOrder.includes(t)),
+      ];
+
+      for (const type of orderedTypes) {
+        const lines = sections[type];
+        if (lines) parts.push(`### ${typeLabels[type] ?? type}\n${lines.join("\n")}`);
       }
 
       return parts.join("\n\n");

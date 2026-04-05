@@ -5,6 +5,7 @@ import { instanceSettingsApi } from "@/api/instanceSettings";
 import { useBreadcrumbs } from "../context/BreadcrumbContext";
 import { queryKeys } from "../lib/queryKeys";
 import { cn } from "../lib/utils";
+import { ComplianceDisclaimer } from "../components/ComplianceDisclaimer";
 
 export function InstanceExperimentalSettings() {
   const { setBreadcrumbs } = useBreadcrumbs();
@@ -183,6 +184,7 @@ export function InstanceExperimentalSettings() {
             />
           </button>
         </div>
+        <ComplianceDisclaimer severity="beta" />
       </section>
     </div>
   );

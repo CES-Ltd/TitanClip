@@ -174,6 +174,31 @@ async function extractMemories(ctx: PostExecutionContext): Promise<void> {
       expiresAt: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000), // 14 day TTL
     });
   }
+
+  // Enterprise workflow: auto-generate work summary (R3b)
+  if (content.length > 100) {
+    const now = new Date();
+    const dateKey = now.toISOString().split("T")[0]; // YYYY-MM-DD
+
+    // Update work summary (always latest)
+    await memorySvc.upsert(ctx.agentId, ctx.companyId, {
+      memoryType: "work_summary",
+      key: `summary:${dateKey}`,
+      content: `[${now.toLocaleTimeString()}] ${ctx.issueTitle ? `Task: ${ctx.issueTitle}. ` : ""}${content.slice(0, 300)}`,
+      importance: 8, // High importance — always visible in context
+      sourceRunId: ctx.runId,
+      sourceIssueId: ctx.issueId,
+    });
+
+    // Update shift context
+    await memorySvc.upsert(ctx.agentId, ctx.companyId, {
+      memoryType: "shift_context",
+      key: "current_shift",
+      content: `Last active: ${now.toISOString()}. ${ctx.issueTitle ? `Was working on: ${ctx.issueTitle}. ` : ""}Status: ${ctx.exitCode === 0 ? "completed successfully" : "encountered errors"}. ${ctx.issueId ? `Issue ID: ${ctx.issueId}` : ""}`,
+      importance: 9, // Highest — always injected first
+      sourceRunId: ctx.runId,
+    });
+  }
 }
 
 /**
