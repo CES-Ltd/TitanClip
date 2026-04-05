@@ -1,47 +1,58 @@
 import { useState, useEffect } from "react";
 import { ChevronLeft, ChevronRight, BookOpen } from "lucide-react";
-import { Link, useLocation } from "@/lib/router";
+import { Link, useLocation, useNavigate } from "@/lib/router";
 import { cn } from "../lib/utils";
 
 const electronAPI = (window as any).electronAPI;
+const isMac = electronAPI?.getPlatform?.() === "darwin" || navigator.platform?.startsWith("Mac");
 
 export function AppTitleBar() {
   const [canGoBack, setCanGoBack] = useState(false);
   const [canGoForward, setCanGoForward] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
 
-  // Update nav state on route change
   useEffect(() => {
-    if (!electronAPI?.navCanGoBack) return;
     const update = async () => {
-      setCanGoBack(await electronAPI.navCanGoBack());
-      setCanGoForward(await electronAPI.navCanGoForward());
+      if (electronAPI?.navCanGoBack) {
+        setCanGoBack(await electronAPI.navCanGoBack());
+        setCanGoForward(await electronAPI.navCanGoForward());
+      } else {
+        setCanGoBack(window.history.length > 1);
+        setCanGoForward(false);
+      }
     };
     update();
   }, [location.pathname]);
 
   const handleBack = () => {
     if (electronAPI?.navBack) electronAPI.navBack();
-    else window.history.back();
+    else navigate(-1 as any);
   };
 
   const handleForward = () => {
     if (electronAPI?.navForward) electronAPI.navForward();
-    else window.history.forward();
+    else navigate(1 as any);
   };
 
   return (
-    <div className="flex items-center h-9 px-2 bg-[#09090b] border-b border-border/50 shrink-0 select-none"
+    <div
+      className="flex items-center h-9 bg-[#09090b] border-b border-border/30 shrink-0 select-none"
       style={{ WebkitAppRegion: "drag" } as any}
     >
+      {/* macOS traffic light spacer */}
+      {isMac && <div className="w-[76px] shrink-0" />}
+
       {/* Navigation buttons */}
-      <div className="flex items-center gap-0.5" style={{ WebkitAppRegion: "no-drag" } as any}>
+      <div className="flex items-center gap-0.5 px-1" style={{ WebkitAppRegion: "no-drag" } as any}>
         <button
           onClick={handleBack}
           disabled={!canGoBack}
           className={cn(
-            "w-7 h-7 rounded-lg flex items-center justify-center transition-colors",
-            canGoBack ? "text-muted-foreground hover:text-foreground hover:bg-muted/30" : "text-muted-foreground/30 cursor-not-allowed",
+            "w-7 h-7 rounded-md flex items-center justify-center transition-colors",
+            canGoBack
+              ? "text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800"
+              : "text-zinc-700 cursor-not-allowed",
           )}
           title="Back"
         >
@@ -51,8 +62,10 @@ export function AppTitleBar() {
           onClick={handleForward}
           disabled={!canGoForward}
           className={cn(
-            "w-7 h-7 rounded-lg flex items-center justify-center transition-colors",
-            canGoForward ? "text-muted-foreground hover:text-foreground hover:bg-muted/30" : "text-muted-foreground/30 cursor-not-allowed",
+            "w-7 h-7 rounded-md flex items-center justify-center transition-colors",
+            canGoForward
+              ? "text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800"
+              : "text-zinc-700 cursor-not-allowed",
           )}
           title="Forward"
         >
@@ -60,21 +73,24 @@ export function AppTitleBar() {
         </button>
       </div>
 
-      {/* Title (draggable area) */}
+      {/* Title — draggable center */}
       <div className="flex-1 text-center">
-        <span className="text-[11px] text-muted-foreground/60 font-medium">TitanClip</span>
+        <span className="text-[11px] text-zinc-500 font-medium tracking-wide">TitanClip</span>
       </div>
 
       {/* Help & Docs */}
-      <div style={{ WebkitAppRegion: "no-drag" } as any}>
+      <div className="px-2" style={{ WebkitAppRegion: "no-drag" } as any}>
         <Link
           to="/help"
-          className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] text-muted-foreground hover:text-foreground hover:bg-muted/30 transition-colors"
+          className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800 transition-colors"
         >
           <BookOpen className="h-3.5 w-3.5" />
-          Help & Docs
+          Help
         </Link>
       </div>
+
+      {/* Windows title bar overlay spacer */}
+      {!isMac && <div className="w-[138px] shrink-0" />}
     </div>
   );
 }

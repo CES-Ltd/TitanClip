@@ -9,11 +9,23 @@ let serverProcess: ChildProcess | null = null;
 const SERVER_PORT = 3100;
 
 function createWindow(): void {
+  const isMac = process.platform === "darwin";
+
   mainWindow = new BrowserWindow({
     width: 1400,
     height: 900,
     minWidth: 800,
     minHeight: 600,
+    titleBarStyle: "hidden",
+    ...(isMac ? {
+      trafficLightPosition: { x: 12, y: 10 },
+    } : {
+      titleBarOverlay: {
+        color: "#09090b",
+        symbolColor: "#a1a1aa",
+        height: 36,
+      },
+    }),
     webPreferences: {
       preload: path.join(__dirname, "preload.js"),
       contextIsolation: true,
