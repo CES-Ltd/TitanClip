@@ -806,6 +806,18 @@ const ipcRoutes: IpcRoute[] = [
     args: (m) => ({ slug: m[1] }) },
   { method: "POST", pattern: /^\/routine-templates\/([^/]+)\/instantiate$/, channel: "routine-templates:instantiate",
     args: (m, b) => ({ slug: m[1], ...(b as object) }) },
+
+  // User Credentials
+  { method: "GET", pattern: /^\/user-credentials\/options$/, channel: "user-credentials:options",
+    args: () => undefined },
+  { method: "GET", pattern: /^\/companies\/([^/]+)\/user-credentials$/, channel: "user-credentials:list",
+    args: (m) => ({ companyId: m[1] }) },
+  { method: "POST", pattern: /^\/companies\/([^/]+)\/user-credentials$/, channel: "user-credentials:create",
+    args: (m, b) => ({ companyId: m[1], ...(b as object) }) },
+  { method: "PATCH", pattern: /^\/user-credentials\/([^/]+)$/, channel: "user-credentials:update",
+    args: (m, b) => ({ id: m[1], ...(b as object) }) },
+  { method: "DELETE", pattern: /^\/user-credentials\/([^/]+)$/, channel: "user-credentials:revoke",
+    args: (m) => ({ id: m[1] }) },
 ];
 
 // ── IPC Transport ───────────────────────────────────────────────────────

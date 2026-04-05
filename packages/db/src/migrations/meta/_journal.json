@@ -428,6 +428,13 @@
       "when": 1776268800000,
       "tag": "0063_session_agents",
       "breakpoints": true
+    },
+    {
+      "idx": 64,
+      "version": "7",
+      "when": 1776355200000,
+      "tag": "0064_user_credentials",
+      "breakpoints": true
     }
   ]
 }

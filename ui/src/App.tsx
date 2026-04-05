@@ -70,6 +70,7 @@ import { BoardClaimPage } from "./pages/BoardClaim";
 import { CliAuthPage } from "./pages/CliAuth";
 import { InviteLandingPage } from "./pages/InviteLanding";
 import { NotFoundPage } from "./pages/NotFound";
+import { UserCredentials } from "./pages/UserCredentials";
 import { queryKeys } from "./lib/queryKeys";
 import { useCompany } from "./context/CompanyContext";
 import { useDialog } from "./context/DialogContext";
@@ -151,6 +152,7 @@ function boardRoutes() {
       <Route path="workplace" element={<Suspense fallback={<div className="flex items-center justify-center h-full text-muted-foreground">Loading Workplace...</div>}><Workplace /></Suspense>} />
       <Route path="chat" element={<CommandCenter />} />
       <Route path="vault" element={<VaultManagement />} />
+      <Route path="credentials" element={<UserCredentials />} />
       <Route path="compliance" element={<Compliance />} />
       <Route path="members" element={<TeamMembers />} />
       <Route path="chargeback" element={<Chargeback />} />

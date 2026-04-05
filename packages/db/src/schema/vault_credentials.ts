@@ -31,6 +31,10 @@ export const vaultCredentials = pgTable("vault_credentials", {
   // Status
   status: text("status").notNull().default("active"), // active, expired, revoked, rotating
 
+  // Scope: admin (board-managed) or user (self-managed, restricted types)
+  scope: text("scope").notNull().default("admin"), // admin, user
+  createdByUserId: text("created_by_user_id"), // who created this (for user-scoped creds)
+
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
