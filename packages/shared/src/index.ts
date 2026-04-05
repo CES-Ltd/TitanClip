@@ -349,6 +349,7 @@ export type {
   CredentialProvider,
   CredentialStatus,
   CheckoutStatus,
+  PermissionPolicy,
 } from "./types/index.js";
 
 export {
@@ -616,6 +617,13 @@ export {
   type CreateVaultCredential,
   type UpdateVaultCredential,
 } from "./validators/vault.js";
+
+export {
+  createPermissionPolicySchema,
+  updatePermissionPolicySchema,
+  type CreatePermissionPolicy,
+  type UpdatePermissionPolicy,
+} from "./validators/permission-policy.js";
 
 export { API_PREFIX, API } from "./api.js";
 export { normalizeAgentUrlKey, deriveAgentUrlKey, isUuidLike } from "./agent-url-key.js";

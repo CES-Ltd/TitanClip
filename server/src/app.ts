@@ -27,6 +27,7 @@ import { sidebarBadgeRoutes } from "./routes/sidebar-badges.js";
 import { instanceSettingsRoutes } from "./routes/instance-settings.js";
 import { adminSettingsRoutes } from "./routes/admin-settings.js";
 import { vaultRoutes } from "./routes/vault.js";
+import { permissionPolicyRoutes } from "./routes/permission-policies.js";
 import { llmRoutes } from "./routes/llms.js";
 import { assetRoutes } from "./routes/assets.js";
 import { accessRoutes } from "./routes/access.js";
@@ -173,6 +174,7 @@ export async function createApp(
     ssoClientId: opts.ssoClientId,
   } as any));
   api.use(vaultRoutes(db));
+  api.use(permissionPolicyRoutes(db));
   const hostServicesDisposers = new Map<string, () => void>();
   const workerManager = createPluginWorkerManager();
   const pluginRegistry = pluginRegistryService(db);

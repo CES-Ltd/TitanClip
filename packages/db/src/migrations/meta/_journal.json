@@ -358,6 +358,13 @@
       "when": 1775318400000,
       "tag": "0050_vault_credentials",
       "breakpoints": true
+    },
+    {
+      "idx": 51,
+      "version": "7",
+      "when": 1775404800000,
+      "tag": "0051_permission_policies",
+      "breakpoints": true
     }
   ]
 }

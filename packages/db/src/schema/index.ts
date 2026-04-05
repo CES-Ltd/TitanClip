@@ -59,3 +59,4 @@ export { pluginJobs, pluginJobRuns } from "./plugin_jobs.js";
 export { pluginWebhookDeliveries } from "./plugin_webhooks.js";
 export { pluginLogs } from "./plugin_logs.js";
 export { vaultCredentials, vaultTokenCheckouts } from "./vault_credentials.js";
+export { permissionPolicies } from "./permission_policies.js";

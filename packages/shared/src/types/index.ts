@@ -226,3 +226,4 @@ export type {
   VaultTokenCheckout,
   VaultCheckoutResult,
 } from "./vault.js";
+export type { PermissionPolicy } from "./permission-policy.js";
