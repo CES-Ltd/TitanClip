@@ -7,4 +7,5 @@ contextBridge.exposeInMainWorld("electronAPI", {
   navForward: () => ipcRenderer.invoke("nav-forward"),
   navCanGoBack: () => ipcRenderer.invoke("nav-can-go-back"),
   navCanGoForward: () => ipcRenderer.invoke("nav-can-go-forward"),
+  setTheme: (theme: string) => ipcRenderer.invoke("set-theme", theme),
 });

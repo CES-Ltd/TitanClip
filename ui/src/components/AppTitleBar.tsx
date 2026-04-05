@@ -15,6 +15,11 @@ export function AppTitleBar() {
   const { theme, toggleTheme } = useTheme();
   const nextTheme = theme === "dark" ? "light" : "dark";
 
+  // Sync theme to Electron title bar overlay (Windows)
+  useEffect(() => {
+    electronAPI?.setTheme?.(theme);
+  }, [theme]);
+
   useEffect(() => {
     const update = async () => {
       if (electronAPI?.navCanGoBack) {
@@ -38,12 +43,12 @@ export function AppTitleBar() {
     else navigate(1 as any);
   };
 
-  const btnClass = "w-7 h-7 rounded-md flex items-center justify-center transition-colors text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800";
-  const btnDisabled = "text-zinc-700 cursor-not-allowed";
+  const btnClass = "w-7 h-7 rounded-md flex items-center justify-center transition-colors text-muted-foreground hover:text-foreground hover:bg-accent/50";
+  const btnDisabled = "text-muted-foreground/30 cursor-not-allowed";
 
   return (
     <div
-      className="flex items-center h-9 bg-[#09090b] border-b border-border/30 shrink-0 select-none"
+      className="flex items-center h-9 bg-background border-b border-border shrink-0 select-none"
       style={{ WebkitAppRegion: "drag" } as any}
     >
       {/* macOS traffic light spacer */}
@@ -63,7 +68,7 @@ export function AppTitleBar() {
 
       {/* Title — draggable center */}
       <div className="flex-1 text-center">
-        <span className="text-[11px] text-zinc-500 font-medium tracking-wide">TitanClip</span>
+        <span className="text-[11px] text-muted-foreground/60 font-medium tracking-wide">TitanClip</span>
       </div>
 
       {/* Right actions: Help, Settings, Theme */}

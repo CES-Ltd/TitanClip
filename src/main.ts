@@ -155,6 +155,15 @@ ipcMain.handle("nav-can-go-back", () => {
 ipcMain.handle("nav-can-go-forward", () => {
   return mainWindow?.webContents.canGoForward() ?? false;
 });
+ipcMain.handle("set-theme", (_event, theme: string) => {
+  if (!mainWindow || process.platform === "darwin") return;
+  try {
+    mainWindow.setTitleBarOverlay({
+      color: theme === "dark" ? "#09090b" : "#ffffff",
+      symbolColor: theme === "dark" ? "#a1a1aa" : "#374151",
+    });
+  } catch { /* older Electron versions may not support this */ }
+});
 
 // App lifecycle
 app.whenReady().then(async () => {
