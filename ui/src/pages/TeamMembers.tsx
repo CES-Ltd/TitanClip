@@ -1,31 +1,27 @@
-import { useEffect, useState } from "react";
+/**
+ * Agent Access Manager — assign permission policies to agents.
+ * Replaces the user-centric "Team Members" page.
+ */
+import { useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Users, Plus, Trash2, Shield, Eye, UserCheck } from "lucide-react";
-import { TEAM_ROLE_LABELS, TEAM_ROLE_DESCRIPTIONS } from "@titanclip/shared";
-import type { TeamRoleLevel } from "@titanclip/shared";
+import { Shield, Users, Lock, CheckCircle, XCircle } from "lucide-react";
 import { useCompany } from "../context/CompanyContext";
 import { useBreadcrumbs } from "../context/BreadcrumbContext";
 import { useToast } from "../context/ToastContext";
-import { teamRolesApi } from "../api/teamRoles";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { agentsApi } from "../api/agents";
+import { permissionPoliciesApi } from "../api/permissionPolicies";
+import { queryKeys } from "../lib/queryKeys";
 import { cn } from "../lib/utils";
+import { roleLabels } from "../components/agent-config-primitives";
+import { Link } from "@/lib/router";
+import type { PermissionPolicy } from "@titanclip/shared";
 
-const ROLES: TeamRoleLevel[] = ["team_admin", "member", "viewer"];
-
-const ROLE_ICONS: Record<string, typeof Shield> = {
-  instance_admin: Shield,
-  team_admin: UserCheck,
-  member: Users,
-  viewer: Eye,
-};
-
-const ROLE_COLORS: Record<string, string> = {
-  instance_admin: "text-indigo-400 bg-indigo-500/10",
-  team_admin: "text-amber-400 bg-amber-500/10",
-  member: "text-emerald-400 bg-emerald-500/10",
-  viewer: "text-zinc-400 bg-zinc-500/10",
+const STATUS_DOT: Record<string, string> = {
+  running: "bg-cyan-400 animate-pulse",
+  active: "bg-emerald-400",
+  idle: "bg-emerald-400",
+  paused: "bg-amber-400",
+  error: "bg-red-400",
 };
 
 export function TeamMembers() {
@@ -35,145 +31,126 @@ export function TeamMembers() {
   const queryClient = useQueryClient();
   const cid = selectedCompanyId!;
 
-  const [showAdd, setShowAdd] = useState(false);
-  const [newUserId, setNewUserId] = useState("");
-  const [newRole, setNewRole] = useState<string>("member");
-  const [error, setError] = useState<string | null>(null);
+  useEffect(() => { setBreadcrumbs([{ label: "Agent Access" }]); }, [setBreadcrumbs]);
 
-  useEffect(() => { setBreadcrumbs([{ label: "Team Members" }]); }, [setBreadcrumbs]);
-
-  const { data: members = [], isLoading } = useQuery({
-    queryKey: ["team-roles", cid],
-    queryFn: () => teamRolesApi.list(cid),
+  const { data: agents = [] } = useQuery({
+    queryKey: queryKeys.agents.list(cid),
+    queryFn: () => agentsApi.list(cid),
     enabled: !!cid,
   });
 
-  const assignMut = useMutation({
-    mutationFn: ({ userId, role }: { userId: string; role: string }) => teamRolesApi.assign(cid, userId, role),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["team-roles", cid] });
-      pushToast({ title: "Member added", tone: "success" });
-      setShowAdd(false); setNewUserId(""); setNewRole("member"); setError(null);
-    },
-    onError: (e) => setError((e as Error).message),
+  const { data: policies = [] } = useQuery({
+    queryKey: ["permission-policies"],
+    queryFn: () => permissionPoliciesApi.list(),
   });
 
-  const changeRoleMut = useMutation({
-    mutationFn: ({ userId, role }: { userId: string; role: string }) => teamRolesApi.assign(cid, userId, role),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["team-roles", cid] });
-      pushToast({ title: "Role updated", tone: "success" });
-    },
-  });
+  const activeAgents = agents.filter((a) => a.status !== "terminated");
+  const policyMap = new Map<string, PermissionPolicy>(policies.map((p) => [p.id, p]));
 
-  const removeMut = useMutation({
-    mutationFn: (userId: string) => teamRolesApi.remove(cid, userId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["team-roles", cid] });
-      pushToast({ title: "Member removed", tone: "warn" });
-    },
-  });
+  // For now, policy assignment is shown per agent but updates go through
+  // the agent's metadata. In future, this writes to agents.permission_policy_id.
+  // Currently display-only showing which template policy the agent inherited.
 
   if (!selectedCompanyId) return <div className="p-8 text-sm text-muted-foreground">Select a team first.</div>;
 
   return (
-    <div className="max-w-3xl mx-auto p-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-lg font-semibold flex items-center gap-2">
-            <Users className="h-5 w-5" /> Team Members
-          </h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Manage who has access to {selectedCompany?.name ?? "this team"} and their permission level.
-          </p>
-        </div>
-        <Button size="sm" onClick={() => setShowAdd(true)} className="gap-1.5">
-          <Plus className="h-3.5 w-3.5" /> Add Member
-        </Button>
+    <div className="max-w-4xl mx-auto p-6 space-y-6">
+      <div>
+        <h1 className="text-lg font-semibold flex items-center gap-2">
+          <Shield className="h-5 w-5" /> Agent Access Control
+        </h1>
+        <p className="text-sm text-muted-foreground mt-1">
+          View and manage permission policies assigned to agents in {selectedCompany?.name ?? "this team"}.
+        </p>
       </div>
 
-      {/* Role Legend */}
-      <div className="grid grid-cols-4 gap-2">
-        {(["instance_admin", ...ROLES] as TeamRoleLevel[]).map((role) => {
-          const Icon = ROLE_ICONS[role] ?? Users;
-          return (
-            <div key={role} className="rounded-xl border border-border/50 p-3">
-              <div className="flex items-center gap-1.5 mb-1">
-                <Icon className={cn("h-3.5 w-3.5", ROLE_COLORS[role]?.split(" ")[0])} />
-                <span className="text-xs font-medium">{TEAM_ROLE_LABELS[role]}</span>
+      {/* Policy Summary */}
+      {policies.length > 0 && (
+        <div className="grid grid-cols-3 gap-3">
+          {policies.map((p) => {
+            const agentCount = activeAgents.filter((a) => (a as any).permissionPolicyId === p.id).length;
+            return (
+              <div key={p.id} className="rounded-xl border border-border/50 p-3">
+                <div className="flex items-center gap-2 mb-1">
+                  <Lock className="h-3.5 w-3.5 text-indigo-400" />
+                  <span className="text-xs font-medium">{p.name}</span>
+                </div>
+                <div className="flex flex-wrap gap-1 mt-1">
+                  {p.canCreateIssues && <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400">Tasks</span>}
+                  {p.canAccessVault && <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-purple-500/10 text-purple-400">Vault</span>}
+                  {p.canCreateAgents && <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-blue-500/10 text-blue-400">Agents</span>}
+                </div>
+                <p className="text-[10px] text-muted-foreground mt-1">{agentCount} agent{agentCount !== 1 ? "s" : ""}</p>
               </div>
-              <p className="text-[10px] text-muted-foreground">{TEAM_ROLE_DESCRIPTIONS[role]}</p>
-            </div>
-          );
-        })}
-      </div>
-
-      {/* Add Member Form */}
-      {showAdd && (
-        <div className="rounded-xl border p-4 bg-card space-y-3">
-          <h3 className="text-sm font-medium">Add Team Member</h3>
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1">
-              <Label className="text-xs">User ID / Email</Label>
-              <Input value={newUserId} onChange={(e) => setNewUserId(e.target.value)} placeholder="user@example.com or user ID" />
-            </div>
-            <div className="space-y-1">
-              <Label className="text-xs">Role</Label>
-              <select value={newRole} onChange={(e) => setNewRole(e.target.value)} className="w-full rounded-xl border bg-background px-3 py-2 text-sm">
-                {ROLES.map((r) => <option key={r} value={r}>{TEAM_ROLE_LABELS[r]}</option>)}
-              </select>
-            </div>
-          </div>
-          {error && <p className="text-sm text-destructive">{error}</p>}
-          <div className="flex gap-2">
-            <Button size="sm" onClick={() => assignMut.mutate({ userId: newUserId, role: newRole })}
-              disabled={!newUserId.trim() || assignMut.isPending}>
-              {assignMut.isPending ? "Adding..." : "Add Member"}
-            </Button>
-            <Button size="sm" variant="outline" onClick={() => { setShowAdd(false); setError(null); }}>Cancel</Button>
-          </div>
+            );
+          })}
         </div>
       )}
 
-      {/* Members List */}
-      {isLoading && <p className="text-sm text-muted-foreground">Loading members...</p>}
-      {members.length === 0 && !isLoading && (
-        <div className="text-center py-8 border border-dashed border-border/50 rounded-2xl">
-          <Users className="h-8 w-8 mx-auto mb-2 text-muted-foreground/20" />
-          <p className="text-sm text-muted-foreground">No team members configured</p>
-          <p className="text-xs text-muted-foreground/60 mt-1">In local trusted mode, all users have full access</p>
-        </div>
-      )}
+      {/* Agent List with Policy Assignment */}
+      <div>
+        <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3 flex items-center gap-1.5">
+          <Users className="h-3 w-3" /> Agents ({activeAgents.length})
+        </h2>
 
-      <div className="space-y-2">
-        {members.map((member) => {
-          const Icon = ROLE_ICONS[member.role] ?? Users;
-          return (
-            <div key={member.id} className="flex items-center gap-3 rounded-xl border border-border/50 px-4 py-3 hover:bg-muted/10 transition-colors">
-              <div className={cn("w-9 h-9 rounded-xl flex items-center justify-center", ROLE_COLORS[member.role] ?? "bg-muted text-muted-foreground")}>
-                <Icon className="h-4 w-4" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium">{member.userId}</p>
-                <p className="text-[11px] text-muted-foreground">
-                  Added {new Date(member.createdAt).toLocaleDateString()}
-                  {member.assignedBy && ` · by ${member.assignedBy}`}
-                </p>
-              </div>
-              <select
-                value={member.role}
-                onChange={(e) => changeRoleMut.mutate({ userId: member.userId, role: e.target.value })}
-                className="rounded-lg border bg-background px-2 py-1 text-xs"
-              >
-                {ROLES.map((r) => <option key={r} value={r}>{TEAM_ROLE_LABELS[r]}</option>)}
-              </select>
-              <Button variant="ghost" size="sm" onClick={() => { if (confirm(`Remove ${member.userId}?`)) removeMut.mutate(member.userId); }}
-                className="h-7 w-7 p-0 text-destructive hover:text-destructive">
-                <Trash2 className="h-3 w-3" />
-              </Button>
-            </div>
-          );
-        })}
+        {activeAgents.length === 0 && (
+          <div className="text-center py-8 border border-dashed border-border/50 rounded-2xl">
+            <Users className="h-8 w-8 mx-auto mb-2 text-muted-foreground/20" />
+            <p className="text-sm text-muted-foreground">No agents in this team</p>
+          </div>
+        )}
+
+        <div className="space-y-2">
+          {activeAgents.map((agent) => {
+            const policyId = (agent as any).permissionPolicyId;
+            const policy = policyId ? policyMap.get(policyId) : null;
+            return (
+              <Link key={agent.id} to={`/agents/${agent.id}`}
+                className="flex items-center gap-3 rounded-xl border border-border/50 px-4 py-3 hover:bg-muted/10 transition-colors">
+                <div className={cn("w-2.5 h-2.5 rounded-full shrink-0", STATUS_DOT[agent.status] ?? "bg-zinc-500")} />
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium">{agent.name}</span>
+                    <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-primary/10 text-primary">
+                      {roleLabels[agent.role] ?? agent.role}
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-muted-foreground mt-0.5">
+                    {agent.adapterType} · {agent.status}
+                  </p>
+                </div>
+                <div className="shrink-0">
+                  {policy ? (
+                    <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-indigo-500/10 border border-indigo-500/20">
+                      <Lock className="h-3 w-3 text-indigo-400" />
+                      <span className="text-[11px] text-indigo-400 font-medium">{policy.name}</span>
+                    </div>
+                  ) : (
+                    <span className="text-[10px] text-muted-foreground/50 px-2.5 py-1 rounded-lg bg-muted/30">No policy</span>
+                  )}
+                </div>
+                <div className="flex items-center gap-2 ml-2">
+                  {policy ? (
+                    <>
+                      {policy.canCreateIssues ? <CheckCircle className="h-3 w-3 text-emerald-400" /> : <XCircle className="h-3 w-3 text-red-400/50" />}
+                      {policy.canAccessVault ? <CheckCircle className="h-3 w-3 text-purple-400" /> : <XCircle className="h-3 w-3 text-red-400/50" />}
+                    </>
+                  ) : (
+                    <span className="text-[9px] text-muted-foreground">Full access</span>
+                  )}
+                </div>
+              </Link>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Legend */}
+      <div className="flex items-center gap-4 text-[10px] text-muted-foreground border-t border-border/30 pt-3">
+        <span className="flex items-center gap-1"><CheckCircle className="h-3 w-3 text-emerald-400" /> Tasks</span>
+        <span className="flex items-center gap-1"><CheckCircle className="h-3 w-3 text-purple-400" /> Vault</span>
+        <span className="flex items-center gap-1"><XCircle className="h-3 w-3 text-red-400/50" /> Denied</span>
+        <span>Policies are assigned via agent templates in Admin Settings</span>
       </div>
     </div>
   );

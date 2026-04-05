@@ -123,7 +123,7 @@ export function vaultService(db: Db, secretsSvc: {
     },
 
     // --- TOKEN CHECKOUT ---
-    async checkout(credentialId: string, agentId: string, runId: string | null, envVarName: string): Promise<VaultCheckoutResult> {
+    async checkout(credentialId: string, agentId: string, runId: string | null, envVarName: string, agentRole?: string): Promise<VaultCheckoutResult> {
       const cred = await this.getById(credentialId);
       if (!cred) throw new Error("Credential not found");
       if (cred.status !== "active") throw new Error(`Credential is ${cred.status}`);
@@ -132,9 +132,14 @@ export function vaultService(db: Db, secretsSvc: {
         throw new Error("Credential has expired");
       }
 
-      // Access control
+      // Access control — agent ID scoping
       if (cred.allowedAgentIds && !cred.allowedAgentIds.includes(agentId)) {
         throw new Error("Agent not authorized for this credential");
+      }
+
+      // Access control — role scoping
+      if (cred.allowedRoles && agentRole && !cred.allowedRoles.includes(agentRole)) {
+        throw new Error(`Agent role "${agentRole}" not authorized for this credential`);
       }
 
       // Check concurrent checkout limit

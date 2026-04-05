@@ -1296,8 +1296,11 @@ export function agentRoutes(db: Db) {
       if (!req.body.budgetMonthlyCents && template.defaultBudgetMonthlyCents) {
         req.body.budgetMonthlyCents = template.defaultBudgetMonthlyCents;
       }
-      // Store template ref for post-creation file writing
+      // Store template ref for post-creation file writing + policy
       (req as any)._agentTemplate = template;
+      if (template.permissionPolicyId) {
+        (req as any)._agentPermissionPolicyId = template.permissionPolicyId;
+      }
     }
     // --- End template application ---
 

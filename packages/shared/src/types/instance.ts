@@ -20,6 +20,7 @@ export interface AgentTemplate {
   heartbeatMd: string;
   agentsMd: string;
   defaultBudgetMonthlyCents: number;
+  permissionPolicyId: string | null;
   status: "available" | "draft";
   createdAt: string;
   updatedAt: string;

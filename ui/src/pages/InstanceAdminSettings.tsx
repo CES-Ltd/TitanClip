@@ -10,6 +10,7 @@ import {
 import type { AgentTemplate, CreateAgentTemplate } from "@titanclip/shared";
 import { Lock, LockOpen, ShieldCheck, KeyRound, Plus, Pencil, Trash2, FileText, Globe, EyeOff } from "lucide-react";
 import { adminSettingsApi } from "@/api/adminSettings";
+import { permissionPoliciesApi } from "../api/permissionPolicies";
 import { useAdminSession } from "../context/AdminSessionContext";
 import { AdminPinDialog } from "../components/AdminPinDialog";
 import { useBreadcrumbs } from "../context/BreadcrumbContext";
@@ -53,6 +54,7 @@ export function InstanceAdminSettings() {
   const [tplDescription, setTplDescription] = useState("");
   const [tplRole, setTplRole] = useState("general");
   const [tplBudget, setTplBudget] = useState(0);
+  const [tplPolicyId, setTplPolicyId] = useState<string | null>(null);
   const [tplStatus, setTplStatus] = useState<"available" | "draft">("draft");
   const [tplSoul, setTplSoul] = useState("");
   const [tplHeartbeat, setTplHeartbeat] = useState("");
@@ -69,6 +71,11 @@ export function InstanceAdminSettings() {
   const adminQuery = useQuery({
     queryKey: queryKeys.instance.adminSettings,
     queryFn: () => adminSettingsApi.get(),
+  });
+
+  const { data: allPolicies = [] } = useQuery({
+    queryKey: ["permission-policies"],
+    queryFn: () => permissionPoliciesApi.list(),
   });
 
   const updateMutation = useMutation({
@@ -143,14 +150,14 @@ export function InstanceAdminSettings() {
     setShowTemplateForm(false);
     setEditingTemplate(null);
     setTplName(""); setTplDescription(""); setTplRole("general");
-    setTplBudget(0); setTplStatus("draft");
+    setTplBudget(0); setTplPolicyId(null); setTplStatus("draft");
     setTplSoul(""); setTplHeartbeat(""); setTplAgents(""); setTplError(null);
   }
 
   function openEditTemplate(t: AgentTemplate) {
     setEditingTemplate(t);
     setTplName(t.name); setTplDescription(t.description); setTplRole(t.role);
-    setTplBudget(t.defaultBudgetMonthlyCents);
+    setTplBudget(t.defaultBudgetMonthlyCents); setTplPolicyId(t.permissionPolicyId ?? null);
     setTplStatus(t.status); setTplSoul(t.soulMd); setTplHeartbeat(t.heartbeatMd); setTplAgents(t.agentsMd);
     setShowTemplateForm(true);
   }
@@ -162,7 +169,8 @@ export function InstanceAdminSettings() {
     const payload = {
       name: tplName.trim(), description: tplDescription, role: tplRole,
       soulMd: tplSoul, heartbeatMd: tplHeartbeat, agentsMd: tplAgents,
-      defaultBudgetMonthlyCents: tplBudget, status: tplStatus,
+      defaultBudgetMonthlyCents: tplBudget, permissionPolicyId: tplPolicyId,
+      status: tplStatus,
     };
     if (editingTemplate) {
       updateTemplateMutation.mutate({ id: editingTemplate.id, patch: payload });
@@ -503,6 +511,13 @@ export function InstanceAdminSettings() {
                   <Label className="text-xs">Role</Label>
                   <select value={tplRole} onChange={(e) => setTplRole(e.target.value)} className="w-full rounded-md border bg-background px-2 py-1.5 text-sm">
                     {AGENT_ROLES.map((r) => <option key={r} value={r}>{AGENT_ROLE_LABELS[r]}</option>)}
+                  </select>
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">Permission Policy</Label>
+                  <select value={tplPolicyId ?? ""} onChange={(e) => setTplPolicyId(e.target.value || null)} className="w-full rounded-md border bg-background px-2 py-1.5 text-sm">
+                    <option value="">No policy (full access)</option>
+                    {allPolicies.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
                   </select>
                 </div>
                 <div className="space-y-1">

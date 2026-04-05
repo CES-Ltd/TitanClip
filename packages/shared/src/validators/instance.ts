@@ -28,6 +28,7 @@ export const agentTemplateSchema = z.object({
   heartbeatMd: z.string().max(100_000).default(""),
   agentsMd: z.string().max(100_000).default(""),
   defaultBudgetMonthlyCents: z.number().int().min(0).default(0),
+  permissionPolicyId: z.string().uuid().nullable().default(null),
   status: z.enum(["available", "draft"]).default("draft"),
   createdAt: z.string(),
   updatedAt: z.string(),
