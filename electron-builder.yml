@@ -16,10 +16,12 @@ extraResources:
     to: server-dist
   - from: server/src/onboarding-assets
     to: server-dist/onboarding-assets
-  - from: .build-server/node_modules
+  - from: /tmp/titanclip-server-modules
     to: server-dist/node_modules
   - from: server/package.json
     to: server-dist/package.json
+  - from: server/package.json
+    to: package.json
   - from: skills
     to: skills
 

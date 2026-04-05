@@ -105,17 +105,21 @@ function startServer(): void {
     args = [serverEntry];
     console.log("[TitanClip] Starting server (dev) from:", serverEntry);
   } else {
-    // Production: use compiled JS from extraResources
+    // Production: use Electron's bundled Node via fork-like spawn
     const serverEntry = path.join(resourcesPath, "server-dist", "index.js");
-    command = "node";
+    // Use process.execPath (Electron binary) with ELECTRON_RUN_AS_NODE=1
+    // This makes the Electron binary behave as a plain Node.js runtime
+    command = process.execPath;
     args = [serverEntry];
     console.log("[TitanClip] Starting server (prod) from:", serverEntry);
+    console.log("[TitanClip] Using Node from:", command);
   }
 
   serverProcess = spawn(command, args, {
     stdio: ["ignore", "pipe", "pipe"],
     env: {
       ...process.env,
+      ...(isDev ? {} : { ELECTRON_RUN_AS_NODE: "1" }),
       PORT: String(SERVER_PORT),
       HOST: "127.0.0.1",
       SERVE_UI: "true",
