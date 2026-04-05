@@ -175,6 +175,7 @@ export type {
   AgentSkillEntry,
   AgentSkillSnapshot,
   AgentSkillSyncRequest,
+  AgentTemplate,
   InstanceAdminSettings,
   InstanceAdminSettingsPublic,
   InstanceExperimentalSettings,
@@ -365,6 +366,11 @@ export {
   verifyPinSchema,
   type InstanceAdminSettingsValidated,
   type PatchInstanceAdminSettings,
+  agentTemplateSchema,
+  createAgentTemplateSchema,
+  updateAgentTemplateSchema,
+  type CreateAgentTemplate,
+  type UpdateAgentTemplate,
 } from "./validators/index.js";
 
 export {

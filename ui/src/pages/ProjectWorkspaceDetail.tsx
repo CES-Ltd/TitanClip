@@ -528,7 +528,7 @@ export function ProjectWorkspaceDetail() {
                 </Field>
               </div>
 
-              <Field label="Runtime services JSON" hint="Default runtime services for this workspace. Execution workspaces inherit this config unless they set an override. If you do not know the commands yet, ask your CEO to configure them for you.">
+              <Field label="Runtime services JSON" hint="Default runtime services for this workspace. Execution workspaces inherit this config unless they set an override. If you do not know the commands yet, ask your Business Unit Head to configure them for you.">
                 <textarea
                   className="min-h-36 w-full rounded-lg border border-border bg-background px-3 py-2 font-mono text-sm outline-none"
                   value={form.runtimeConfig}

@@ -7,7 +7,8 @@ import {
   type AgentAdapterType,
   type AgentRole,
 } from "@titanclip/shared";
-import { Lock, LockOpen, ShieldCheck, KeyRound } from "lucide-react";
+import type { AgentTemplate, CreateAgentTemplate } from "@titanclip/shared";
+import { Lock, LockOpen, ShieldCheck, KeyRound, Plus, Pencil, Trash2, FileText } from "lucide-react";
 import { adminSettingsApi } from "@/api/adminSettings";
 import { useAdminSession } from "../context/AdminSessionContext";
 import { AdminPinDialog } from "../components/AdminPinDialog";
@@ -44,6 +45,21 @@ export function InstanceAdminSettings() {
   const [confirmPin, setConfirmPin] = useState("");
   const [pinError, setPinError] = useState<string | null>(null);
   const [pinSuccess, setPinSuccess] = useState(false);
+
+  // Template state
+  const [editingTemplate, setEditingTemplate] = useState<AgentTemplate | null>(null);
+  const [showTemplateForm, setShowTemplateForm] = useState(false);
+  const [tplName, setTplName] = useState("");
+  const [tplDescription, setTplDescription] = useState("");
+  const [tplRole, setTplRole] = useState("general");
+  const [tplAdapter, setTplAdapter] = useState("claude_local");
+  const [tplModel, setTplModel] = useState("");
+  const [tplBudget, setTplBudget] = useState(0);
+  const [tplStatus, setTplStatus] = useState<"available" | "draft">("draft");
+  const [tplSoul, setTplSoul] = useState("");
+  const [tplHeartbeat, setTplHeartbeat] = useState("");
+  const [tplAgents, setTplAgents] = useState("");
+  const [tplError, setTplError] = useState<string | null>(null);
 
   useEffect(() => {
     setBreadcrumbs([
@@ -83,6 +99,69 @@ export function InstanceAdminSettings() {
       setPinError(error instanceof Error ? error.message : "Failed to change PIN.");
     },
   });
+
+  // Template queries & mutations
+  const templatesQuery = useQuery({
+    queryKey: queryKeys.instance.adminTemplates,
+    queryFn: () => adminSettingsApi.listTemplates(token!),
+    enabled: isUnlocked && !!token,
+  });
+
+  const createTemplateMutation = useMutation({
+    mutationFn: (input: CreateAgentTemplate) => adminSettingsApi.createTemplate(input, token!),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.instance.adminTemplates });
+      resetTemplateForm();
+    },
+    onError: (err) => setTplError(err instanceof Error ? err.message : "Failed to create template."),
+  });
+
+  const updateTemplateMutation = useMutation({
+    mutationFn: ({ id, patch }: { id: string; patch: Record<string, unknown> }) =>
+      adminSettingsApi.updateTemplate(id, patch as any, token!),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.instance.adminTemplates });
+      resetTemplateForm();
+    },
+    onError: (err) => setTplError(err instanceof Error ? err.message : "Failed to update template."),
+  });
+
+  const deleteTemplateMutation = useMutation({
+    mutationFn: (id: string) => adminSettingsApi.deleteTemplate(id, token!),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: queryKeys.instance.adminTemplates }),
+  });
+
+  function resetTemplateForm() {
+    setShowTemplateForm(false);
+    setEditingTemplate(null);
+    setTplName(""); setTplDescription(""); setTplRole("general"); setTplAdapter("claude_local");
+    setTplModel(""); setTplBudget(0); setTplStatus("draft");
+    setTplSoul(""); setTplHeartbeat(""); setTplAgents(""); setTplError(null);
+  }
+
+  function openEditTemplate(t: AgentTemplate) {
+    setEditingTemplate(t);
+    setTplName(t.name); setTplDescription(t.description); setTplRole(t.role);
+    setTplAdapter(t.adapterType); setTplModel(t.model); setTplBudget(t.defaultBudgetMonthlyCents);
+    setTplStatus(t.status); setTplSoul(t.soulMd); setTplHeartbeat(t.heartbeatMd); setTplAgents(t.agentsMd);
+    setShowTemplateForm(true);
+  }
+
+  function handleSaveTemplate(e: React.FormEvent) {
+    e.preventDefault();
+    setTplError(null);
+    if (!tplName.trim()) { setTplError("Name is required."); return; }
+    const payload = {
+      name: tplName.trim(), description: tplDescription, role: tplRole, adapterType: tplAdapter,
+      model: tplModel, soulMd: tplSoul, heartbeatMd: tplHeartbeat, agentsMd: tplAgents,
+      defaultBudgetMonthlyCents: tplBudget, status: tplStatus,
+    };
+    if (editingTemplate) {
+      updateTemplateMutation.mutate({ id: editingTemplate.id, patch: payload });
+    } else {
+      createTemplateMutation.mutate(payload as CreateAgentTemplate);
+    }
+  }
 
   if (adminQuery.isLoading) {
     return <div className="text-sm text-muted-foreground">Loading admin settings...</div>;
@@ -332,6 +411,134 @@ export function InstanceAdminSettings() {
             </form>
           </div>
         )}
+      </div>
+
+      {/* Agent Templates Section */}
+      <div className={cn(!isUnlocked && "opacity-50 pointer-events-none select-none")}>
+        <div className="space-y-3 rounded-lg border p-4 mt-4">
+          <div className="flex items-center justify-between">
+            <h3 className="font-medium text-sm flex items-center gap-2">
+              <FileText className="h-4 w-4" />
+              Agent Templates
+            </h3>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => { resetTemplateForm(); setShowTemplateForm(true); }}
+              disabled={!isUnlocked}
+              className="gap-1"
+            >
+              <Plus className="h-3 w-3" /> Create Template
+            </Button>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Pre-configured agent blueprints with instructions. Available templates can be used by non-admin users when creating agents.
+          </p>
+
+          {/* Template list */}
+          {(templatesQuery.data ?? []).length === 0 && !showTemplateForm && (
+            <p className="text-xs text-muted-foreground py-4 text-center">No templates yet. Create one to get started.</p>
+          )}
+          <div className="flex flex-col gap-2">
+            {(templatesQuery.data ?? []).map((t) => (
+              <div key={t.id} className="flex items-center justify-between rounded-md border px-3 py-2.5 bg-muted/20">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium">{t.name}</span>
+                    <span className={cn(
+                      "text-[10px] px-1.5 py-0.5 rounded",
+                      t.status === "available" ? "bg-green-500/10 text-green-500" : "bg-yellow-500/10 text-yellow-500",
+                    )}>
+                      {t.status === "available" ? "Available" : "Draft"}
+                    </span>
+                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-primary/10 text-primary">
+                      {AGENT_ROLE_LABELS[t.role as AgentRole] ?? t.role}
+                    </span>
+                    <span className="text-[10px] text-muted-foreground">{ADAPTER_LABELS[t.adapterType] ?? t.adapterType}</span>
+                  </div>
+                  {t.description && <p className="text-xs text-muted-foreground mt-0.5 truncate">{t.description}</p>}
+                </div>
+                <div className="flex items-center gap-1 ml-2">
+                  <Button variant="ghost" size="sm" onClick={() => openEditTemplate(t)} className="h-7 w-7 p-0">
+                    <Pencil className="h-3 w-3" />
+                  </Button>
+                  <Button variant="ghost" size="sm" onClick={() => { if (confirm(`Delete template "${t.name}"?`)) deleteTemplateMutation.mutate(t.id); }} className="h-7 w-7 p-0 text-destructive hover:text-destructive">
+                    <Trash2 className="h-3 w-3" />
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Template editor form */}
+          {showTemplateForm && (
+            <form onSubmit={handleSaveTemplate} className="space-y-3 rounded-md border p-4 bg-background mt-2">
+              <h4 className="text-sm font-medium">{editingTemplate ? "Edit Template" : "New Template"}</h4>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <Label className="text-xs">Name *</Label>
+                  <Input value={tplName} onChange={(e) => setTplName(e.target.value)} placeholder="e.g. Senior Engineer" />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">Role</Label>
+                  <select value={tplRole} onChange={(e) => setTplRole(e.target.value)} className="w-full rounded-md border bg-background px-2 py-1.5 text-sm">
+                    {AGENT_ROLES.map((r) => <option key={r} value={r}>{AGENT_ROLE_LABELS[r]}</option>)}
+                  </select>
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">Adapter Type</Label>
+                  <select value={tplAdapter} onChange={(e) => setTplAdapter(e.target.value)} className="w-full rounded-md border bg-background px-2 py-1.5 text-sm">
+                    {AGENT_ADAPTER_TYPES.map((t) => <option key={t} value={t}>{ADAPTER_LABELS[t] ?? t}</option>)}
+                  </select>
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">Model</Label>
+                  <Input value={tplModel} onChange={(e) => setTplModel(e.target.value)} placeholder="e.g. claude-sonnet-4-6" />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">Default Budget ($/month)</Label>
+                  <Input type="number" value={tplBudget / 100} onChange={(e) => setTplBudget(Math.round(Number(e.target.value) * 100))} min={0} step={1} />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">Status</Label>
+                  <select value={tplStatus} onChange={(e) => setTplStatus(e.target.value as "available" | "draft")} className="w-full rounded-md border bg-background px-2 py-1.5 text-sm">
+                    <option value="draft">Draft</option>
+                    <option value="available">Available</option>
+                  </select>
+                </div>
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs">Description</Label>
+                <Input value={tplDescription} onChange={(e) => setTplDescription(e.target.value)} placeholder="What this agent does..." />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs">SOUL.md (Persona & Voice)</Label>
+                <textarea value={tplSoul} onChange={(e) => setTplSoul(e.target.value)} rows={8}
+                  className="w-full rounded-md border bg-background px-3 py-2 text-xs font-mono resize-y"
+                  placeholder="# SOUL.md&#10;&#10;You are a..." />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs">HEARTBEAT.md (Periodic Task Logic)</Label>
+                <textarea value={tplHeartbeat} onChange={(e) => setTplHeartbeat(e.target.value)} rows={8}
+                  className="w-full rounded-md border bg-background px-3 py-2 text-xs font-mono resize-y"
+                  placeholder="# HEARTBEAT.md&#10;&#10;Run this checklist..." />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs">AGENTS.md (Instructions & Skills)</Label>
+                <textarea value={tplAgents} onChange={(e) => setTplAgents(e.target.value)} rows={8}
+                  className="w-full rounded-md border bg-background px-3 py-2 text-xs font-mono resize-y"
+                  placeholder="# AGENTS.md&#10;&#10;## Skills&#10;..." />
+              </div>
+              {tplError && <p className="text-sm text-destructive">{tplError}</p>}
+              <div className="flex gap-2">
+                <Button type="submit" size="sm" disabled={createTemplateMutation.isPending || updateTemplateMutation.isPending}>
+                  {(createTemplateMutation.isPending || updateTemplateMutation.isPending) ? "Saving..." : editingTemplate ? "Update Template" : "Create Template"}
+                </Button>
+                <Button type="button" variant="outline" size="sm" onClick={resetTemplateForm}>Cancel</Button>
+              </div>
+            </form>
+          )}
+        </div>
       </div>
 
       {/* PIN Dialog */}

@@ -536,7 +536,7 @@ export function ExecutionWorkspaceDetail() {
                   </div>
                 </div>
 
-                <Field label="Runtime services JSON" hint="Concrete workspace runtime settings for this execution workspace. Leave this inheriting unless you need a one-off override. If you are missing the right commands, ask your CEO to set them up for you.">
+                <Field label="Runtime services JSON" hint="Concrete workspace runtime settings for this execution workspace. Leave this inheriting unless you need a one-off override. If you are missing the right commands, ask your Business Unit Head to set them up for you.">
                   <div className="mb-2 flex items-center gap-2 text-xs text-muted-foreground">
                     <input
                       id="inherit-runtime-config"

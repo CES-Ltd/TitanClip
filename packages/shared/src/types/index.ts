@@ -11,7 +11,7 @@ export type {
   FeedbackTraceBundleFile,
   FeedbackTraceBundle,
 } from "./feedback.js";
-export type { InstanceAdminSettings, InstanceAdminSettingsPublic, InstanceExperimentalSettings, InstanceGeneralSettings, InstanceSettings } from "./instance.js";
+export type { AgentTemplate, InstanceAdminSettings, InstanceAdminSettingsPublic, InstanceExperimentalSettings, InstanceGeneralSettings, InstanceSettings } from "./instance.js";
 export type {
   CompanySkillSourceType,
   CompanySkillTrustLevel,

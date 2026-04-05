@@ -3,7 +3,7 @@ import { formatCents } from "../lib/utils";
 
 export const typeLabel: Record<string, string> = {
   hire_agent: "Hire Agent",
-  approve_ceo_strategy: "CEO Strategy",
+  approve_ceo_strategy: "Business Unit Head Strategy",
   budget_override_required: "Budget Override",
 };
 

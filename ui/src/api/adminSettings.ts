@@ -1,4 +1,4 @@
-import type { InstanceAdminSettingsPublic, PatchInstanceAdminSettings } from "@titanclip/shared";
+import type { AgentTemplate, InstanceAdminSettingsPublic, PatchInstanceAdminSettings, CreateAgentTemplate, UpdateAgentTemplate } from "@titanclip/shared";
 import { api, sha256 } from "./client";
 
 export const adminSettingsApi = {
@@ -30,4 +30,28 @@ export const adminSettingsApi = {
       { headers: { "x-admin-token": adminToken } },
     );
   },
+  // Template CRUD (admin token required)
+  listTemplates: (adminToken: string) =>
+    api.get<AgentTemplate[]>("/instance/settings/admin/templates", {
+      headers: { "x-admin-token": adminToken },
+    }),
+
+  createTemplate: (input: CreateAgentTemplate, adminToken: string) =>
+    api.post<AgentTemplate>("/instance/settings/admin/templates", input, {
+      headers: { "x-admin-token": adminToken },
+    }),
+
+  updateTemplate: (id: string, patch: UpdateAgentTemplate, adminToken: string) =>
+    api.patch<AgentTemplate>(`/instance/settings/admin/templates/${id}`, patch, {
+      headers: { "x-admin-token": adminToken },
+    }),
+
+  deleteTemplate: (id: string, adminToken: string) =>
+    api.delete<{ ok: boolean }>(`/instance/settings/admin/templates/${id}`, {
+      headers: { "x-admin-token": adminToken },
+    }),
+
+  // Available templates (any board user, no token needed)
+  listAvailableTemplates: () =>
+    api.get<AgentTemplate[]>("/instance/settings/templates/available"),
 };

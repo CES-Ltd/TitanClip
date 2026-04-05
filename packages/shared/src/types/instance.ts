@@ -11,6 +11,22 @@ export interface InstanceExperimentalSettings {
   autoRestartDevServerWhenIdle: boolean;
 }
 
+export interface AgentTemplate {
+  id: string;
+  name: string;
+  description: string;
+  role: string;
+  adapterType: string;
+  model: string;
+  soulMd: string;
+  heartbeatMd: string;
+  agentsMd: string;
+  defaultBudgetMonthlyCents: number;
+  status: "available" | "draft";
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface InstanceAdminSettings {
   /** Scrypt-hashed PIN for admin access (null = use default "1234") */
   adminPinHash: string | null;
@@ -22,6 +38,8 @@ export interface InstanceAdminSettings {
   allowedRoles: string[] | null;
   /** Admin PIN session timeout in seconds */
   pinSessionTimeoutSec: number;
+  /** Pre-configured agent templates */
+  agentTemplates: AgentTemplate[];
 }
 
 /** Public version of admin settings (PIN hash stripped) */

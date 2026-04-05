@@ -13,6 +13,11 @@ export {
   verifyPinSchema,
   type InstanceAdminSettingsValidated,
   type PatchInstanceAdminSettings,
+  agentTemplateSchema,
+  createAgentTemplateSchema,
+  updateAgentTemplateSchema,
+  type CreateAgentTemplate,
+  type UpdateAgentTemplate,
 } from "./instance.js";
 
 export {

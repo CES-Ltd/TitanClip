@@ -1,5 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { useAdminGovernance } from "../context/AdminGovernanceContext";
+import { adminSettingsApi } from "../api/adminSettings";
+import type { AgentTemplate } from "@titanclip/shared";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useSearchParams } from "@/lib/router";
 import { useCompany } from "../context/CompanyContext";
@@ -75,6 +77,24 @@ export function NewAgent() {
   const [selectedSkillKeys, setSelectedSkillKeys] = useState<string[]>([]);
   const [roleOpen, setRoleOpen] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null);
+
+  // Fetch available templates
+  const { data: availableTemplates = [] } = useQuery({
+    queryKey: queryKeys.instance.availableTemplates,
+    queryFn: () => adminSettingsApi.listAvailableTemplates(),
+  });
+
+  function selectTemplate(template: AgentTemplate) {
+    setSelectedTemplateId(template.id);
+    setName(template.name);
+    setRole(template.role);
+    setConfigValues((prev) => ({
+      ...prev,
+      adapterType: template.adapterType,
+      ...(template.model ? { model: template.model } : {}),
+    }));
+  }
 
   // Filter roles by admin governance
   const governance = useAdminGovernance();
@@ -123,8 +143,8 @@ export function NewAgent() {
 
   useEffect(() => {
     if (isFirstAgent) {
-      if (!name) setName("CEO");
-      if (!title) setTitle("CEO");
+      if (!name) setName("Business Unit Head");
+      if (!title) setTitle("Business Unit Head");
     }
   }, [isFirstAgent]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -207,6 +227,7 @@ export function NewAgent() {
         },
       },
       budgetMonthlyCents: 0,
+      ...(selectedTemplateId ? { templateId: selectedTemplateId } : {}),
     });
   }
 
@@ -229,6 +250,50 @@ export function NewAgent() {
           Advanced agent configuration
         </p>
       </div>
+
+      {/* Template picker (shown when templates are available) */}
+      {availableTemplates.length > 0 && !isFirstAgent && (
+        <div className="space-y-2">
+          <h2 className="text-sm font-medium">Start from a template</h2>
+          <div className="grid grid-cols-2 gap-2">
+            {availableTemplates.map((t) => (
+              <button
+                key={t.id}
+                onClick={() => selectTemplate(t)}
+                className={cn(
+                  "text-left rounded-lg border p-3 transition-all",
+                  selectedTemplateId === t.id
+                    ? "border-primary bg-primary/5 ring-1 ring-primary"
+                    : "border-border hover:border-primary/50 hover:bg-accent/30",
+                )}
+              >
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-medium">{t.name}</span>
+                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-primary/10 text-primary">
+                    {roleLabels[t.role] ?? t.role}
+                  </span>
+                </div>
+                {t.description && <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{t.description}</p>}
+              </button>
+            ))}
+            <button
+              onClick={() => { setSelectedTemplateId(null); }}
+              className={cn(
+                "text-left rounded-lg border p-3 transition-all",
+                selectedTemplateId === null
+                  ? "border-primary bg-primary/5 ring-1 ring-primary"
+                  : "border-border hover:border-primary/50 hover:bg-accent/30",
+              )}
+            >
+              <span className="text-sm font-medium">Custom Configuration</span>
+              <p className="text-xs text-muted-foreground mt-1">Configure adapter, model, and role manually</p>
+            </button>
+          </div>
+          {selectedTemplateId && (
+            <p className="text-xs text-muted-foreground">Template will configure role, adapter, model, and instructions. You can still edit the agent name.</p>
+          )}
+        </div>
+      )}
 
       <div className="border border-border">
         {/* Name */}
@@ -302,7 +367,7 @@ export function NewAgent() {
         <div className="border-t border-border px-4 py-4">
           <div className="space-y-3">
             <div>
-              <h2 className="text-sm font-medium">Company skills</h2>
+              <h2 className="text-sm font-medium">Team skills</h2>
               <p className="mt-1 text-xs text-muted-foreground">
                 Optional skills from the company library. Built-in TitanClip runtime skills are added automatically.
               </p>
@@ -340,7 +405,7 @@ export function NewAgent() {
         {/* Footer */}
         <div className="border-t border-border px-4 py-3">
           {isFirstAgent && (
-            <p className="text-xs text-muted-foreground mb-2">This will be the CEO</p>
+            <p className="text-xs text-muted-foreground mb-2">This will be the Business Unit Head</p>
           )}
           {formError && (
             <p className="text-xs text-destructive mb-2">{formError}</p>

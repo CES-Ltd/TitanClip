@@ -1,3 +1,4 @@
+import crypto from "node:crypto";
 import type { Db } from "@titanclip/db";
 import { companies, instanceSettings } from "@titanclip/db";
 import {
@@ -57,6 +58,7 @@ function normalizeAdminSettings(raw: unknown): InstanceAdminSettings {
       allowedModelsPerAdapter: parsed.data.allowedModelsPerAdapter ?? null,
       allowedRoles: parsed.data.allowedRoles ?? null,
       pinSessionTimeoutSec: parsed.data.pinSessionTimeoutSec ?? 1800,
+      agentTemplates: parsed.data.agentTemplates ?? [],
     };
   }
   return {
@@ -65,6 +67,7 @@ function normalizeAdminSettings(raw: unknown): InstanceAdminSettings {
     allowedModelsPerAdapter: null,
     allowedRoles: null,
     pinSessionTimeoutSec: 1800,
+    agentTemplates: [],
   };
 }
 
@@ -192,6 +195,60 @@ export function instanceSettingsService(db: Db) {
           admin: { ...currentAdmin, adminPinHash: hash } as any,
           updatedAt: now,
         })
+        .where(eq(instanceSettings.id, current.id));
+    },
+
+    getAgentTemplates: async () => {
+      const admin = normalizeAdminSettings((await getOrCreateRow() as any).admin);
+      return admin.agentTemplates;
+    },
+
+    getAvailableTemplates: async () => {
+      const admin = normalizeAdminSettings((await getOrCreateRow() as any).admin);
+      return admin.agentTemplates.filter((t) => t.status === "available");
+    },
+
+    getAgentTemplate: async (id: string) => {
+      const admin = normalizeAdminSettings((await getOrCreateRow() as any).admin);
+      return admin.agentTemplates.find((t) => t.id === id) ?? null;
+    },
+
+    createAgentTemplate: async (input: Omit<import("@titanclip/shared").AgentTemplate, "id" | "createdAt" | "updatedAt">) => {
+      const current = await getOrCreateRow();
+      const currentAdmin = normalizeAdminSettings((current as any).admin);
+      const now = new Date().toISOString();
+      const template = { ...input, id: crypto.randomUUID(), createdAt: now, updatedAt: now };
+      const nextAdmin = { ...currentAdmin, agentTemplates: [...currentAdmin.agentTemplates, template] };
+      await db
+        .update(instanceSettings)
+        .set({ admin: nextAdmin as any, updatedAt: new Date() })
+        .where(eq(instanceSettings.id, current.id));
+      return template;
+    },
+
+    updateAgentTemplate: async (id: string, patch: Record<string, unknown>) => {
+      const current = await getOrCreateRow();
+      const currentAdmin = normalizeAdminSettings((current as any).admin);
+      const idx = currentAdmin.agentTemplates.findIndex((t) => t.id === id);
+      if (idx === -1) return null;
+      const updated = { ...currentAdmin.agentTemplates[idx], ...patch, updatedAt: new Date().toISOString() };
+      const nextTemplates = [...currentAdmin.agentTemplates];
+      nextTemplates[idx] = updated;
+      const nextAdmin = { ...currentAdmin, agentTemplates: nextTemplates };
+      await db
+        .update(instanceSettings)
+        .set({ admin: nextAdmin as any, updatedAt: new Date() })
+        .where(eq(instanceSettings.id, current.id));
+      return updated;
+    },
+
+    deleteAgentTemplate: async (id: string) => {
+      const current = await getOrCreateRow();
+      const currentAdmin = normalizeAdminSettings((current as any).admin);
+      const nextAdmin = { ...currentAdmin, agentTemplates: currentAdmin.agentTemplates.filter((t) => t.id !== id) };
+      await db
+        .update(instanceSettings)
+        .set({ admin: nextAdmin as any, updatedAt: new Date() })
         .where(eq(instanceSettings.id, current.id));
     },
 

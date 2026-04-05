@@ -1285,11 +1285,33 @@ export function agentRoutes(db: Db) {
     }
     // --- End admin governance enforcement ---
 
+    // --- Template application ---
+    const { templateId } = req.body;
+    if (templateId) {
+      const template = await instanceSettings.getAgentTemplate(templateId);
+      if (!template) throw badRequest("Agent template not found.");
+      if (template.status !== "available") throw badRequest("Agent template is not available (draft).");
+      // Apply template defaults where hire input doesn't override
+      if (!req.body.role) req.body.role = template.role;
+      if (!req.body.adapterType) req.body.adapterType = template.adapterType;
+      if (!req.body.adapterConfig) req.body.adapterConfig = {};
+      if (template.model && !(req.body.adapterConfig as any).model) {
+        (req.body.adapterConfig as any).model = template.model;
+      }
+      if (!req.body.budgetMonthlyCents && template.defaultBudgetMonthlyCents) {
+        req.body.budgetMonthlyCents = template.defaultBudgetMonthlyCents;
+      }
+      // Store template ref for post-creation file writing
+      (req as any)._agentTemplate = template;
+    }
+    // --- End template application ---
+
     const sourceIssueIds = parseSourceIssueIds(req.body);
     const {
       desiredSkills: requestedDesiredSkills,
       sourceIssueId: _sourceIssueId,
       sourceIssueIds: _sourceIssueIds,
+      templateId: _templateId,
       ...hireInput
     } = req.body;
     const requestedAdapterConfig = applyCreateDefaultsByAdapterType(
@@ -1336,6 +1358,31 @@ export function agentRoutes(db: Db) {
       lastHeartbeatAt: null,
     });
     const agent = await materializeDefaultInstructionsBundleForNewAgent(createdAgent);
+
+    // Write template instruction files if template was used
+    const appliedTemplate = (req as any)._agentTemplate;
+    if (appliedTemplate) {
+      const agentConfig = agent.adapterConfig as Record<string, unknown> | undefined;
+      const rootPath = agentConfig?.instructionsRootPath as string | undefined;
+      if (rootPath) {
+        const fs = await import("node:fs/promises");
+        const path = await import("node:path");
+        try {
+          await fs.mkdir(rootPath, { recursive: true });
+          if (appliedTemplate.soulMd) {
+            await fs.writeFile(path.join(rootPath, "SOUL.md"), appliedTemplate.soulMd, "utf-8");
+          }
+          if (appliedTemplate.heartbeatMd) {
+            await fs.writeFile(path.join(rootPath, "HEARTBEAT.md"), appliedTemplate.heartbeatMd, "utf-8");
+          }
+          if (appliedTemplate.agentsMd) {
+            await fs.writeFile(path.join(rootPath, "AGENTS.md"), appliedTemplate.agentsMd, "utf-8");
+          }
+        } catch (err) {
+          console.error("[TitanClip] Failed to write template instruction files:", err);
+        }
+      }
+    }
 
     let approval: Awaited<ReturnType<typeof approvalsSvc.getById>> | null = null;
     const actor = getActorInfo(req);

@@ -99,6 +99,8 @@ export const queryKeys = {
     experimentalSettings: ["instance", "experimental-settings"] as const,
     adminSettings: ["instance", "admin-settings"] as const,
     adminAuthMode: ["instance", "admin-auth-mode"] as const,
+    adminTemplates: ["instance", "admin-templates"] as const,
+    availableTemplates: ["instance", "available-templates"] as const,
   },
   health: ["health"] as const,
   secrets: {

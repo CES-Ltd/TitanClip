@@ -4,6 +4,8 @@ import {
   patchInstanceAdminSettingsSchema,
   verifyPinSchema,
   changePinSchema,
+  createAgentTemplateSchema,
+  updateAgentTemplateSchema,
 } from "@titanclip/shared";
 import { forbidden, badRequest } from "../errors.js";
 import { validate } from "../middleware/validate.js";
@@ -146,6 +148,50 @@ export function adminSettingsRoutes(db: Db, config: AdminRoutesConfig) {
       res.json({ ok: true });
     },
   );
+
+  // --- Agent Template CRUD ---
+
+  // GET all templates (admin only)
+  router.get("/instance/settings/admin/templates", async (req, res) => {
+    assertAdminSession(req);
+    res.json(await settingsSvc.getAgentTemplates());
+  });
+
+  // POST create template (admin only)
+  router.post(
+    "/instance/settings/admin/templates",
+    validate(createAgentTemplateSchema),
+    async (req, res) => {
+      assertAdminSession(req);
+      const template = await settingsSvc.createAgentTemplate(req.body);
+      res.status(201).json(template);
+    },
+  );
+
+  // PATCH update template (admin only)
+  router.patch(
+    "/instance/settings/admin/templates/:id",
+    validate(updateAgentTemplateSchema),
+    async (req, res) => {
+      assertAdminSession(req);
+      const updated = await settingsSvc.updateAgentTemplate(req.params.id as string, req.body);
+      if (!updated) throw badRequest("Template not found");
+      res.json(updated);
+    },
+  );
+
+  // DELETE template (admin only)
+  router.delete("/instance/settings/admin/templates/:id", async (req, res) => {
+    assertAdminSession(req);
+    await settingsSvc.deleteAgentTemplate(req.params.id as string);
+    res.json({ ok: true });
+  });
+
+  // GET available templates (any board user — for agent creation picker)
+  router.get("/instance/settings/templates/available", async (req, res) => {
+    assertBoardUser(req);
+    res.json(await settingsSvc.getAvailableTemplates());
+  });
 
   return router;
 }
