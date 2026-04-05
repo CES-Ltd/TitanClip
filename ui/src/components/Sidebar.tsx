@@ -122,6 +122,7 @@ export function Sidebar() {
           <SidebarNavItem to="/members" label="Access" icon={Shield} />
           <SidebarNavItem to="/vault" label="Vault" icon={KeyRound} />
           <SidebarNavItem to="/compliance" label="Compliance" icon={Shield} />
+          <SidebarNavItem to="/chargeback" label="Chargeback" icon={DollarSign} />
           <SidebarNavItem to="/company/settings" label="Settings" icon={Settings} />
         </SidebarSection>
 

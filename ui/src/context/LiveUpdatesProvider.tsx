@@ -291,6 +291,20 @@ function buildActivityToast(
   const actorId = readString(payload.actorId);
   const actorType = readString(payload.actorType);
 
+  // Budget incident notifications
+  if (entityType === "budget_incident" && action) {
+    if (action === "budget.incident_created" || action === "budget.threshold_breached") {
+      const scopeName = readString(details?.scopeName) ?? "Resource";
+      return {
+        title: "Budget alert",
+        body: `${scopeName} has exceeded its budget threshold`,
+        tone: "error" as const,
+        action: { label: "View Costs", href: "/costs" },
+        dedupeKey: `budget:${entityId}`,
+      };
+    }
+  }
+
   // Approval notifications → navigate to Command Center
   if (entityType === "approval" && entityId && action) {
     if (action === "approval.created" || action === "approval.requested") {
