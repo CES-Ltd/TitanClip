@@ -74,6 +74,7 @@ function normalizeAdminSettings(raw: unknown): InstanceAdminSettings {
       otelEndpoint: parsed.data.otelEndpoint ?? "http://localhost:4318",
       otelServiceName: parsed.data.otelServiceName ?? "titanclip",
       otelSampleRate: parsed.data.otelSampleRate ?? 1.0,
+      enableSessionAgents: parsed.data.enableSessionAgents ?? false,
       allowAutonomousMode: parsed.data.allowAutonomousMode ?? false,
     };
   }
@@ -96,6 +97,7 @@ function normalizeAdminSettings(raw: unknown): InstanceAdminSettings {
     otelEndpoint: "http://localhost:4318",
     otelServiceName: "titanclip",
     otelSampleRate: 1.0,
+    enableSessionAgents: false,
     allowAutonomousMode: false,
   };
 }

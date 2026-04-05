@@ -62,6 +62,8 @@ export const instanceAdminSettingsSchema = z.object({
   otelEndpoint: z.string().default("http://localhost:4318"),
   otelServiceName: z.string().default("titanclip"),
   otelSampleRate: z.number().min(0).max(1).default(1.0),
+  /** Agent Governance: allow Agent OS to create temporary session agents on-the-fly */
+  enableSessionAgents: z.boolean().default(false),
   /** Danger Zone: allow agents to use "autonomous" autonomy level (unrestricted tool access) */
   allowAutonomousMode: z.boolean().default(false),
 }).strict();

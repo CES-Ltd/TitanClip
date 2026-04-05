@@ -421,6 +421,13 @@
       "when": 1776096000000,
       "tag": "0059_agent_os_tables",
       "breakpoints": true
+    },
+    {
+      "idx": 63,
+      "version": "7",
+      "when": 1776268800000,
+      "tag": "0063_session_agents",
+      "breakpoints": true
     }
   ]
 }

@@ -55,6 +55,8 @@ export interface InstanceAdminSettings {
   otelEndpoint: string;
   otelServiceName: string;
   otelSampleRate: number;
+  /** Agent Governance: allow Agent OS to create temporary session agents */
+  enableSessionAgents: boolean;
   /** Danger Zone: allow agents to use "autonomous" autonomy level */
   allowAutonomousMode: boolean;
 }

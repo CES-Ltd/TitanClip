@@ -5,6 +5,7 @@ import {
   text,
   integer,
   timestamp,
+  boolean,
   jsonb,
   index,
 } from "drizzle-orm/pg-core";
@@ -32,6 +33,10 @@ export const agents = pgTable(
     permissions: jsonb("permissions").$type<Record<string, unknown>>().notNull().default({}),
     lastHeartbeatAt: timestamp("last_heartbeat_at", { withTimezone: true }),
     metadata: jsonb("metadata").$type<Record<string, unknown>>(),
+    /** Session agent fields */
+    isSessionAgent: boolean("is_session_agent").notNull().default(false),
+    sessionExpiresAt: timestamp("session_expires_at", { withTimezone: true }),
+    parentAgentId: uuid("parent_agent_id").references((): AnyPgColumn => agents.id),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },

@@ -113,8 +113,13 @@ export function SidebarAgents() {
                     : "text-foreground/80 hover:bg-accent/50 hover:text-foreground"
                 )}
               >
-                <AgentIcon icon={agent.icon} className="shrink-0 h-3.5 w-3.5 text-muted-foreground" />
+                <AgentIcon icon={agent.icon} className={`shrink-0 h-3.5 w-3.5 ${(agent as any).isSessionAgent ? "text-indigo-400" : "text-muted-foreground"}`} />
                 <span className="flex-1 truncate">{agent.name}</span>
+                {(agent as any).isSessionAgent && (
+                  <span className="text-[9px] font-bold uppercase tracking-wider px-1 py-px rounded bg-indigo-500/15 text-indigo-400 border border-indigo-500/20 border-dashed shrink-0">
+                    Session
+                  </span>
+                )}
                 {(agent.pauseReason === "budget" || runCount > 0) && (
                   <span className="ml-auto flex items-center gap-1.5 shrink-0">
                     {agent.pauseReason === "budget" ? (

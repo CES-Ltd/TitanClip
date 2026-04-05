@@ -336,7 +336,107 @@ async function processHireActions(
       );
 
       if (!template) {
-        results.push({ templateName, reason, status: "template_not_found", error: `No template found matching "${templateName}"` });
+        // Fallback: create a session agent if enabled
+        const adminSettings = await settingsSvc.getAdmin();
+        if ((adminSettings as any).enableSessionAgents) {
+          // Session agent: inherits parent's config, temporary, requires approval
+          const { agents: agentsTable } = await import("@titanclip/db");
+          const [parentAgent] = await db.select().from(agentsTable).where(
+            (await import("drizzle-orm")).eq(agentsTable.id, ctx.requestingAgentId)
+          );
+
+          const sessionName = `${templateName} (session)`;
+          const sessionExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24h
+
+          const [sessionAgent] = await db.insert(agentsTable).values({
+            companyId: ctx.companyId,
+            name: sessionName,
+            role: "general",
+            status: "pending_approval", // Session agents ALWAYS require approval
+            adapterType: parentAgent?.adapterType ?? "openai_compatible",
+            adapterConfig: parentAgent?.adapterConfig ?? {},
+            runtimeConfig: parentAgent?.runtimeConfig ?? {},
+            permissions: parentAgent?.permissions ?? {},
+            budgetMonthlyCents: budgetMonthlyCents ?? parentAgent?.budgetMonthlyCents ?? 0,
+            isSessionAgent: true,
+            sessionExpiresAt: sessionExpiry,
+            parentAgentId: ctx.requestingAgentId,
+            reportsTo: ctx.requestingAgentId,
+          }).returning();
+
+          // Log session agent creation
+          await logActivity(db, {
+            companyId: ctx.companyId,
+            actorType: "agent",
+            actorId: ctx.requestingAgentId,
+            agentId: ctx.requestingAgentId,
+            action: "agent.session_created",
+            entityType: "agent",
+            entityId: sessionAgent.id,
+            details: {
+              reason,
+              requestedRole: templateName,
+              sessionAgentName: sessionName,
+              parentAgentId: ctx.requestingAgentId,
+              expiresAt: sessionExpiry.toISOString(),
+              conversationId: ctx.conversationId,
+              issueId: ctx.issueId,
+              inheritedPermissions: true,
+            },
+          });
+
+          // Create approval record (session agents always need approval)
+          try {
+            const { approvals: approvalsTable } = await import("@titanclip/db");
+            await db.insert(approvalsTable).values({
+              companyId: ctx.companyId,
+              type: "hire_agent",
+              status: "pending",
+              payload: {
+                agentId: sessionAgent.id,
+                name: sessionName,
+                role: "general",
+                reason,
+                requestedByAgentId: ctx.requestingAgentId,
+                sessionAgent: true,
+                expiresAt: sessionExpiry.toISOString(),
+              },
+            });
+          } catch { /* Best effort */ }
+
+          // Issue comment
+          if (ctx.issueId) {
+            try {
+              const { issueComments } = await import("@titanclip/db");
+              await db.insert(issueComments).values({
+                companyId: ctx.companyId,
+                issueId: ctx.issueId,
+                body: `**Session Agent Proposed**: "${sessionName}" (no matching template for "${templateName}").\n\n**Reason**: ${reason}\n**Expires**: ${sessionExpiry.toISOString()}\n**Inherits from**: Parent agent\n\n_Pending user approval._`,
+                authorAgentId: ctx.requestingAgentId,
+              });
+            } catch { /* Best effort */ }
+          }
+
+          results.push({
+            templateName,
+            reason,
+            agentId: sessionAgent.id,
+            agentName: sessionName,
+            status: "pending_approval",
+          });
+          ctx.sendSSE({
+            type: "session_agent_proposed",
+            templateName,
+            agentName: sessionName,
+            agentId: sessionAgent.id,
+            reason,
+            expiresAt: sessionExpiry.toISOString(),
+          });
+          continue;
+        }
+
+        // Session agents not enabled — return error
+        results.push({ templateName, reason, status: "template_not_found", error: `No template found matching "${templateName}" (session agents not enabled)` });
         ctx.sendSSE({ type: "hire_failed", templateName, error: `Template "${templateName}" not found` });
         continue;
       }
