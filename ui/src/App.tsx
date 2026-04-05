@@ -46,6 +46,7 @@ import { PluginSettings } from "./pages/PluginSettings";
 import { PluginPage } from "./pages/PluginPage";
 import { RunTranscriptUxLab } from "./pages/RunTranscriptUxLab";
 import { OrgChart } from "./pages/OrgChart";
+import { InstanceWorkspaceGovernance } from "./pages/InstanceWorkspaceGovernance";
 import { NewAgent } from "./pages/NewAgent";
 import { AuthPage } from "./pages/Auth";
 import { BoardClaimPage } from "./pages/BoardClaim";
@@ -338,6 +339,7 @@ export function App() {
             <Route path="plugins/:pluginId" element={<PluginSettings />} />
             <Route path="admin" element={<InstanceAdminSettings />} />
             <Route path="policies" element={<InstancePolicies />} />
+            <Route path="workspaces" element={<InstanceWorkspaceGovernance />} />
           </Route>
           <Route path="companies" element={<UnprefixedBoardRedirect />} />
           <Route path="issues" element={<UnprefixedBoardRedirect />} />

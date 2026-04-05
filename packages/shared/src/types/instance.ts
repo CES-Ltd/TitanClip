@@ -44,6 +44,11 @@ export interface InstanceAdminSettings {
   retentionActivityDays: number;
   retentionCostEventsDays: number;
   retentionTokenAuditDays: number;
+  /** Workspace governance */
+  allowedGitRepos: string[] | null;
+  protectedBranches: string[];
+  workspaceAutoCleanupHours: number;
+  maxWorkspaceDiskMb: number;
 }
 
 /** Public version of admin settings (PIN hash stripped) */

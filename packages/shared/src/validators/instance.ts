@@ -53,6 +53,10 @@ export const instanceAdminSettingsSchema = z.object({
   retentionActivityDays: z.number().int().min(0).max(3650).default(365),
   retentionCostEventsDays: z.number().int().min(0).max(3650).default(365),
   retentionTokenAuditDays: z.number().int().min(0).max(3650).default(180),
+  allowedGitRepos: z.array(z.string()).nullable().default(null),
+  protectedBranches: z.array(z.string()).default(["main", "master"]),
+  workspaceAutoCleanupHours: z.number().int().min(0).max(720).default(24),
+  maxWorkspaceDiskMb: z.number().int().min(0).max(102400).default(5120),
 }).strict();
 
 export const patchInstanceAdminSettingsSchema = instanceAdminSettingsSchema

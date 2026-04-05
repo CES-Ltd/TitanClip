@@ -63,6 +63,10 @@ function normalizeAdminSettings(raw: unknown): InstanceAdminSettings {
       retentionActivityDays: parsed.data.retentionActivityDays ?? 365,
       retentionCostEventsDays: parsed.data.retentionCostEventsDays ?? 365,
       retentionTokenAuditDays: parsed.data.retentionTokenAuditDays ?? 180,
+      allowedGitRepos: parsed.data.allowedGitRepos ?? null,
+      protectedBranches: parsed.data.protectedBranches ?? ["main", "master"],
+      workspaceAutoCleanupHours: parsed.data.workspaceAutoCleanupHours ?? 24,
+      maxWorkspaceDiskMb: parsed.data.maxWorkspaceDiskMb ?? 5120,
     };
   }
   return {
@@ -76,6 +80,10 @@ function normalizeAdminSettings(raw: unknown): InstanceAdminSettings {
     retentionActivityDays: 365,
     retentionCostEventsDays: 365,
     retentionTokenAuditDays: 180,
+    allowedGitRepos: null,
+    protectedBranches: ["main", "master"],
+    workspaceAutoCleanupHours: 24,
+    maxWorkspaceDiskMb: 5120,
   };
 }
 
