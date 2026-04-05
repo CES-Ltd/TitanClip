@@ -41,6 +41,9 @@ export function Workplace() {
     enabled: !!selectedCompanyId,
   });
 
+  // Track game ready state for syncing
+  const [gameReady, setGameReady] = useState(false);
+
   // Initialize Phaser game (dynamic import to avoid polluting main bundle)
   useEffect(() => {
     if (!gameContainerRef.current || gameRef.current) return;
@@ -48,17 +51,22 @@ export function Workplace() {
     import("../workplace/WorkplaceGame").then(({ createWorkplaceGame }) => {
       if (destroyed || !gameContainerRef.current) return;
       gameRef.current = createWorkplaceGame(gameContainerRef.current);
+      // Wait for scenes to be ready, then signal
+      setTimeout(() => {
+        if (!destroyed) setGameReady(true);
+      }, 500);
     });
     return () => {
       destroyed = true;
       gameRef.current?.destroy(true);
       gameRef.current = null;
+      setGameReady(false);
     };
   }, []);
 
-  // Sync agent data to Phaser
+  // Sync agent data to Phaser — also triggers when game becomes ready
   useEffect(() => {
-    if (!gameRef.current || !agents) return;
+    if (!gameRef.current || !agents || !gameReady) return;
     gameRef.current.events.emit("agents-updated", agents);
 
     // Update HUD stats
@@ -73,13 +81,13 @@ export function Workplace() {
       errorCount,
       taskCount: issues?.length ?? 0,
     });
-  }, [agents, issues]);
+  }, [agents, issues, gameReady]);
 
   // Sync live runs to Phaser
   useEffect(() => {
-    if (!gameRef.current || !liveRuns) return;
+    if (!gameRef.current || !liveRuns || !gameReady) return;
     gameRef.current.events.emit("runs-updated", liveRuns);
-  }, [liveRuns]);
+  }, [liveRuns, gameReady]);
 
   // Listen for interaction events from Phaser
   useEffect(() => {

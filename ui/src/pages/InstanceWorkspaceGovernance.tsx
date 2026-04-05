@@ -78,7 +78,9 @@ export function InstanceWorkspaceGovernance() {
           <p className="text-sm text-muted-foreground">Control workspace access, branch protection, and resource limits for agent execution.</p>
         </div>
         {isUnlocked ? (
-          <Button variant="outline" size="sm" onClick={lock} className="gap-2">Unlock</Button>
+          <Button variant="outline" size="sm" onClick={lock} className="gap-2">
+            <Shield className="h-4 w-4" /> Lock
+          </Button>
         ) : (
           <Button size="sm" onClick={() => setPinDialogOpen(true)} className="gap-2">
             <Shield className="h-4 w-4" /> Unlock
