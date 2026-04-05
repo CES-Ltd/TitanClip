@@ -70,3 +70,6 @@ export { workflowTemplates } from "./workflow_templates.js";
 export { agentSkillProficiency } from "./agent_skill_proficiency.js";
 export { onboardingWorkflows, onboardingInstances, changeRequests } from "./onboarding_workflows.js";
 export { llmProviderConfigs } from "./llm_provider_configs.js";
+export { agentMemories } from "./agent_memories.js";
+export { conversations, conversationMessages } from "./conversations.js";
+export { skillProposals, skillUsageEvents } from "./skill_proposals.js";
