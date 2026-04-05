@@ -24,7 +24,7 @@ export function InstanceExperimentalSettings() {
   });
 
   const toggleMutation = useMutation({
-    mutationFn: async (patch: { enableIsolatedWorkspaces?: boolean; autoRestartDevServerWhenIdle?: boolean }) =>
+    mutationFn: async (patch: { enableIsolatedWorkspaces?: boolean; autoRestartDevServerWhenIdle?: boolean; enableAgentOs?: boolean }) =>
       instanceSettingsApi.updateExperimental(patch),
     onSuccess: async () => {
       setActionError(null);
@@ -54,6 +54,7 @@ export function InstanceExperimentalSettings() {
 
   const enableIsolatedWorkspaces = experimentalQuery.data?.enableIsolatedWorkspaces === true;
   const autoRestartDevServerWhenIdle = experimentalQuery.data?.autoRestartDevServerWhenIdle === true;
+  const enableAgentOs = experimentalQuery.data?.enableAgentOs === true;
 
   return (
     <div className="max-w-4xl space-y-6">
@@ -129,6 +130,55 @@ export function InstanceExperimentalSettings() {
               className={cn(
                 "inline-block h-3.5 w-3.5 rounded-full bg-white transition-transform",
                 autoRestartDevServerWhenIdle ? "translate-x-4.5" : "translate-x-0.5",
+              )}
+            />
+          </button>
+        </div>
+      </section>
+
+      {/* Beta Features Section */}
+      <div className="space-y-2 pt-4 border-t border-border">
+        <div className="flex items-center gap-2">
+          <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Beta Features</h2>
+          <span className="text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full bg-indigo-500/10 text-indigo-500 border border-indigo-500/20">
+            Beta
+          </span>
+        </div>
+        <p className="text-xs text-muted-foreground">
+          These features are in active development. They may be unstable or incomplete.
+        </p>
+      </div>
+
+      <section className="rounded-xl border border-indigo-500/20 bg-card p-5">
+        <div className="flex items-start justify-between gap-4">
+          <div className="space-y-1.5">
+            <div className="flex items-center gap-2">
+              <h2 className="text-sm font-semibold">Agent OS</h2>
+              <span className="text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full bg-indigo-500/10 text-indigo-500 border border-indigo-500/20">
+                Beta
+              </span>
+            </div>
+            <p className="max-w-2xl text-sm text-muted-foreground">
+              Enable the Agent OS personal AI assistant with multi-LLM chat, persistent memory,
+              conversation history search, self-improving skills, and scheduled autonomous tasks.
+              Adds an "Agent OS" section to the sidebar.
+            </p>
+          </div>
+          <button
+            type="button"
+            data-slot="toggle"
+            aria-label="Toggle Agent OS beta feature"
+            disabled={toggleMutation.isPending}
+            className={cn(
+              "relative inline-flex h-5 w-9 items-center rounded-full transition-colors disabled:cursor-not-allowed disabled:opacity-60",
+              enableAgentOs ? "bg-indigo-600" : "bg-muted",
+            )}
+            onClick={() => toggleMutation.mutate({ enableAgentOs: !enableAgentOs })}
+          >
+            <span
+              className={cn(
+                "inline-block h-3.5 w-3.5 rounded-full bg-white transition-transform",
+                enableAgentOs ? "translate-x-4.5" : "translate-x-0.5",
               )}
             />
           </button>

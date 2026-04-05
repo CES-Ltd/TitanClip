@@ -9,6 +9,7 @@ export interface InstanceGeneralSettings {
 export interface InstanceExperimentalSettings {
   enableIsolatedWorkspaces: boolean;
   autoRestartDevServerWhenIdle: boolean;
+  enableAgentOs: boolean;
 }
 
 export interface AgentTemplate {
