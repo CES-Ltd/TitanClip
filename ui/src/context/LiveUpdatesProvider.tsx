@@ -291,6 +291,50 @@ function buildActivityToast(
   const actorId = readString(payload.actorId);
   const actorType = readString(payload.actorType);
 
+  // Approval notifications → navigate to Command Center
+  if (entityType === "approval" && entityId && action) {
+    if (action === "approval.created" || action === "approval.requested") {
+      const name = readString(details?.name) ?? "Agent";
+      return {
+        title: "New approval request",
+        body: `${name} needs your approval`,
+        tone: "warn",
+        action: { label: "Command Center", href: "/chat" },
+        dedupeKey: `approval:${entityId}`,
+      };
+    }
+    if (action === "approval.approved") {
+      return {
+        title: "Approval granted",
+        body: readString(details?.name) ?? "Request approved",
+        tone: "success",
+        action: { label: "Command Center", href: "/chat" },
+        dedupeKey: `approval:approved:${entityId}`,
+      };
+    }
+    if (action === "approval.rejected") {
+      return {
+        title: "Approval rejected",
+        body: readString(details?.name) ?? "Request rejected",
+        tone: "error",
+        action: { label: "Command Center", href: "/chat" },
+        dedupeKey: `approval:rejected:${entityId}`,
+      };
+    }
+  }
+
+  // Agent hire notifications
+  if (entityType === "agent" && action === "agent.created" && entityId) {
+    const name = readString(details?.name) ?? "New agent";
+    return {
+      title: "Agent created",
+      body: name,
+      tone: "success",
+      action: { label: "View agent", href: `/agents/${entityId}` },
+      dedupeKey: `agent:created:${entityId}`,
+    };
+  }
+
   if (entityType !== "issue" || !entityId || !action || !ISSUE_TOAST_ACTIONS.has(action)) {
     return null;
   }

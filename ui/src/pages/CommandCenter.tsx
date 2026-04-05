@@ -21,6 +21,7 @@ import { ApprovalCard as ApprovalActionCard } from "../components/ApprovalAction
 import { Link } from "@/lib/router";
 import { Button } from "@/components/ui/button";
 import { cn } from "../lib/utils";
+import { useToast } from "../context/ToastContext";
 import { roleLabels } from "../components/agent-config-primitives";
 import type { ActivityEvent } from "@titanclip/shared";
 
@@ -80,6 +81,7 @@ export function CommandCenter() {
   const { selectedCompanyId, selectedCompany } = useCompany();
   const { setBreadcrumbs } = useBreadcrumbs();
   const { openNewIssue } = useDialog();
+  const { pushToast } = useToast();
   const queryClient = useQueryClient();
 
   useEffect(() => { setBreadcrumbs([{ label: "Command Center" }]); }, [setBreadcrumbs]);
@@ -96,8 +98,32 @@ export function CommandCenter() {
   const { data: costSummary } = useQuery({ queryKey: queryKeys.costs(cid), queryFn: () => costsApi.summary(cid), enabled: !!cid, refetchInterval: 30_000 });
   const { data: budgetOverview } = useQuery({ queryKey: ["budgets", cid], queryFn: () => budgetsApi.overview(cid), enabled: !!cid, refetchInterval: 30_000 });
 
-  const approveMut = useMutation({ mutationFn: (id: string) => approvalsApi.approve(id), onSuccess: () => queryClient.invalidateQueries({ queryKey: queryKeys.approvals.list(cid) }) });
-  const rejectMut = useMutation({ mutationFn: (id: string) => approvalsApi.reject(id), onSuccess: () => queryClient.invalidateQueries({ queryKey: queryKeys.approvals.list(cid) }) });
+  const approveMut = useMutation({
+    mutationFn: (id: string) => approvalsApi.approve(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.approvals.list(cid, "pending") });
+      queryClient.invalidateQueries({ queryKey: queryKeys.agents.list(cid) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.dashboard(cid) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.activity(cid) });
+      pushToast({ title: "Approved", tone: "success", ttlMs: 3000 });
+    },
+    onError: (err) => {
+      pushToast({ title: "Failed to approve", body: (err as Error).message, tone: "error" });
+    },
+  });
+  const rejectMut = useMutation({
+    mutationFn: (id: string) => approvalsApi.reject(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.approvals.list(cid, "pending") });
+      queryClient.invalidateQueries({ queryKey: queryKeys.agents.list(cid) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.dashboard(cid) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.activity(cid) });
+      pushToast({ title: "Rejected", tone: "warn", ttlMs: 3000 });
+    },
+    onError: (err) => {
+      pushToast({ title: "Failed to reject", body: (err as Error).message, tone: "error" });
+    },
+  });
   const wakeMut = useMutation({ mutationFn: (agentId: string) => agentsApi.wakeup(agentId, { source: "on_demand", triggerDetail: "manual" }, cid) });
 
   if (!selectedCompanyId) return <div className="p-8 text-muted-foreground text-sm">Select a team first.</div>;

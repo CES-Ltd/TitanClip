@@ -247,8 +247,9 @@ export function NewAgent() {
       </div>
 
       {/* Template selection (required when templates exist) */}
-      {availableTemplates.length > 0 && !isFirstAgent && (
-        <div className="space-y-2">
+      {/* Agent Template Selection */}
+      {availableTemplates.length > 0 && (
+        <div className="space-y-2 rounded-lg border border-primary/20 bg-primary/5 p-4">
           <h2 className="text-sm font-medium">Agent Template</h2>
           <p className="text-xs text-muted-foreground">Select a pre-configured template for this agent.</p>
           <select
@@ -256,10 +257,11 @@ export function NewAgent() {
             onChange={(e) => {
               const tpl = availableTemplates.find((t) => t.id === e.target.value);
               if (tpl) selectTemplate(tpl);
+              else setSelectedTemplateId(null);
             }}
-            className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+            className="w-full rounded-xl border bg-background px-3 py-2.5 text-sm"
           >
-            <option value="" disabled>Choose a template...</option>
+            <option value="">-- No template (manual config) --</option>
             {availableTemplates.map((t) => (
               <option key={t.id} value={t.id}>
                 {t.name} ({roleLabels[t.role] ?? t.role})
@@ -267,16 +269,10 @@ export function NewAgent() {
             ))}
           </select>
           {selectedTemplateId && (
-            <p className="text-xs text-muted-foreground">
-              Template sets the role and instructions. Select adapter and model below.
+            <p className="text-xs text-primary/70">
+              Template sets the role and instructions. Configure adapter and model below.
             </p>
           )}
-        </div>
-      )}
-      {availableTemplates.length === 0 && !isFirstAgent && (
-        <div className="rounded-lg border border-border bg-muted/20 p-6 text-center">
-          <p className="text-sm text-muted-foreground">No agent templates configured.</p>
-          <p className="text-xs text-muted-foreground mt-1">Contact your admin to create agent templates.</p>
         </div>
       )}
 
