@@ -1,29 +1,30 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Bot, MessageCircle } from "lucide-react";
+import { Bot, User, Send, Sparkles } from "lucide-react";
 import { useCompany } from "../context/CompanyContext";
 import { useBreadcrumbs } from "../context/BreadcrumbContext";
 import { agentsApi } from "../api/agents";
 import { approvalsApi } from "../api/approvals";
-import { issuesApi } from "../api/issues";
+import { chatApi } from "../api/chat";
+import type { ChatMessage } from "../api/chat";
 import { queryKeys } from "../lib/queryKeys";
-import { ChatMessageComponent } from "../components/chat/ChatMessage";
-import { ChatInput } from "../components/chat/ChatInput";
-import type { ChatMessage, ChatAction } from "../api/chat";
+import { ApprovalCard } from "../components/chat/ApprovalCard";
+import { cn } from "../lib/utils";
 
 export function TeamChat() {
   const { selectedCompanyId, selectedCompany } = useCompany();
   const { setBreadcrumbs } = useBreadcrumbs();
   const queryClient = useQueryClient();
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [input, setInput] = useState("");
   const [isThinking, setIsThinking] = useState(false);
 
   useEffect(() => {
     setBreadcrumbs([{ label: "Chat" }]);
   }, [setBreadcrumbs]);
 
-  // Fetch agents to find the CEO/Business Unit Head
   const { data: agents } = useQuery({
     queryKey: queryKeys.agents.list(selectedCompanyId!),
     queryFn: () => agentsApi.list(selectedCompanyId!),
@@ -32,7 +33,6 @@ export function TeamChat() {
 
   const leadAgent = agents?.find((a) => a.role === "ceo") ?? agents?.[0];
 
-  // Fetch pending approvals
   const { data: approvals } = useQuery({
     queryKey: queryKeys.approvals.list(selectedCompanyId!, "pending"),
     queryFn: () => approvalsApi.list(selectedCompanyId!, "pending"),
@@ -40,63 +40,39 @@ export function TeamChat() {
     refetchInterval: 15_000,
   });
 
-  // Add welcome message and approvals on load
+  // Welcome message
   useEffect(() => {
     if (!leadAgent) return;
-    const welcomeMessages: ChatMessage[] = [
-      {
-        id: "welcome",
-        role: "system",
-        content: `Welcome to your team chat. You're connected with ${leadAgent.name} (${leadAgent.title ?? "Business Unit Head"}).`,
-        createdAt: new Date().toISOString(),
-      },
-    ];
-    setMessages(welcomeMessages);
+    setMessages([{
+      id: "welcome",
+      role: "system",
+      content: `Connected to **${leadAgent.name}** (${leadAgent.title ?? "Business Unit Head"}). Ask anything — I'm powered by the configured AI model.`,
+      createdAt: new Date().toISOString(),
+    }]);
   }, [leadAgent?.id]);
 
-  // Scroll to bottom on new messages
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+  }, [messages, isThinking]);
 
-  // Build approval actions for chat
-  const approvalActions: ChatAction[] = (approvals ?? []).map((a) => ({
-    type: "approval_pending" as const,
-    approval: a,
-  }));
-
-  // Approve mutation
+  // Approve/reject mutations
   const approveMutation = useMutation({
     mutationFn: (id: string) => approvalsApi.approve(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.approvals.list(selectedCompanyId!) });
-      setMessages((prev) => [...prev, {
-        id: `sys-${Date.now()}`,
-        role: "system",
-        content: "Approval granted.",
-        createdAt: new Date().toISOString(),
-      }]);
     },
   });
-
   const rejectMutation = useMutation({
     mutationFn: (id: string) => approvalsApi.reject(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.approvals.list(selectedCompanyId!) });
-      setMessages((prev) => [...prev, {
-        id: `sys-${Date.now()}`,
-        role: "system",
-        content: "Approval rejected.",
-        createdAt: new Date().toISOString(),
-      }]);
     },
   });
 
-  // Send message handler
-  const handleSend = useCallback(async (text: string) => {
-    if (!selectedCompanyId || !leadAgent) return;
+  const handleSend = useCallback(async () => {
+    const text = input.trim();
+    if (!text || !selectedCompanyId || !leadAgent || isThinking) return;
 
-    // Add user message
     const userMsg: ChatMessage = {
       id: `user-${Date.now()}`,
       role: "user",
@@ -104,147 +80,143 @@ export function TeamChat() {
       createdAt: new Date().toISOString(),
     };
     setMessages((prev) => [...prev, userMsg]);
+    setInput("");
     setIsThinking(true);
 
     try {
-      // Parse intent and create appropriate action
-      const lowerText = text.toLowerCase();
-      const actions: ChatAction[] = [];
+      // Build conversation history (exclude system messages)
+      const history = messages
+        .filter((m) => m.role !== "system")
+        .map((m) => ({ role: m.role, content: m.content }));
 
-      if (lowerText.includes("create") && (lowerText.includes("task") || lowerText.includes("issue"))) {
-        // Create an issue
-        const title = text.replace(/^(create|make|add)\s+(a\s+)?(task|issue)\s*(to|for|about|:)?\s*/i, "").trim() || text;
-        const issue = await issuesApi.create(selectedCompanyId, {
-          title,
-          description: `Created from team chat: "${text}"`,
-          priority: "medium",
-          assigneeAgentId: leadAgent.id,
-        });
-        actions.push({ type: "issue_created", issue: issue as any });
+      const response = await chatApi.send(selectedCompanyId, leadAgent.id, text, history);
 
-        setMessages((prev) => [...prev, {
-          id: `assistant-${Date.now()}`,
-          role: "assistant",
-          content: `I've created a new task and assigned it to ${leadAgent.name}.`,
-          actions,
-          createdAt: new Date().toISOString(),
-        }]);
-      } else if (lowerText.includes("wake") || lowerText.includes("invoke") || lowerText.includes("start")) {
-        // Wake the agent
-        try {
-          await agentsApi.wakeup(leadAgent.id, { source: "on_demand", triggerDetail: "manual" }, selectedCompanyId);
-          actions.push({ type: "agent_invoked", runId: "triggered" });
-          setMessages((prev) => [...prev, {
-            id: `assistant-${Date.now()}`,
-            role: "assistant",
-            content: `I've triggered ${leadAgent.name} to start working. Check the dashboard for run status.`,
-            actions,
-            createdAt: new Date().toISOString(),
-          }]);
-        } catch {
-          setMessages((prev) => [...prev, {
-            id: `assistant-${Date.now()}`,
-            role: "assistant",
-            content: `Could not wake ${leadAgent.name}. The agent may already be running or paused.`,
-            createdAt: new Date().toISOString(),
-          }]);
-        }
-      } else if (lowerText.includes("status") || lowerText.includes("how")) {
-        // Status check
-        const agentList = agents ?? [];
-        const running = agentList.filter((a) => a.status === "running").length;
-        const idle = agentList.filter((a) => a.status === "idle" || a.status === "active").length;
-        const paused = agentList.filter((a) => a.status === "paused").length;
-        const pendingApprovals = (approvals ?? []).length;
-
-        setMessages((prev) => [...prev, {
-          id: `assistant-${Date.now()}`,
-          role: "assistant",
-          content: `Team status:\n• ${agentList.length} agents (${running} working, ${idle} idle, ${paused} paused)\n• ${pendingApprovals} pending approvals\n\nNeed me to do anything?`,
-          createdAt: new Date().toISOString(),
-        }]);
-      } else {
-        // General response
-        setMessages((prev) => [...prev, {
-          id: `assistant-${Date.now()}`,
-          role: "assistant",
-          content: `I understand you said: "${text}"\n\nI can help you:\n• **Create a task**: "Create a task to build login page"\n• **Check status**: "How is the team doing?"\n• **Wake an agent**: "Wake up the team lead"\n\nWhat would you like to do?`,
-          createdAt: new Date().toISOString(),
-        }]);
-      }
-    } catch (err) {
+      setMessages((prev) => [...prev, {
+        id: response.message.id,
+        role: "assistant",
+        content: response.message.content,
+        createdAt: response.message.createdAt,
+      }]);
+    } catch (err: any) {
       setMessages((prev) => [...prev, {
         id: `error-${Date.now()}`,
         role: "assistant",
-        content: `Sorry, something went wrong: ${err instanceof Error ? err.message : "Unknown error"}`,
+        content: `⚠️ ${err?.message ?? "Failed to get response. Check that the agent has an API key configured."}`,
         createdAt: new Date().toISOString(),
       }]);
     } finally {
       setIsThinking(false);
+      inputRef.current?.focus();
     }
-  }, [selectedCompanyId, leadAgent, agents, approvals]);
+  }, [input, selectedCompanyId, leadAgent, isThinking, messages]);
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      handleSend();
+    }
+  };
 
   if (!selectedCompanyId) {
-    return <div className="p-4 text-muted-foreground text-sm">Select a team first.</div>;
+    return <div className="p-8 text-muted-foreground text-sm">Select a team first.</div>;
   }
 
   return (
-    <div className="flex flex-col h-[calc(100vh-3rem)]">
-      {/* Header */}
-      <div className="flex items-center gap-3 px-4 py-3 border-b border-border bg-background shrink-0">
-        <div className="w-9 h-9 rounded-full bg-indigo-500/20 flex items-center justify-center">
-          <Bot className="h-5 w-5 text-indigo-400" />
+    <div className="flex flex-col h-[calc(100vh-3rem)] bg-background">
+      {/* Fixed Header */}
+      <div className="sticky top-0 z-10 flex items-center gap-3 px-5 py-3.5 border-b border-border bg-background/95 backdrop-blur-sm shrink-0">
+        <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-500/20">
+          <Bot className="h-5 w-5 text-white" />
         </div>
-        <div>
-          <h2 className="text-sm font-semibold">
+        <div className="flex-1">
+          <h2 className="text-sm font-semibold tracking-tight">
             {leadAgent?.name ?? "Team Chat"}
           </h2>
           <p className="text-xs text-muted-foreground">
-            {leadAgent?.title ?? "Business Unit Head"} • {selectedCompany?.name ?? "Team"}
+            {leadAgent?.title ?? "Business Unit Head"} · {selectedCompany?.name ?? "Team"}
           </p>
         </div>
-        <div className="ml-auto flex items-center gap-1">
-          <div className={`w-2 h-2 rounded-full ${leadAgent?.status === "running" ? "bg-green-400 animate-pulse" : leadAgent?.status === "paused" ? "bg-yellow-400" : "bg-green-400"}`} />
-          <span className="text-[10px] text-muted-foreground">{leadAgent?.status ?? "offline"}</span>
+        <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-muted/50">
+          <div className={cn(
+            "w-2 h-2 rounded-full",
+            leadAgent?.status === "running" ? "bg-emerald-400 animate-pulse" :
+            leadAgent?.status === "paused" ? "bg-amber-400" :
+            "bg-emerald-400",
+          )} />
+          <span className="text-[11px] text-muted-foreground capitalize">{leadAgent?.status ?? "offline"}</span>
         </div>
       </div>
 
-      {/* Messages */}
-      <div className="flex-1 overflow-y-auto py-4 space-y-1">
+      {/* Messages Area */}
+      <div className="flex-1 overflow-y-auto px-4 py-6 space-y-4">
         {messages.map((msg) => (
-          <ChatMessageComponent
-            key={msg.id}
-            role={msg.role}
-            content={msg.content}
-            actions={msg.actions}
-            onApprove={(id) => approveMutation.mutate(id)}
-            onReject={(id) => rejectMutation.mutate(id)}
-            approvalPending={approveMutation.isPending || rejectMutation.isPending}
-          />
+          <div key={msg.id} className={cn(
+            "flex gap-3 max-w-3xl",
+            msg.role === "user" ? "ml-auto flex-row-reverse" : "mr-auto",
+          )}>
+            {/* Avatar */}
+            {msg.role !== "system" && (
+              <div className={cn(
+                "shrink-0 w-8 h-8 rounded-xl flex items-center justify-center mt-0.5",
+                msg.role === "user"
+                  ? "bg-primary/15 text-primary"
+                  : "bg-gradient-to-br from-indigo-500/20 to-purple-500/20 text-indigo-400",
+              )}>
+                {msg.role === "user" ? <User className="h-4 w-4" /> : <Sparkles className="h-4 w-4" />}
+              </div>
+            )}
+
+            {/* Bubble */}
+            <div className={cn(
+              "px-4 py-3 text-sm leading-relaxed max-w-[85%]",
+              msg.role === "user"
+                ? "bg-primary text-primary-foreground rounded-2xl rounded-tr-md shadow-sm"
+                : msg.role === "system"
+                  ? "bg-muted/40 text-muted-foreground rounded-2xl text-xs italic w-full max-w-none text-center py-2"
+                  : "bg-card border border-border/50 text-foreground rounded-2xl rounded-tl-md shadow-sm",
+            )}>
+              <p className="whitespace-pre-wrap">{msg.content}</p>
+            </div>
+          </div>
         ))}
 
-        {/* Pending approvals */}
-        {approvalActions.length > 0 && (
-          <ChatMessageComponent
-            role="system"
-            content={`You have ${approvalActions.length} pending approval${approvalActions.length > 1 ? "s" : ""}:`}
-            actions={approvalActions}
-            onApprove={(id) => approveMutation.mutate(id)}
-            onReject={(id) => rejectMutation.mutate(id)}
-            approvalPending={approveMutation.isPending || rejectMutation.isPending}
-          />
+        {/* Pending Approvals */}
+        {(approvals ?? []).length > 0 && (
+          <div className="mr-auto max-w-3xl space-y-3">
+            <div className="flex gap-3">
+              <div className="shrink-0 w-8 h-8 rounded-xl bg-amber-500/15 text-amber-400 flex items-center justify-center mt-0.5">
+                <Sparkles className="h-4 w-4" />
+              </div>
+              <div className="space-y-2">
+                <p className="text-xs text-muted-foreground">
+                  {(approvals ?? []).length} pending approval{(approvals ?? []).length > 1 ? "s" : ""}:
+                </p>
+                {(approvals ?? []).map((a: any) => (
+                  <ApprovalCard
+                    key={a.id}
+                    approval={a}
+                    onApprove={(id) => approveMutation.mutate(id)}
+                    onReject={(id) => rejectMutation.mutate(id)}
+                    isPending={approveMutation.isPending || rejectMutation.isPending}
+                  />
+                ))}
+              </div>
+            </div>
+          </div>
         )}
 
-        {/* Thinking indicator */}
+        {/* Thinking Indicator */}
         {isThinking && (
-          <div className="flex gap-3 px-4 py-3">
-            <div className="w-8 h-8 rounded-full bg-indigo-500/20 flex items-center justify-center">
-              <Bot className="h-4 w-4 text-indigo-400" />
+          <div className="flex gap-3 mr-auto max-w-3xl">
+            <div className="shrink-0 w-8 h-8 rounded-xl bg-gradient-to-br from-indigo-500/20 to-purple-500/20 text-indigo-400 flex items-center justify-center mt-0.5">
+              <Sparkles className="h-4 w-4 animate-pulse" />
             </div>
-            <div className="flex items-center gap-1 px-4 py-2.5 bg-muted/30 rounded-lg">
-              <span className="w-2 h-2 rounded-full bg-muted-foreground animate-bounce" style={{ animationDelay: "0ms" }} />
-              <span className="w-2 h-2 rounded-full bg-muted-foreground animate-bounce" style={{ animationDelay: "150ms" }} />
-              <span className="w-2 h-2 rounded-full bg-muted-foreground animate-bounce" style={{ animationDelay: "300ms" }} />
+            <div className="bg-card border border-border/50 rounded-2xl rounded-tl-md px-5 py-3 shadow-sm">
+              <div className="flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-indigo-400/60 animate-bounce" style={{ animationDelay: "0ms" }} />
+                <span className="w-2 h-2 rounded-full bg-indigo-400/60 animate-bounce" style={{ animationDelay: "150ms" }} />
+                <span className="w-2 h-2 rounded-full bg-indigo-400/60 animate-bounce" style={{ animationDelay: "300ms" }} />
+              </div>
             </div>
           </div>
         )}
@@ -252,12 +224,37 @@ export function TeamChat() {
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Input */}
-      <ChatInput
-        onSend={handleSend}
-        disabled={isThinking || !leadAgent}
-        placeholder={leadAgent ? `Message ${leadAgent.name}...` : "No agents available"}
-      />
+      {/* Input Bar — Material style */}
+      <div className="shrink-0 px-4 pb-4 pt-2">
+        <div className="flex items-end gap-3 max-w-3xl mx-auto rounded-2xl border border-border bg-card shadow-lg p-2">
+          <textarea
+            ref={inputRef}
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder={leadAgent ? `Message ${leadAgent.name}...` : "No agents available"}
+            disabled={isThinking || !leadAgent}
+            rows={1}
+            className="flex-1 resize-none bg-transparent px-3 py-2.5 text-sm placeholder:text-muted-foreground/40 focus:outline-none"
+            style={{ minHeight: "40px", maxHeight: "120px" }}
+          />
+          <button
+            onClick={handleSend}
+            disabled={isThinking || !leadAgent || !input.trim()}
+            className={cn(
+              "shrink-0 w-10 h-10 rounded-xl flex items-center justify-center transition-all",
+              input.trim() && !isThinking
+                ? "bg-primary text-primary-foreground shadow-md hover:shadow-lg hover:scale-105"
+                : "bg-muted text-muted-foreground cursor-not-allowed",
+            )}
+          >
+            <Send className="h-4 w-4" />
+          </button>
+        </div>
+        <p className="text-center text-[10px] text-muted-foreground/50 mt-2">
+          Powered by {leadAgent?.adapterType === "claude_local" ? "Claude" : leadAgent?.adapterType ?? "AI"} · Conversations are not persisted
+        </p>
+      </div>
     </div>
   );
 }
