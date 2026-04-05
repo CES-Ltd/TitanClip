@@ -235,6 +235,16 @@ export function agentChatRoutes(db: Db) {
         } catch { /* Memory table may not exist */ }
       }
 
+      // 14. Process autonomous hire requests from tool results
+      const hireResults = await processHireActions(db, {
+        companyId,
+        requestingAgentId: agentId,
+        conversationId: conversation.id,
+        issueId,
+        responseContent,
+        sendSSE,
+      });
+
       sendSSE({
         type: "done",
         conversationId: conversation.id,
@@ -243,6 +253,7 @@ export function agentChatRoutes(db: Db) {
         model: result.model,
         provider: result.provider,
         costUsd: result.costUsd,
+        hires: hireResults,
       });
     } catch (err: any) {
       sendSSE({ type: "error", error: err.message });
@@ -266,4 +277,180 @@ export function agentChatRoutes(db: Db) {
   });
 
   return router;
+}
+
+// ── Autonomous Hire Processing ─────────────────────────────────────────
+
+interface HireResult {
+  templateName: string;
+  reason: string;
+  agentId?: string;
+  agentName?: string;
+  status: "created" | "pending_approval" | "template_not_found" | "rate_limited" | "error";
+  error?: string;
+}
+
+async function processHireActions(
+  db: any,
+  ctx: {
+    companyId: string;
+    requestingAgentId: string;
+    conversationId: string;
+    issueId?: string;
+    responseContent: string;
+    sendSSE: (data: Record<string, unknown>) => void;
+  }
+): Promise<HireResult[]> {
+  const results: HireResult[] = [];
+
+  // Scan response for hire_agent action JSON blocks
+  const hirePattern = /"action"\s*:\s*"hire_agent"/g;
+  if (!hirePattern.test(ctx.responseContent)) return results;
+
+  // Extract all JSON blocks that contain hire actions
+  const jsonBlocks = ctx.responseContent.match(/\{[^{}]*"action"\s*:\s*"hire_agent"[^{}]*\}/g);
+  if (!jsonBlocks?.length) return results;
+
+  // Rate limit: max 3 hires per request
+  const MAX_HIRES_PER_REQUEST = 3;
+
+  for (const block of jsonBlocks.slice(0, MAX_HIRES_PER_REQUEST)) {
+    try {
+      const parsed = JSON.parse(block);
+      if (parsed.action !== "hire_agent") continue;
+
+      const templateName = parsed.templateName as string;
+      const reason = parsed.reason as string;
+      const budgetMonthlyCents = parsed.budgetMonthlyCents as number | undefined;
+
+      if (!templateName || !reason) continue;
+
+      ctx.sendSSE({ type: "hire_started", templateName, reason });
+
+      // Resolve template
+      const { instanceSettingsService } = await import("../services/instance-settings.js");
+      const settingsSvc = instanceSettingsService(db);
+      const templates = await settingsSvc.getAvailableTemplates();
+      const template = templates.find(
+        (t: any) => t.name.toLowerCase() === templateName.toLowerCase()
+      );
+
+      if (!template) {
+        results.push({ templateName, reason, status: "template_not_found", error: `No template found matching "${templateName}"` });
+        ctx.sendSSE({ type: "hire_failed", templateName, error: `Template "${templateName}" not found` });
+        continue;
+      }
+
+      // Check company approval policy
+      const { companies: companiesTable } = await import("@titanclip/db");
+      const [company] = await db.select().from(companiesTable).where(
+        (await import("drizzle-orm")).eq(companiesTable.id, ctx.companyId)
+      );
+
+      const requiresApproval = company?.requireBoardApprovalForNewAgents ?? true;
+      const agentStatus = requiresApproval ? "pending_approval" : "idle";
+
+      // Create the agent
+      const { agents: agentsTable } = await import("@titanclip/db");
+      const agentName = `${template.name} (auto-hired)`;
+      const [newAgent] = await db.insert(agentsTable).values({
+        companyId: ctx.companyId,
+        name: agentName,
+        role: template.role || "general",
+        status: agentStatus,
+        adapterType: "openai_compatible",
+        adapterConfig: {},
+        runtimeConfig: {},
+        budgetMonthlyCents: budgetMonthlyCents ?? template.defaultBudgetMonthlyCents ?? 0,
+      }).returning();
+
+      // Log the autonomous hire in activity audit
+      await logActivity(db, {
+        companyId: ctx.companyId,
+        actorType: "agent",
+        actorId: ctx.requestingAgentId,
+        agentId: ctx.requestingAgentId,
+        action: "agent.autonomous_hire",
+        entityType: "agent",
+        entityId: newAgent.id,
+        details: {
+          reason,
+          templateId: template.id,
+          templateName: template.name,
+          hiredAgentName: agentName,
+          hiredAgentId: newAgent.id,
+          conversationId: ctx.conversationId,
+          issueId: ctx.issueId,
+          requiresApproval,
+          budgetMonthlyCents: newAgent.budgetMonthlyCents,
+        },
+      });
+
+      // If approval required, create approval record
+      if (requiresApproval) {
+        try {
+          const { approvals: approvalsTable } = await import("@titanclip/db");
+          await db.insert(approvalsTable).values({
+            companyId: ctx.companyId,
+            type: "hire_agent",
+            status: "pending",
+            payload: {
+              agentId: newAgent.id,
+              name: agentName,
+              role: template.role,
+              templateId: template.id,
+              templateName: template.name,
+              reason,
+              requestedByAgentId: ctx.requestingAgentId,
+              autonomous: true,
+            },
+          }).returning();
+
+          await logActivity(db, {
+            companyId: ctx.companyId,
+            actorType: "system",
+            actorId: "agent-os",
+            action: "approval.created",
+            entityType: "agent",
+            entityId: newAgent.id,
+            details: { type: "hire_agent", reason, autonomous: true },
+          });
+        } catch { /* Approval creation is best-effort */ }
+      }
+
+      // Add issue comment documenting the hire
+      if (ctx.issueId) {
+        try {
+          const { issueComments } = await import("@titanclip/db");
+          await db.insert(issueComments).values({
+            companyId: ctx.companyId,
+            issueId: ctx.issueId,
+            body: `**Autonomous Hire**: Agent hired "${agentName}" from template "${template.name}".\n\n**Reason**: ${reason}\n\n${requiresApproval ? "_Pending board approval._" : "_Agent is now active._"}`,
+            authorAgentId: ctx.requestingAgentId,
+          });
+        } catch { /* Best effort */ }
+      }
+
+      results.push({
+        templateName: template.name,
+        reason,
+        agentId: newAgent.id,
+        agentName,
+        status: requiresApproval ? "pending_approval" : "created",
+      });
+
+      ctx.sendSSE({
+        type: "hire_completed",
+        templateName: template.name,
+        agentName,
+        agentId: newAgent.id,
+        status: requiresApproval ? "pending_approval" : "created",
+        reason,
+      });
+    } catch (err: any) {
+      results.push({ templateName: "unknown", reason: "parse error", status: "error", error: err.message });
+    }
+  }
+
+  return results;
 }

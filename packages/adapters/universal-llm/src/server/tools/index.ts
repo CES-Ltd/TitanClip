@@ -200,6 +200,7 @@ const currentTimeTool: RegisteredTool = {
 // ── Tool Registry ──────────────────────────────────────────────────────
 
 import { delegateToAgentTool } from "./delegate.js";
+import { hireAgentTool } from "./hire-agent.js";
 
 const BUILT_IN_TOOLS: RegisteredTool[] = [
   webSearchTool,
@@ -209,6 +210,7 @@ const BUILT_IN_TOOLS: RegisteredTool[] = [
   writeFileTool,
   currentTimeTool,
   delegateToAgentTool,
+  hireAgentTool,
 ];
 
 const toolMap = new Map<string, RegisteredTool>(
