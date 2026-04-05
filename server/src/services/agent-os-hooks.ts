@@ -184,14 +184,44 @@ async function analyzeForSkills(ctx: PostExecutionContext): Promise<void> {
   if (ctx.exitCode !== 0) return;
   if (!ctx.resultContent || ctx.resultContent.length < 200) return;
 
-  // For now, just record that this run completed successfully.
-  // Phase D's full implementation will analyze patterns across runs
-  // and generate skill proposals using the configured LLM.
-  //
-  // The skill proposer service is ready to accept proposals:
-  //   skillProposerService(ctx.db).propose(ctx.companyId, ctx.agentId, { ... })
-  //
-  // This will be connected when the LLM-based analysis is implemented.
+  const proposerSvc = skillProposerService(ctx.db);
+
+  // Heuristic: if the output contains multi-step instructions or code patterns,
+  // propose it as a potential skill
+  const content = ctx.resultContent;
+
+  // Detect structured output patterns that suggest a reusable skill
+  const hasSteps = (content.match(/^\d+\.\s/gm) || []).length >= 3;
+  const hasCodeBlocks = (content.match(/```/g) || []).length >= 2;
+  const hasHeadings = (content.match(/^#+\s/gm) || []).length >= 2;
+
+  if (!hasSteps && !hasCodeBlocks && !hasHeadings) return;
+
+  // Check if we already proposed a skill from this agent recently (avoid spam)
+  const recentProposals = await proposerSvc.list(ctx.companyId, {
+    agentId: ctx.agentId,
+    status: "proposed",
+  });
+  if (recentProposals.length >= 5) return; // Max 5 pending proposals per agent
+
+  // Generate a skill proposal
+  const titleMatch = content.match(/^#\s+(.+)/m) || content.match(/^(.{10,80})/m);
+  const title = titleMatch?.[1]?.slice(0, 100) ?? "Auto-detected skill";
+
+  const pattern = hasSteps
+    ? "multi-step procedure"
+    : hasCodeBlocks
+    ? "code generation pattern"
+    : "structured output pattern";
+
+  await proposerSvc.propose(ctx.companyId, ctx.agentId, {
+    title: `Proposed: ${title}`,
+    description: `Auto-detected ${pattern} from a successful run. Review the markdown to approve as a reusable skill.`,
+    proposedMarkdown: content.slice(0, 5000),
+    sourceRunIds: [ctx.runId],
+    sourcePattern: pattern,
+    confidence: hasSteps && hasCodeBlocks ? "0.80" : "0.50",
+  });
 }
 
 // ── Helpers ──────────────────────────────────────────────────────────────

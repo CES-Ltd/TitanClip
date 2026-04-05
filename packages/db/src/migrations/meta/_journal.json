@@ -414,6 +414,13 @@
       "when": 1776009600000,
       "tag": "0058_lifecycle_automation",
       "breakpoints": true
+    },
+    {
+      "idx": 59,
+      "version": "7",
+      "when": 1776096000000,
+      "tag": "0059_agent_os_tables",
+      "breakpoints": true
     }
   ]
 }
