@@ -69,3 +69,4 @@ export { issueDependencies } from "./issue_dependencies.js";
 export { workflowTemplates } from "./workflow_templates.js";
 export { agentSkillProficiency } from "./agent_skill_proficiency.js";
 export { onboardingWorkflows, onboardingInstances, changeRequests } from "./onboarding_workflows.js";
+export { llmProviderConfigs } from "./llm_provider_configs.js";

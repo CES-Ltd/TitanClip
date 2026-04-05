@@ -81,6 +81,14 @@ import {
 } from "hermes-paperclip-adapter";
 import { processAdapter } from "./process/index.js";
 import { httpAdapter } from "./http/index.js";
+import {
+  execute as universalLlmExecute,
+  testEnvironment as universalLlmTestEnvironment,
+} from "@titanclip/adapter-universal-llm/server";
+import {
+  agentConfigurationDoc as universalLlmAgentConfigurationDoc,
+  models as universalLlmModels,
+} from "@titanclip/adapter-universal-llm";
 
 const claudeLocalAdapter: ServerAdapterModule = {
   type: "claude_local",
@@ -188,6 +196,15 @@ const hermesLocalAdapter: ServerAdapterModule = {
   detectModel: () => detectModelFromHermes(),
 };
 
+const universalLlmAdapter: ServerAdapterModule = {
+  type: "universal_llm",
+  execute: universalLlmExecute,
+  testEnvironment: universalLlmTestEnvironment,
+  models: universalLlmModels,
+  supportsLocalAgentJwt: false,
+  agentConfigurationDoc: universalLlmAgentConfigurationDoc,
+};
+
 const adaptersByType = new Map<string, ServerAdapterModule>(
   [
     claudeLocalAdapter,
@@ -198,6 +215,7 @@ const adaptersByType = new Map<string, ServerAdapterModule>(
     geminiLocalAdapter,
     openclawGatewayAdapter,
     hermesLocalAdapter,
+    universalLlmAdapter,
     processAdapter,
     httpAdapter,
   ].map((a) => [a.type, a]),

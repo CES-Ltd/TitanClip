@@ -1,0 +1,13 @@
+{
+  "name": "@titanclip/adapter-universal-llm",
+  "version": "0.1.0",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./server": "./src/server/index.ts"
+  },
+  "dependencies": {
+    "@titanclip/adapter-utils": "workspace:*",
+    "@titanclip/shared": "workspace:*"
+  }
+}
