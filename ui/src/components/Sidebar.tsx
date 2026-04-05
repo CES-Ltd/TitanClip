@@ -21,6 +21,9 @@ import {
   Timer,
   ShieldAlert,
   GitBranch,
+  Crosshair,
+  TrendingUp,
+  UserPlus,
 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { SidebarSection } from "./SidebarSection";
@@ -125,7 +128,10 @@ export function Sidebar() {
           <SidebarNavItem to="/org" label="Org" icon={Network} />
           <SidebarNavItem to="/skills" label="Skills" icon={Boxes} />
           <SidebarNavItem to="/costs" label="Costs" icon={DollarSign} />
+          <SidebarNavItem to="/skill-routing" label="Skill Routing" icon={Crosshair} />
           <SidebarNavItem to="/performance" label="Performance" icon={BarChart3} />
+          <SidebarNavItem to="/analytics" label="Analytics" icon={TrendingUp} />
+          <SidebarNavItem to="/lifecycle" label="Lifecycle" icon={UserPlus} />
           <SidebarNavItem to="/sla" label="SLA" icon={Timer} />
           <SidebarNavItem to="/escalation" label="Escalation" icon={ShieldAlert} />
           <SidebarNavItem to="/activity" label="Activity" icon={History} />

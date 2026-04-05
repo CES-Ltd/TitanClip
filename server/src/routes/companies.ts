@@ -21,6 +21,7 @@ import {
   companyPortabilityService,
   companyService,
   feedbackService,
+  issueService,
   logActivity,
 } from "../services/index.js";
 import type { StorageService } from "../storage/types.js";
@@ -34,6 +35,7 @@ export function companyRoutes(db: Db, storage?: StorageService) {
   const access = accessService(db);
   const budgets = budgetService(db);
   const feedback = feedbackService(db);
+  const issues = issueService(db);
 
   function parseBooleanQuery(value: unknown) {
     return value === true || value === "true" || value === "1";
@@ -285,6 +287,55 @@ export function companyRoutes(db: Db, storage?: StorageService) {
         req.actor.userId ?? "board",
       );
     }
+
+    // Auto-onboard: create CEO agent + hiring task
+    try {
+      const ceoAgent = await agents.create(company.id, {
+        name: "Business Unit Head",
+        role: "ceo",
+        adapterType: "claude_local",
+        adapterConfig: {},
+        status: "idle",
+        spentMonthlyCents: 0,
+        lastHeartbeatAt: null,
+        runtimeConfig: {
+          heartbeat: { enabled: true, intervalSeconds: 3600, wakeOnDemand: true, maxConcurrentRuns: 1 },
+        },
+      } as any);
+
+      await logActivity(db, {
+        companyId: company.id,
+        actorType: "user",
+        actorId: req.actor.userId ?? "board",
+        action: "agent.created",
+        entityType: "agent",
+        entityId: ceoAgent.id,
+        details: { name: ceoAgent.name, role: "ceo", autoOnboarded: true },
+      });
+
+      // Create the initial hiring task assigned to CEO
+      const hiringTask = await issues.create(company.id, {
+        title: "Hire your first engineer and create a hiring plan",
+        description: "As the Business Unit Head, your first task is to:\n\n1. Assess the team's needs\n2. Create a hiring plan with roles and responsibilities\n3. Hire the first engineer agent to start building\n\nThis task was auto-created during team onboarding.",
+        priority: "high",
+        status: "todo",
+        assigneeAgentId: ceoAgent.id,
+      });
+
+      await logActivity(db, {
+        companyId: company.id,
+        actorType: "user",
+        actorId: req.actor.userId ?? "board",
+        action: "issue.created",
+        entityType: "issue",
+        entityId: hiringTask.id,
+        details: { title: hiringTask.title, autoOnboarded: true },
+      });
+    } catch (onboardErr) {
+      // Log but don't fail company creation if auto-onboard fails
+      console.error("[TitanClip] Auto-onboard failed (non-fatal):", onboardErr);
+    }
+
     res.status(201).json(company);
   });
 

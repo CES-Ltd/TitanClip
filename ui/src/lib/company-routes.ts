@@ -27,6 +27,9 @@ const BOARD_ROUTE_ROOTS = new Set([
   "sla",
   "escalation",
   "workflows",
+  "skill-routing",
+  "analytics",
+  "lifecycle",
 ]);
 
 const GLOBAL_ROUTE_ROOTS = new Set(["auth", "invite", "board-claim", "cli-auth", "docs", "instance", "help"]);

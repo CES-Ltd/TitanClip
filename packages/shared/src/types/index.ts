@@ -240,3 +240,13 @@ export type {
   WorkflowTemplate, WorkflowStep, WorkflowInstance,
   CriticalPathNode, CriticalPathResult,
 } from "./dependencies.js";
+export type {
+  ProficiencyLevel, AgentSkillProficiency, TaskSkillRequirement,
+  RoutingCandidate, RoutingResult,
+} from "./skill-routing.js";
+export { PROFICIENCY_LABELS, PROFICIENCY_COLORS, SKILL_CATALOG } from "./skill-routing.js";
+export type {
+  OnboardingWorkflow, OnboardingStep, OnboardingStepStatus, OnboardingInstance,
+  OffboardingReport,
+  ChangeRequest, ChangeRequestStatus, ChangeRequestRisk, ChangeRequestCategory,
+} from "./lifecycle.js";

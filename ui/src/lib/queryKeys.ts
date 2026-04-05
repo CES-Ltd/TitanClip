@@ -170,4 +170,17 @@ export const queryKeys = {
     list: (companyId: string) => ["workflows", companyId] as const,
     detail: (companyId: string, id: string) => ["workflows", companyId, id] as const,
   },
+  lifecycle: {
+    onboardingWorkflows: (companyId: string) => ["lifecycle", "onboarding-workflows", companyId] as const,
+    onboardingInstances: (companyId: string) => ["lifecycle", "onboarding-instances", companyId] as const,
+    changeRequests: (companyId: string, status?: string) => ["lifecycle", "change-requests", companyId, status] as const,
+  },
+  analytics: {
+    summary: (companyId: string, sinceDays?: number) => ["analytics", companyId, sinceDays ?? 30] as const,
+  },
+  skillProficiency: {
+    list: (companyId: string) => ["skill-proficiency", companyId] as const,
+    matrix: (companyId: string) => ["skill-matrix", companyId] as const,
+    forAgent: (companyId: string, agentId: string) => ["skill-proficiency", companyId, agentId] as const,
+  },
 };

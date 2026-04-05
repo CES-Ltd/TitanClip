@@ -11,13 +11,16 @@ export const HELP_CATEGORIES = [
   "Dashboard & Navigation",
   "Agent Management",
   "Performance Intelligence",
+  "Skill-Based Routing",
   "Enterprise Security",
   "Credential Vault",
   "Task Management",
   "Dependencies & Workflows",
   "SLA Management",
+  "Analytics & Forecasting",
   "Cost & Budgets",
   "Compliance & Audit",
+  "Lifecycle Management",
   "Workspace Governance",
   "Team Settings",
 ] as const;
@@ -36,6 +39,9 @@ export const HELP_TOPICS: HelpTopic[] = [
 - Agent performance intelligence with health scores, leaderboards, and utilization metrics
 - SLA management with automated breach detection and escalation rules
 - Task dependencies and workflow pipelines with critical path analysis
+- Skill-based task routing with proficiency matrix and smart auto-assignment
+- Advanced analytics with velocity charts, burndown, cost trends, and workload forecasting
+- Lifecycle management: onboarding workflows, offboarding automation, and change requests
 - Enterprise security with admin PIN/SSO, permission policies, and agent-centric RBAC
 - Credential vault with timed token checkout for secure runtime access
 - Cost tracking with chargeback reports and cloud cost estimation
@@ -297,6 +303,90 @@ Health badges appear on agent rows in the Agents list, Command Center agent grid
 **Utilization:** Estimated percentage of available time spent actively working. Based on run frequency relative to the time window.
 
 **Expanded Detail:** Click any agent row to see full breakdown of tasks, runs, token usage (input/output), status, last active time, and health score component weights.`,
+  },
+
+  // --- Skill-Based Routing ---
+  {
+    id: "skill-matrix",
+    title: "Skill Matrix",
+    category: "Skill-Based Routing",
+    keywords: ["skill", "matrix", "proficiency", "agent", "capability", "competency"],
+    content: `The Skill Matrix (Team → Skill Routing → Skill Matrix tab) shows a grid of all agents and their skill proficiency levels.
+
+**Proficiency Levels (1-5):**
+- 1 - Novice: Basic awareness
+- 2 - Beginner: Can perform with guidance
+- 3 - Intermediate: Can work independently
+- 4 - Advanced: Can mentor others
+- 5 - Expert: Deep expertise and leadership
+
+**Using the Matrix:**
+- Rows are agents, columns are skills
+- Star ratings show proficiency level
+- Click "+" in an empty cell to add a skill at level 1
+- Click "+" at end of a row to add a new skill with a custom proficiency level
+- Skills auto-complete from a built-in catalog (coding, testing, code-review, debugging, etc.)
+
+The matrix is the foundation for the Smart Router — agents need skills assigned before they can be matched to tasks.`,
+  },
+  {
+    id: "skill-catalog",
+    title: "Built-in Skill Catalog",
+    category: "Skill-Based Routing",
+    keywords: ["catalog", "skills", "list", "coding", "testing", "review", "devops"],
+    content: `TitanClip includes a built-in skill catalog for quick selection. You can also create custom skill names.
+
+**Built-in Skills:**
+- coding, testing, code-review, documentation, debugging
+- architecture, devops, security, data-analysis, research
+- api-design, frontend, backend, database, infrastructure
+- project-management, communication, problem-solving
+
+Custom skills are entered as free-text and automatically normalized to lowercase. Once any agent has a custom skill, it appears in the autocomplete for all agents.`,
+  },
+  {
+    id: "smart-router",
+    title: "Smart Task Router",
+    category: "Skill-Based Routing",
+    keywords: ["router", "route", "assign", "match", "auto", "smart", "recommend", "candidate"],
+    content: `The Smart Task Router (Team → Skill Routing → Smart Router tab) finds the best agent for a task based on skill requirements.
+
+**How to use:**
+1. Add skill requirements (e.g., "coding" at minimum Intermediate, "testing" at minimum Beginner)
+2. Click "Find Best Match"
+3. The router scores all available agents and ranks them
+
+**Scoring Factors (weighted composite):**
+- Skill Fit (40%): How well the agent's skills match requirements. Full credit if proficiency meets or exceeds minimum; partial credit for lower levels; zero for missing skills.
+- Availability (25%): Agents with fewer current tasks score higher.
+- Workload Balance (20%): Distributes work evenly across the team.
+- Cost Efficiency (15%): Agents with lower recent costs score higher.
+
+**Results show:**
+- Best match highlighted in green with overall score
+- Other candidates ranked by score
+- Expandable detail: score breakdown bars, matched/missing skills, task count, health score
+- Each matched skill shows actual proficiency vs required level`,
+  },
+  {
+    id: "task-skill-requirements",
+    title: "Task Skill Requirements",
+    category: "Skill-Based Routing",
+    keywords: ["task", "requirement", "issue", "assign", "skill", "prerequisite"],
+    content: `Issues can specify skill requirements that feed into the Smart Router.
+
+**How skill requirements work:**
+- Each requirement has a skill name and minimum proficiency level
+- When routing, the system checks each agent's proficiency against all requirements
+- Agents meeting all requirements at or above the minimum level get full skill fit score
+- Agents with partial matches get proportional credit
+- Agents missing required skills entirely are penalized
+
+**Best practices:**
+- Set 1-3 key skills per task for best routing results
+- Use minimum Intermediate (3) for tasks requiring independent work
+- Use minimum Advanced (4) or Expert (5) for complex/critical tasks
+- The router still considers availability and cost, so a slightly less skilled but available agent may rank higher than an overloaded expert`,
   },
 
   // --- Enterprise Security ---
@@ -681,6 +771,112 @@ Shows all tracked issues with:
 **Manual Evaluation:** Click "Evaluate Now" to check all rules immediately instead of waiting for the cron cycle.`,
   },
 
+  // --- Analytics & Forecasting ---
+  {
+    id: "analytics-dashboard",
+    title: "Analytics Dashboard",
+    category: "Analytics & Forecasting",
+    keywords: ["analytics", "dashboard", "charts", "metrics", "overview", "statistics"],
+    content: `The Analytics Dashboard (Team → Analytics) provides comprehensive business intelligence with charts and forecasts.
+
+**Top Metrics Row:**
+- Tasks Created and Completed with completion rate
+- Average Cycle Time (start to completion)
+- Total Runs with success rate
+- Total Cost for the period
+- Open Tasks with estimated clear time
+
+**Time Range:** Switch between 7-day, 30-day, and 90-day views.
+
+All data auto-refreshes every 60 seconds.`,
+  },
+  {
+    id: "velocity-chart",
+    title: "Velocity Chart",
+    category: "Analytics & Forecasting",
+    keywords: ["velocity", "throughput", "created", "completed", "chart", "trend"],
+    content: `The Velocity chart shows task creation vs completion over time.
+
+**Two lines:**
+- Green (solid): Tasks completed per day
+- Indigo (dashed): Tasks created per day
+
+**Metrics below chart:**
+- Average completions per day
+- Average creations per day
+
+When completions exceed creations, the backlog is shrinking. When creations exceed completions, the backlog is growing. Use this to understand team throughput trends and capacity planning.`,
+  },
+  {
+    id: "burndown-chart",
+    title: "Burndown Chart",
+    category: "Analytics & Forecasting",
+    keywords: ["burndown", "remaining", "ideal", "progress", "sprint"],
+    content: `The Burndown chart tracks remaining open tasks over time against an ideal linear trajectory.
+
+**Two lines:**
+- Green (solid): Actual remaining tasks
+- Indigo (dashed): Ideal linear burndown
+
+**Metrics below chart:**
+- Remaining tasks count
+- Capacity utilization percentage (open tasks relative to agent capacity)
+
+If the actual line is above the ideal line, work is behind schedule. If below, the team is ahead of pace.`,
+  },
+  {
+    id: "work-distribution",
+    title: "Work Distribution",
+    category: "Analytics & Forecasting",
+    keywords: ["distribution", "agent", "workload", "balance", "assignment"],
+    content: `Work Distribution shows how tasks and costs are spread across agents.
+
+**Bar chart:** Visual comparison of tasks assigned per agent.
+
+**Detail table:**
+- Agent name
+- Tasks completed out of assigned (e.g., 5/8)
+- Run count
+- Cost
+
+Use this to identify workload imbalances — if one agent has significantly more tasks than others, consider redistributing using the Smart Router.`,
+  },
+  {
+    id: "cost-trend-forecast",
+    title: "Cost Trend & Budget Forecast",
+    category: "Analytics & Forecasting",
+    keywords: ["cost", "trend", "forecast", "budget", "burn", "projection", "monthly"],
+    content: `The Cost Trend chart shows daily spending over the selected time range with a sparkline visualization.
+
+**Budget Forecast panel below the chart:**
+- Month to Date: current month spending so far
+- Projected Month End: extrapolated total based on daily burn rate
+- Daily Burn Rate: average spend per day
+- Days Remaining: days left in current month
+
+Use this to anticipate budget overruns before they happen and adjust agent workloads accordingly.`,
+  },
+  {
+    id: "workload-forecast",
+    title: "Workload Forecast",
+    category: "Analytics & Forecasting",
+    keywords: ["workload", "forecast", "capacity", "clear", "estimate", "utilization"],
+    content: `The Workload Forecast shows projected task clearance and team capacity.
+
+**Metrics:**
+- Open Tasks: current backlog size
+- Avg Completed/Day: historical completion velocity
+- Est. Clear Time: projected days to complete all open tasks at current velocity
+- Capacity Utilization: percentage of team capacity in use (assumes 5 tasks per agent = 100%)
+
+**Color coding:**
+- Green: healthy (utilization under 50%, clear time under 14 days)
+- Amber: moderate load (utilization 50-80%, clear time 14-30 days)
+- Red: overloaded (utilization above 80%, clear time over 30 days)
+
+A capacity utilization bar at the bottom provides a visual indicator.`,
+  },
+
   // --- Cost & Budgets ---
   {
     id: "cost-tracking",
@@ -764,6 +960,81 @@ Navigate to Team → Compliance.`,
 - Token audit: default 180 days
 
 Set to 0 to keep forever. These are configurable via the admin settings PATCH endpoint.`,
+  },
+
+  // --- Lifecycle Management ---
+  {
+    id: "onboarding-workflows",
+    title: "Onboarding Workflows",
+    category: "Lifecycle Management",
+    keywords: ["onboarding", "onboard", "new agent", "training", "workflow", "hire"],
+    content: `Onboarding workflows auto-create training tasks when a new agent is hired.
+
+**Creating an Onboarding Workflow:**
+1. Go to Team → Lifecycle → Onboarding tab
+2. Click "New Workflow"
+3. Set name, target role (e.g., Engineer), and description
+4. Add sequential steps — each becomes a task when executed
+5. Steps are auto-linked with dependencies (step 2 depends on step 1)
+
+**Running Onboarding:**
+1. Select an agent and workflow in the "Run Onboarding" panel
+2. Click "Start"
+3. Tasks are created and assigned to the new agent
+4. First step starts as "todo", subsequent steps start as "blocked"
+5. As each task completes, the next is auto-unblocked
+
+**Auto-Onboard:** Workflows can be matched to agent roles. When enabled, hiring an agent of that role automatically triggers the onboarding workflow.
+
+Recent onboarding instances are shown with agent name, workflow name, task count, and date.`,
+  },
+  {
+    id: "offboarding",
+    title: "Agent Offboarding",
+    category: "Lifecycle Management",
+    keywords: ["offboarding", "offboard", "terminate", "remove", "reassign", "revoke"],
+    content: `Offboarding automates the process of removing an agent from active duty.
+
+**Process (Team → Lifecycle → Offboarding tab):**
+1. Select the agent to offboard
+2. Optionally select another agent to reassign open tasks to
+3. Click "Offboard Agent"
+
+**Automated actions:**
+- All open tasks are reassigned to the selected agent (or unassigned if none selected)
+- All active vault token checkouts are revoked immediately
+- Agent status is set to "terminated"
+
+**Offboarding Report:**
+After completion, a report shows all actions taken: number of tasks reassigned, vault checkouts revoked, and final status. This action cannot be undone.`,
+  },
+  {
+    id: "change-management",
+    title: "Change Requests",
+    category: "Lifecycle Management",
+    keywords: ["change", "request", "approval", "review", "implement", "rollback", "risk"],
+    content: `Change requests provide a structured approval process for modifications to agents, policies, and infrastructure.
+
+**Creating a Change Request:**
+1. Go to Team → Lifecycle → Change Requests tab
+2. Click "New Request"
+3. Fill in: title, description, category, risk level, validation steps
+
+**Categories:** Agent Config, Policy Change, Infrastructure, Workflow, Access Control, Other
+
+**Risk Levels:** Low (green), Medium (amber), High (orange), Critical (red)
+
+**Status Flow:**
+Draft → Pending Review → Approved → Implemented → (optionally) Rolled Back
+Or: Draft → Pending Review → Rejected
+
+**Actions at each stage:**
+- Draft: "Submit" moves to Pending Review
+- Pending Review: "Approve" or "Reject"
+- Approved: "Implement" records implementation timestamp
+- Implemented: "Rollback" if the change needs to be reversed
+
+Each change request tracks affected agents, scheduled date, validation steps, and reviewer notes.`,
   },
 
   // --- Workspace Governance ---

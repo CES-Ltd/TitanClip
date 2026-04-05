@@ -53,6 +53,9 @@ import { Performance } from "./pages/Performance";
 import { SlaManagement } from "./pages/SlaManagement";
 import { EscalationRules } from "./pages/EscalationRules";
 import { Workflows } from "./pages/Workflows";
+import { SkillRouting } from "./pages/SkillRouting";
+import { Analytics } from "./pages/Analytics";
+import { Lifecycle } from "./pages/Lifecycle";
 import { AppTitleBar } from "./components/AppTitleBar";
 import { NewAgent } from "./pages/NewAgent";
 import { AuthPage } from "./pages/Auth";
@@ -149,6 +152,9 @@ function boardRoutes() {
       <Route path="sla" element={<SlaManagement />} />
       <Route path="escalation" element={<EscalationRules />} />
       <Route path="workflows" element={<Workflows />} />
+      <Route path="skill-routing" element={<SkillRouting />} />
+      <Route path="analytics" element={<Analytics />} />
+      <Route path="lifecycle" element={<Lifecycle />} />
       <Route path="onboarding" element={<OnboardingRoutePage />} />
       <Route path="companies" element={<Companies />} />
       <Route path="company/settings" element={<CompanySettings />} />

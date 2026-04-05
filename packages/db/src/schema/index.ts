@@ -67,3 +67,5 @@ export { slaTracking } from "./sla_tracking.js";
 export { escalationRules } from "./escalation_rules.js";
 export { issueDependencies } from "./issue_dependencies.js";
 export { workflowTemplates } from "./workflow_templates.js";
+export { agentSkillProficiency } from "./agent_skill_proficiency.js";
+export { onboardingWorkflows, onboardingInstances, changeRequests } from "./onboarding_workflows.js";
