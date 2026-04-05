@@ -57,6 +57,12 @@ import { SkillRouting } from "./pages/SkillRouting";
 import { Analytics } from "./pages/Analytics";
 import { Lifecycle } from "./pages/Lifecycle";
 import { AgentGallery } from "./pages/AgentGallery";
+import { AgentOS } from "./pages/AgentOS";
+import { AgentOSSettings } from "./pages/AgentOSSettings";
+import { AgentChat } from "./pages/AgentChat";
+import { AgentMemory } from "./pages/AgentMemory";
+import { ConversationHistory } from "./pages/ConversationHistory";
+import { SkillProposals } from "./pages/SkillProposals";
 import { AppTitleBar } from "./components/AppTitleBar";
 import { NewAgent } from "./pages/NewAgent";
 import { AuthPage } from "./pages/Auth";
@@ -157,6 +163,15 @@ function boardRoutes() {
       <Route path="analytics" element={<Analytics />} />
       <Route path="lifecycle" element={<Lifecycle />} />
       <Route path="agent-gallery" element={<AgentGallery />} />
+      {/* Agent OS */}
+      <Route path="agent-os" element={<AgentOS />} />
+      <Route path="agent-os/chat" element={<AgentChat />} />
+      <Route path="agent-os/chat/:conversationId" element={<AgentChat />} />
+      <Route path="agent-os/memory" element={<AgentMemory />} />
+      <Route path="agent-os/memory/:agentId" element={<AgentMemory />} />
+      <Route path="agent-os/conversations" element={<ConversationHistory />} />
+      <Route path="agent-os/skills" element={<SkillProposals />} />
+      <Route path="agent-os/settings" element={<AgentOSSettings />} />
       <Route path="onboarding" element={<OnboardingRoutePage />} />
       <Route path="companies" element={<Companies />} />
       <Route path="company/settings" element={<CompanySettings />} />

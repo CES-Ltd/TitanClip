@@ -738,6 +738,74 @@ const ipcRoutes: IpcRoute[] = [
   // ── Members (missing) ─────────────────────────────────────────────────
   { method: "GET", pattern: /^\/companies\/([^/]+)\/members$/, channel: "members:list",
     args: (m) => ({ companyId: m[1] }) },
+
+  // ═══════════════════════════════════════════════════════════════════════
+  // AGENT OS ROUTES
+  // ═══════════════════════════════════════════════════════════════════════
+
+  // LLM Providers
+  { method: "GET", pattern: /^\/llm-providers\/available$/, channel: "llm-providers:list-available",
+    args: () => undefined },
+  { method: "GET", pattern: /^\/companies\/([^/]+)\/llm-providers$/, channel: "llm-providers:list",
+    args: (m) => ({ companyId: m[1] }) },
+  { method: "GET", pattern: /^\/llm-providers\/([^/]+)\/models$/, channel: "llm-providers:list-models",
+    args: (m) => ({ id: m[1] }) },
+  { method: "GET", pattern: /^\/llm-providers\/([^/]+)$/, channel: "llm-providers:get",
+    args: (m) => ({ id: m[1] }) },
+  { method: "POST", pattern: /^\/companies\/([^/]+)\/llm-providers$/, channel: "llm-providers:create",
+    args: (m, b) => ({ companyId: m[1], ...(b as object) }) },
+  { method: "PATCH", pattern: /^\/llm-providers\/([^/]+)$/, channel: "llm-providers:update",
+    args: (m, b) => ({ id: m[1], ...(b as object) }) },
+  { method: "DELETE", pattern: /^\/llm-providers\/([^/]+)$/, channel: "llm-providers:delete",
+    args: (m) => ({ id: m[1] }) },
+  { method: "POST", pattern: /^\/llm-providers\/([^/]+)\/test$/, channel: "llm-providers:test",
+    args: (m) => ({ id: m[1] }) },
+
+  // Agent Memories
+  { method: "GET", pattern: /^\/companies\/([^/]+)\/agents\/([^/]+)\/memories/, channel: "agent-memories:list",
+    args: (m) => ({ companyId: m[1], agentId: m[2] }) },
+  { method: "POST", pattern: /^\/companies\/([^/]+)\/agents\/([^/]+)\/memories\/search$/, channel: "agent-memories:search",
+    args: (m, b) => ({ companyId: m[1], agentId: m[2], ...(b as object) }) },
+  { method: "POST", pattern: /^\/companies\/([^/]+)\/agents\/([^/]+)\/memories$/, channel: "agent-memories:create",
+    args: (m, b) => ({ companyId: m[1], agentId: m[2], ...(b as object) }) },
+  { method: "DELETE", pattern: /^\/agents\/([^/]+)\/memories\/([^/]+)$/, channel: "agent-memories:delete",
+    args: (m) => ({ agentId: m[1], memoryId: m[2] }) },
+  { method: "GET", pattern: /^\/companies\/([^/]+)\/agents\/([^/]+)\/memory-context$/, channel: "agent-memories:get-context",
+    args: (m) => ({ companyId: m[1], agentId: m[2] }) },
+
+  // Conversations
+  { method: "GET", pattern: /^\/companies\/([^/]+)\/conversations/, channel: "conversations:list",
+    args: (m) => ({ companyId: m[1] }) },
+  { method: "POST", pattern: /^\/companies\/([^/]+)\/conversations\/search$/, channel: "conversations:search",
+    args: (m, b) => ({ companyId: m[1], ...(b as object) }) },
+  { method: "POST", pattern: /^\/companies\/([^/]+)\/conversations$/, channel: "conversations:create",
+    args: (m, b) => ({ companyId: m[1], ...(b as object) }) },
+  { method: "GET", pattern: /^\/conversations\/([^/]+)$/, channel: "conversations:get",
+    args: (m) => ({ id: m[1] }) },
+  { method: "POST", pattern: /^\/conversations\/([^/]+)\/messages$/, channel: "conversations:append-message",
+    args: (m, b) => ({ conversationId: m[1], ...(b as object) }) },
+  { method: "PATCH", pattern: /^\/conversations\/([^/]+)$/, channel: "conversations:update",
+    args: (m, b) => ({ id: m[1], ...(b as object) }) },
+
+  // Skill Proposals
+  { method: "GET", pattern: /^\/companies\/([^/]+)\/skill-proposals/, channel: "skill-proposals:list",
+    args: (m) => ({ companyId: m[1] }) },
+  { method: "GET", pattern: /^\/skill-proposals\/([^/]+)$/, channel: "skill-proposals:get",
+    args: (m) => ({ id: m[1] }) },
+  { method: "POST", pattern: /^\/skill-proposals\/([^/]+)\/approve$/, channel: "skill-proposals:approve",
+    args: (m, b) => ({ id: m[1], ...(b as object) }) },
+  { method: "POST", pattern: /^\/skill-proposals\/([^/]+)\/reject$/, channel: "skill-proposals:reject",
+    args: (m) => ({ id: m[1] }) },
+  { method: "GET", pattern: /^\/companies\/([^/]+)\/skill-usage\/([^/]+)$/, channel: "skill-proposals:effectiveness",
+    args: (m) => ({ companyId: m[1], skillId: m[2] }) },
+
+  // Routine Templates
+  { method: "GET", pattern: /^\/routine-templates$/, channel: "routine-templates:list",
+    args: () => undefined },
+  { method: "GET", pattern: /^\/routine-templates\/([^/]+)$/, channel: "routine-templates:get",
+    args: (m) => ({ slug: m[1] }) },
+  { method: "POST", pattern: /^\/routine-templates\/([^/]+)\/instantiate$/, channel: "routine-templates:instantiate",
+    args: (m, b) => ({ slug: m[1], ...(b as object) }) },
 ];
 
 // ── IPC Transport ───────────────────────────────────────────────────────

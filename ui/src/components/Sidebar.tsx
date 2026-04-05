@@ -25,6 +25,9 @@ import {
   TrendingUp,
   UserPlus,
   Store,
+  Bot,
+  Brain,
+  Sparkles,
 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { SidebarSection } from "./SidebarSection";
@@ -142,6 +145,15 @@ export function Sidebar() {
           <SidebarNavItem to="/compliance" label="Compliance" icon={Shield} />
           <SidebarNavItem to="/chargeback" label="Chargeback" icon={DollarSign} />
           <SidebarNavItem to="/company/settings" label="Settings" icon={Settings} />
+        </SidebarSection>
+
+        <SidebarSection label="Agent OS">
+          <SidebarNavItem to="/agent-os" label="Hub" icon={Bot} />
+          <SidebarNavItem to="/agent-os/chat" label="Chat" icon={MessageSquare} />
+          <SidebarNavItem to="/agent-os/memory" label="Memory" icon={Brain} />
+          <SidebarNavItem to="/agent-os/conversations" label="History" icon={History} />
+          <SidebarNavItem to="/agent-os/skills" label="Skill Proposals" icon={Sparkles} />
+          <SidebarNavItem to="/agent-os/settings" label="LLM Settings" icon={Settings} />
         </SidebarSection>
 
         <PluginSlotOutlet
