@@ -55,6 +55,8 @@ export interface InstanceAdminSettings {
   otelEndpoint: string;
   otelServiceName: string;
   otelSampleRate: number;
+  /** Danger Zone: allow agents to use "autonomous" autonomy level */
+  allowAutonomousMode: boolean;
 }
 
 /** Public version of admin settings (PIN hash stripped) */
