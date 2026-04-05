@@ -163,15 +163,6 @@ function boardRoutes() {
       <Route path="analytics" element={<Analytics />} />
       <Route path="lifecycle" element={<Lifecycle />} />
       <Route path="agent-gallery" element={<AgentGallery />} />
-      {/* Agent OS */}
-      <Route path="agent-os" element={<AgentOS />} />
-      <Route path="agent-os/chat" element={<AgentChat />} />
-      <Route path="agent-os/chat/:conversationId" element={<AgentChat />} />
-      <Route path="agent-os/memory" element={<AgentMemory />} />
-      <Route path="agent-os/memory/:agentId" element={<AgentMemory />} />
-      <Route path="agent-os/conversations" element={<ConversationHistory />} />
-      <Route path="agent-os/skills" element={<SkillProposals />} />
-      <Route path="agent-os/settings" element={<AgentOSSettings />} />
       <Route path="onboarding" element={<OnboardingRoutePage />} />
       <Route path="companies" element={<Companies />} />
       <Route path="company/settings" element={<CompanySettings />} />
@@ -402,6 +393,17 @@ export function App() {
           <Route path="projects/:projectId/configuration" element={<UnprefixedBoardRedirect />} />
           <Route path="execution-workspaces/:workspaceId" element={<UnprefixedBoardRedirect />} />
           <Route path="tests/ux/runs" element={<UnprefixedBoardRedirect />} />
+          {/* Agent OS routes — must be BEFORE :companyPrefix to avoid being caught as a company */}
+          <Route path="agent-os" element={<Layout />}>
+            <Route index element={<AgentOS />} />
+            <Route path="chat" element={<AgentChat />} />
+            <Route path="chat/:conversationId" element={<AgentChat />} />
+            <Route path="memory" element={<AgentMemory />} />
+            <Route path="memory/:agentId" element={<AgentMemory />} />
+            <Route path="conversations" element={<ConversationHistory />} />
+            <Route path="skills" element={<SkillProposals />} />
+            <Route path="settings" element={<AgentOSSettings />} />
+          </Route>
           <Route path=":companyPrefix" element={<Layout />}>
             {boardRoutes()}
           </Route>
