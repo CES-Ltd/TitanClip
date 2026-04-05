@@ -345,8 +345,9 @@ function NoCompaniesStartPage() {
 
 export function App() {
   return (
-    <>
+    <div className="flex flex-col h-dvh overflow-hidden">
       <AppTitleBar />
+      <div className="flex-1 min-h-0">
       <Routes>
         <Route path="auth" element={<AuthPage />} />
         <Route path="help" element={<Help />} />
@@ -410,7 +411,8 @@ export function App() {
           <Route path="*" element={<NotFoundPage scope="global" />} />
         </Route>
       </Routes>
+      </div>
       <OnboardingWizard />
-    </>
+    </div>
   );
 }
