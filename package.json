@@ -6,12 +6,12 @@
   "scripts": {
     "dev": "tsc -p tsconfig.electron.json && electron .",
     "dev:native": "tsc -p tsconfig.electron.json && PAPERCLIP_STARTUP_MODE=native electron .",
-    "build": "pnpm -r build",
+    "build": "pnpm -r --filter '!./packages/plugins/examples/*' build",
     "build:ui-electron": "cd ui && ELECTRON_BUILD=true pnpm run build",
     "build:electron": "tsc -p tsconfig.electron.json",
     "build:all": "pnpm run build && pnpm run build:ui-electron && pnpm run build:electron",
     "start": "electron .",
-    "dist": "pnpm run build:all && bash scripts/patch-server-modules.sh && electron-builder --mac && bash scripts/sign-mac.sh",
+    "dist": "pnpm run build:all && node scripts/download-node.mjs && node scripts/prepare-server.mjs && electron-builder --mac",
     "dist:win": "pnpm run build:all && electron-builder --win",
     "dist:linux": "pnpm run build:all && electron-builder --linux",
     "typecheck": "pnpm -r typecheck"
@@ -24,6 +24,7 @@
     "@types/node": "^20.10.0",
     "electron": "^33.0.0",
     "electron-builder": "^26.8.1",
+    "tree-kill": "^1.2.2",
     "typescript": "^5.7.3"
   },
   "pnpm": {

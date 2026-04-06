@@ -8,12 +8,14 @@ files:
   - dist/**/*
 
 # IMPORTANT: asar must be false for the server child process to work.
-# The server process (ELECTRON_RUN_AS_NODE) needs real filesystem access
-# to its node_modules, migration files, and onboarding assets.
-# The original TitanClip also uses asar: false.
+# The server process needs real filesystem access to node_modules,
+# migration files, onboarding assets, and embedded PostgreSQL.
 asar: false
 
 extraResources:
+  # Bundled Node.js binary
+  - from: build/node-bin
+    to: node-bin
   # UI static files
   - from: ui/dist
     to: ui-dist
@@ -23,13 +25,12 @@ extraResources:
   # Server onboarding assets
   - from: server/src/onboarding-assets
     to: server-dist/onboarding-assets
-  # Server node_modules (pre-bundled)
-  - from: /tmp/titanclip-server-modules
+  # Server node_modules (built by scripts/prepare-server.mjs)
+  - from: build/server-modules
     to: server-dist/node_modules
   # Server package.json (needed by server/dist/version.js -> require("../package.json"))
   - from: server/package.json
     to: server-dist/package.json
-  # Also at Resources root for the "../package.json" require
   - from: server/package.json
     to: package.json
   # Skills directory
@@ -38,6 +39,8 @@ extraResources:
   # SQLite migrations
   - from: packages/db/src/migrations-sqlite
     to: migrations-sqlite
+
+afterPack: ./scripts/after-pack.mjs
 
 mac:
   hardenedRuntime: false
@@ -89,6 +92,6 @@ protocols:
 
 publish:
   provider: github
-  owner: paperclipai
-  repo: paperclip
+  owner: ankurCES
+  repo: TitanClip
   releaseType: release

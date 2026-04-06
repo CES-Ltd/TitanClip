@@ -2,8 +2,7 @@
  * Server Bridge — manages the embedded Express server as a child process.
  *
  * Dev:  Spawns tsx to run TypeScript server directly
- * Prod: Spawns the Electron binary as a Node.js runtime (ELECTRON_RUN_AS_NODE=1)
- *       to run the pre-compiled server from extraResources
+ * Prod: Spawns bundled Node.js binary (or system Node fallback) to run compiled server
  */
 
 import { app } from "electron";
@@ -12,24 +11,37 @@ import http from "http";
 import path from "path";
 import { getServerSourcePath, getTsxBinPath, getResourcesPath } from "./paths.js";
 
+// tree-kill for clean process tree shutdown (kills postgres + child processes)
+let treeKill: (pid: number, signal?: string, callback?: (error?: Error) => void) => void;
+try {
+  treeKill = require("tree-kill");
+} catch {
+  // Fallback if tree-kill not available
+  treeKill = (pid, signal) => { try { process.kill(pid, (signal as any) || "SIGTERM"); } catch {} };
+}
+
 let serverProcess: ChildProcess | null = null;
 
 const SERVER_PORT = 3100;
 const IS_DEV = !app.isPackaged;
 
+/**
+ * Augmented PATH that includes common binary directories.
+ * Required when launched from Finder/Dock (which has a minimal PATH).
+ */
+function getAugmentedPath(): string {
+  const extra = process.platform === "darwin"
+    ? ["/opt/homebrew/bin", "/usr/local/bin", "/usr/local/sbin", "/usr/bin"]
+    : process.platform === "win32"
+    ? ["C:\\Program Files\\nodejs"]
+    : ["/usr/local/bin", "/usr/bin"];
+  return [...extra, process.env.PATH || ""].join(process.platform === "win32" ? ";" : ":");
+}
+
 export function startServer(): void {
   let command: string;
   let args: string[];
   let env: Record<string, string | undefined>;
-
-  // Ensure CLI tools (opencode, claude, codex, cursor, etc.) are discoverable
-  // by including common binary directories in PATH.
-  const extraPaths = process.platform === "darwin"
-    ? "/opt/homebrew/bin:/usr/local/bin:/usr/bin"
-    : process.platform === "win32"
-    ? "C:\\Program Files\\nodejs"
-    : "/usr/local/bin:/usr/bin";
-  const fullPath = `${extraPaths}:${process.env.PATH ?? ""}`;
 
   const baseEnv: Record<string, string> = {
     PORT: String(SERVER_PORT),
@@ -40,7 +52,7 @@ export function startServer(): void {
     PAPERCLIP_MIGRATION_PROMPT: "never",
     PAPERCLIP_DEPLOYMENT_MODE: "local_trusted",
     PAPERCLIP_OPEN_ON_LISTEN: "false",
-    PATH: fullPath,
+    PATH: getAugmentedPath(),
   };
 
   if (IS_DEV) {
@@ -52,11 +64,9 @@ export function startServer(): void {
     env = { ...process.env, ...baseEnv };
     console.log("[TitanClip] Starting server (dev) from:", serverEntry);
   } else {
-    // Production: use system Node.js to run the server.
-    // Electron's built-in Node has an ASAR fs wrapper that conflicts with
-    // --experimental-require-module (infinite recursion). System Node avoids this.
+    // Production: use bundled Node.js, fallback to system Node
     const serverEntry = path.join(getResourcesPath(), "server-dist", "index.js");
-    const nodeBin = findSystemNode();
+    const nodeBin = findProductionNode();
     command = nodeBin;
     args = ["--experimental-require-module", serverEntry];
     env = {
@@ -71,7 +81,6 @@ export function startServer(): void {
   serverProcess = spawn(command, args, {
     stdio: ["ignore", "pipe", "pipe"],
     env,
-    // Set cwd to server-dist so relative requires work
     cwd: IS_DEV ? undefined : path.join(getResourcesPath(), "server-dist"),
   });
 
@@ -94,36 +103,30 @@ export function startServer(): void {
 }
 
 export function stopServer(): void {
-  if (!serverProcess) return;
+  if (!serverProcess || !serverProcess.pid) return;
 
-  console.log("[TitanClip] Stopping server...");
-  const proc = serverProcess;
+  console.log("[TitanClip] Stopping server (pid:", serverProcess.pid, ")...");
+  const pid = serverProcess.pid;
   serverProcess = null;
 
-  try {
-    // Send SIGTERM for graceful shutdown
-    proc.kill("SIGTERM");
-  } catch {
-    // Already dead
-    return;
-  }
+  // Use tree-kill to kill the entire process tree (server + embedded postgres + adapters)
+  treeKill(pid, "SIGTERM", (err) => {
+    if (err) {
+      console.warn("[TitanClip] tree-kill SIGTERM failed, force killing:", err.message);
+      try { process.kill(pid, "SIGKILL"); } catch {}
+    }
+  });
 
   // Force kill after 5 seconds if still running
-  const forceKillTimer = setTimeout(() => {
+  setTimeout(() => {
     try {
-      if (!proc.killed) {
-        console.log("[TitanClip] Server didn't stop gracefully, force killing...");
-        proc.kill("SIGKILL");
-      }
+      process.kill(pid, 0); // Check if alive
+      console.log("[TitanClip] Server didn't stop, force killing...");
+      treeKill(pid, "SIGKILL");
     } catch {
-      // Already dead
+      // Already dead — good
     }
   }, 5000);
-
-  // Clean up timer if process exits on its own
-  proc.on("exit", () => {
-    clearTimeout(forceKillTimer);
-  });
 }
 
 export function waitForServer(port: number, timeoutMs = 120000): Promise<void> {
@@ -156,52 +159,44 @@ export function isServerRunning(): boolean {
 }
 
 /**
- * Find system Node.js binary.
- * Checks common locations on macOS, Windows, and Linux.
- * Falls back to Electron's binary with ELECTRON_RUN_AS_NODE if system Node not found.
+ * Find Node.js binary for production mode.
+ * Priority: bundled node-bin > system node > Electron fallback
  */
-function findSystemNode(): string {
-  const { execSync } = require("child_process") as typeof import("child_process");
+function findProductionNode(): string {
   const { existsSync } = require("fs") as typeof import("fs");
+  const { execSync } = require("child_process") as typeof import("child_process");
 
-  // Try `which node` / `where node`
+  // 1. Check bundled Node binary
+  const bundled = path.join(getResourcesPath(), "node-bin", "node");
+  if (existsSync(bundled)) {
+    console.log("[TitanClip] Using bundled Node.js");
+    return bundled;
+  }
+
+  // 2. Try system Node via which/where
   try {
     const nodePath = execSync(
       process.platform === "win32" ? "where node" : "which node",
-      { encoding: "utf-8", timeout: 3000, env: { ...process.env, PATH: getNodeSearchPath() } }
+      { encoding: "utf-8", timeout: 3000, env: { ...process.env, PATH: getAugmentedPath() } }
     ).trim().split("\n")[0]!.trim();
     if (nodePath && existsSync(nodePath)) {
+      console.log("[TitanClip] Using system Node.js");
       return nodePath;
     }
-  } catch {
-    // which/where failed
-  }
+  } catch {}
 
-  // Check common locations
+  // 3. Check common hardcoded locations
   const candidates = process.platform === "darwin"
     ? ["/opt/homebrew/bin/node", "/usr/local/bin/node", "/usr/bin/node"]
     : process.platform === "win32"
     ? ["C:\\Program Files\\nodejs\\node.exe"]
     : ["/usr/bin/node", "/usr/local/bin/node"];
 
-  for (const candidate of candidates) {
-    if (existsSync(candidate)) return candidate;
+  for (const c of candidates) {
+    if (existsSync(c)) return c;
   }
 
-  // Fallback: use Electron as Node (may have issues but better than nothing)
-  console.warn("[TitanClip] System Node.js not found; falling back to Electron runtime");
+  // 4. Fallback: Electron runtime (may have ASAR issues)
+  console.warn("[TitanClip] No Node.js found; falling back to Electron runtime (may have issues)");
   return process.execPath;
-}
-
-/**
- * Build a PATH string that includes common Node.js installation directories.
- */
-function getNodeSearchPath(): string {
-  const base = process.env.PATH ?? "";
-  const extra = process.platform === "darwin"
-    ? "/opt/homebrew/bin:/usr/local/bin"
-    : process.platform === "win32"
-    ? "C:\\Program Files\\nodejs"
-    : "/usr/local/bin";
-  return `${extra}:${base}`;
 }
