@@ -39,7 +39,7 @@ const __moduleDir = path.dirname(fileURLToPath(import.meta.url));
  * them as proper registered skills.
  */
 async function buildSkillsDir(config: Record<string, unknown>): Promise<string> {
-  const tmp = await fs.mkdtemp(path.join(os.tmpdir(), "paperclip-skills-"));
+  const tmp = await fs.mkdtemp(path.join(os.tmpdir(), "titanclip-skills-"));
   const target = path.join(tmp, ".claude", "skills");
   await fs.mkdir(target, { recursive: true });
   const availableEntries = await readTitanClipRuntimeSkillEntries(config, __moduleDir);

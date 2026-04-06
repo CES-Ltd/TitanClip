@@ -332,7 +332,7 @@ export function applyRuntimePortSelectionToConfig(
 
   if (
     input.allowDatabasePortWrite !== false &&
-    nextConfig.database.mode === "embedded-postgres" &&
+    nextConfig.database?.mode === "embedded-postgres" &&
     typeof input.databasePort === "number" &&
     nextConfig.database.embeddedPostgresPort !== input.databasePort
   ) {
@@ -346,7 +346,7 @@ export function applyRuntimePortSelectionToConfig(
     changed = true;
   }
 
-  if (nextConfig.auth.baseUrlMode === "explicit" && nextConfig.auth.publicBaseUrl) {
+  if (nextConfig.auth?.baseUrlMode === "explicit" && nextConfig.auth.publicBaseUrl) {
     const rewritten = rewriteLocalUrlPort(nextConfig.auth.publicBaseUrl, input.serverPort);
     if (rewritten && rewritten !== nextConfig.auth.publicBaseUrl) {
       nextConfig = {

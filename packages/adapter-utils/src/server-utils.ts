@@ -91,13 +91,13 @@ function buildManagedSkillOrigin(entry: { required?: boolean }): Pick<
   if (entry.required) {
     return {
       origin: "paperclip_required",
-      originLabel: "Required by Paperclip",
+      originLabel: "Required by TitanClip",
       readOnly: false,
     };
   }
   return {
     origin: "company_managed",
-    originLabel: "Managed by Paperclip",
+    originLabel: "Managed by TitanClip",
     readOnly: false,
   };
 }
@@ -406,11 +406,11 @@ export async function listTitanClipSkillEntries(
     return entries
       .filter((entry) => entry.isDirectory())
       .map((entry) => ({
-        key: `paperclipai/paperclip/${entry.name}`,
+        key: `titanclip/${entry.name}`,
         runtimeName: entry.name,
         source: path.join(root, entry.name),
         required: true,
-        requiredReason: "Bundled Paperclip skills are always available for local adapters.",
+        requiredReason: "Bundled TitanClip skills are always available for local adapters.",
       }));
   } catch {
     return [];
@@ -484,7 +484,7 @@ export function buildPersistentSkillSnapshot(
 
   for (const desiredSkill of desiredSkills) {
     if (availableByKey.has(desiredSkill)) continue;
-    warnings.push(`Desired skill "${desiredSkill}" is not available from the Paperclip skills directory.`);
+    warnings.push(`Desired skill "${desiredSkill}" is not available from the TitanClip skills directory.`);
     entries.push({
       key: desiredSkill,
       runtimeName: null,
@@ -493,7 +493,7 @@ export function buildPersistentSkillSnapshot(
       state: "missing",
       sourcePath: null,
       targetPath: null,
-      detail: "Paperclip cannot find this skill in the local runtime skills directory.",
+      detail: "TitanClip cannot find this skill in the local runtime skills directory.",
       origin: "external_unknown",
       originLabel: "External or unavailable",
       readOnly: false,

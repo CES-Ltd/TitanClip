@@ -40,10 +40,8 @@ extraResources:
     to: migrations-sqlite
 
 mac:
-  hardenedRuntime: true
+  hardenedRuntime: false
   gatekeeperAssess: false
-  entitlements: build/entitlements.mac.plist
-  entitlementsInherit: build/entitlements.mac.inherit.plist
   target:
     - target: dmg
       arch:
