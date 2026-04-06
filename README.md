@@ -20,7 +20,7 @@
 
 ## Walkthrough
 
-https://github.com/user-attachments/assets/walkthrough.mov
+[Download Walkthrough Video (62MB)](https://github.com/ankurCES/TitanClip/releases/download/v1.0.0-beta/walkthrough.mov)
 
 > *Full walkthrough: onboarding, agent hiring, task delegation, issue tracking, and analytics.*
 
