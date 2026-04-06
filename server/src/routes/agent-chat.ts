@@ -85,19 +85,6 @@ function buildChatConfig(adapterConfig: Record<string, unknown>, httpAdapters?: 
     }
   }
 
-  // Env var fallback if still no API key after adapter config and httpAdapters
-  if (!apiKey) {
-    if (provider === "anthropic") {
-      apiKey = process.env.ANTHROPIC_API_KEY || "";
-    } else if (provider === "openai") {
-      apiKey = process.env.OPENAI_API_KEY || "";
-    } else if (provider === "openrouter") {
-      apiKey = process.env.OPENROUTER_API_KEY || "";
-    } else {
-      apiKey = process.env.OPENAI_API_KEY || process.env.ANTHROPIC_API_KEY || "";
-    }
-  }
-
   if (!baseUrl) baseUrl = PROVIDER_BASE_URLS[provider] || "";
 
   return {
