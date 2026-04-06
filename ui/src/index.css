@@ -118,41 +118,41 @@
   --sidebar-ring: oklch(0.55 0.14 270);
 }
 
-/* ─── TitanClip Theme: "Forge" — warm charcoal + copper accent ─── */
+/* ─── TitanClip Theme: "Forge" — dark steel + fiery orange (Titan Claw) ─── */
 .titanclip {
   color-scheme: dark;
-  --background: oklch(0.17 0.015 55);
-  --foreground: oklch(0.90 0.015 70);
-  --card: oklch(0.21 0.018 55);
-  --card-foreground: oklch(0.90 0.015 70);
-  --popover: oklch(0.21 0.018 55);
-  --popover-foreground: oklch(0.90 0.015 70);
-  --primary: oklch(0.72 0.14 65);
-  --primary-foreground: oklch(0.17 0.015 55);
-  --secondary: oklch(0.24 0.018 55);
-  --secondary-foreground: oklch(0.88 0.015 70);
-  --muted: oklch(0.24 0.018 55);
-  --muted-foreground: oklch(0.60 0.02 60);
-  --accent: oklch(0.26 0.03 55);
-  --accent-foreground: oklch(0.90 0.015 70);
-  --destructive: oklch(0.58 0.20 30);
-  --destructive-foreground: oklch(0.98 0.005 70);
-  --border: oklch(0.30 0.02 55);
-  --input: oklch(0.30 0.02 55);
-  --ring: oklch(0.72 0.14 65);
-  --chart-1: oklch(0.72 0.14 65);
-  --chart-2: oklch(0.55 0.12 180);
-  --chart-3: oklch(0.60 0.18 25);
-  --chart-4: oklch(0.58 0.15 300);
-  --chart-5: oklch(0.65 0.10 140);
-  --sidebar: oklch(0.14 0.012 55);
-  --sidebar-foreground: oklch(0.90 0.015 70);
-  --sidebar-primary: oklch(0.72 0.14 65);
-  --sidebar-primary-foreground: oklch(0.14 0.012 55);
-  --sidebar-accent: oklch(0.22 0.025 55);
-  --sidebar-accent-foreground: oklch(0.90 0.015 70);
-  --sidebar-border: oklch(0.28 0.018 55);
-  --sidebar-ring: oklch(0.72 0.14 65);
+  --background: oklch(0.16 0.012 35);            /* dark warm charcoal */
+  --foreground: oklch(0.91 0.012 60);             /* warm off-white */
+  --card: oklch(0.20 0.015 35);
+  --card-foreground: oklch(0.91 0.012 60);
+  --popover: oklch(0.20 0.015 35);
+  --popover-foreground: oklch(0.91 0.012 60);
+  --primary: oklch(0.68 0.17 38);                 /* fiery orange — Titan Claw claws */
+  --primary-foreground: oklch(0.15 0.010 35);
+  --secondary: oklch(0.23 0.015 35);
+  --secondary-foreground: oklch(0.89 0.012 60);
+  --muted: oklch(0.23 0.015 35);
+  --muted-foreground: oklch(0.58 0.018 40);
+  --accent: oklch(0.26 0.025 240);                /* steel blue — armor metallic */
+  --accent-foreground: oklch(0.91 0.012 60);
+  --destructive: oklch(0.56 0.22 28);
+  --destructive-foreground: oklch(0.98 0.005 60);
+  --border: oklch(0.28 0.018 35);
+  --input: oklch(0.28 0.018 35);
+  --ring: oklch(0.68 0.17 38);                    /* fiery orange ring */
+  --chart-1: oklch(0.68 0.17 38);                 /* orange */
+  --chart-2: oklch(0.52 0.10 240);                /* steel blue */
+  --chart-3: oklch(0.62 0.18 20);                 /* red */
+  --chart-4: oklch(0.55 0.14 310);                /* plum */
+  --chart-5: oklch(0.62 0.12 150);                /* forest green */
+  --sidebar: oklch(0.13 0.010 35);
+  --sidebar-foreground: oklch(0.91 0.012 60);
+  --sidebar-primary: oklch(0.68 0.17 38);         /* fiery orange */
+  --sidebar-primary-foreground: oklch(0.13 0.010 35);
+  --sidebar-accent: oklch(0.21 0.020 35);
+  --sidebar-accent-foreground: oklch(0.91 0.012 60);
+  --sidebar-border: oklch(0.26 0.015 35);
+  --sidebar-ring: oklch(0.68 0.17 38);            /* fiery orange */
 }
 
 @layer base {

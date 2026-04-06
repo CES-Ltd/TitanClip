@@ -22,7 +22,7 @@ const THEME_STORAGE_KEY = "titanclip.theme";
 const THEME_COLORS: Record<Theme, string> = {
   light: "#FDFCFB",
   dark: "#1C1D28",
-  titanclip: "#2A2520",
+  titanclip: "#241E1A",
 };
 const ThemeContext = createContext<ThemeContextValue | undefined>(undefined);
 
