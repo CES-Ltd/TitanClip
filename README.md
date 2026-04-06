@@ -10,6 +10,10 @@
 </p>
 
 <p align="center">
+  <em>Command your Enterprise Ready Digital Legion: an elite, orchestrated army of AI agents built to scale your enterprise without the risk of going rogue. By replacing chaotic automation with a governed command structure, this workforce integrates fail-safe controls and ironclad guardrails directly into your operations. It's more than just a productivity boost—it's high-velocity intelligence under absolute control, ensuring every autonomous action is safe, synchronized, and strategically aligned.</em>
+</p>
+
+<p align="center">
   <img src="https://img.shields.io/badge/version-1.0.0-blue" alt="Version" />
   <img src="https://img.shields.io/badge/electron-33-brightgreen" alt="Electron" />
   <img src="https://img.shields.io/badge/node-%3E%3D20-green" alt="Node" />
