@@ -8,7 +8,8 @@ import { useToast } from "../context/ToastContext";
 import { useAdminGovernance } from "../context/AdminGovernanceContext";
 import { queryKeys } from "../lib/queryKeys";
 import { cn } from "../lib/utils";
-import { generateSprite, generateAgentNumber } from "../lib/pixel-sprite";
+import { generateSprite, generateAgentNumber, generateVillainAgentName } from "../lib/pixel-sprite";
+import { instanceSettingsApi } from "../api/instanceSettings";
 import { adapterLabels, roleLabels } from "../components/agent-config-primitives";
 import type { AgentTemplate } from "@titanclip/shared";
 
@@ -27,7 +28,7 @@ const ROLE_BADGE_COLORS: Record<string, string> = {
 };
 
 const SUPPORTED_ADAPTERS = [
-  "claude_local", "codex_local", "gemini_local", "opencode_local",
+  "titanclaw_local", "claude_local", "codex_local", "gemini_local", "opencode_local",
   "pi_local", "cursor", "hermes_local", "openclaw_gateway",
 ];
 
@@ -36,6 +37,12 @@ export function AgentGallery() {
   const { pushToast } = useToast();
   const qc = useQueryClient();
   const governance = useAdminGovernance();
+
+  const { data: experimentalSettings } = useQuery({
+    queryKey: queryKeys.instance.experimentalSettings,
+    queryFn: () => instanceSettingsApi.getExperimental(),
+  });
+  const funModeEnabled = experimentalSettings?.enableFunMode === true;
 
   const [selectedTemplate, setSelectedTemplate] = useState<AgentTemplate | null>(null);
   const [hireAdapter, setHireAdapter] = useState("");
@@ -82,7 +89,11 @@ export function AgentGallery() {
   const hireMut = useMutation({
     mutationFn: async () => {
       if (!selectedTemplate || !cid) throw new Error("Missing data");
-      const agentName = `Agent_${generateAgentNumber(selectedTemplate.id)}`;
+      const shortId = crypto.randomUUID().slice(0, 8);
+      const templateName = (selectedTemplate.name || selectedTemplate.role || "Agent").replace(/\s+/g, "_");
+      const agentName = funModeEnabled
+        ? generateVillainAgentName()
+        : `${templateName}_${shortId}`;
       return agentsApi.create(cid, {
         name: agentName,
         role: selectedTemplate.role,
@@ -93,6 +104,7 @@ export function AgentGallery() {
         runtimeConfig: {
           heartbeat: { enabled: true, intervalSeconds: 3600, wakeOnDemand: true, maxConcurrentRuns: 1 },
         },
+        templateId: selectedTemplate.id,
         hireSource: "agent-gallery",
       } as any);
     },
@@ -212,7 +224,7 @@ export function AgentGallery() {
                 Cancel
               </button>
               <button onClick={() => hireMut.mutate()}
-                disabled={!hireAdapter || hireMut.isPending}
+                disabled={!hireAdapter || !hireModel || hireMut.isPending}
                 className="px-5 py-2 text-xs font-medium rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 transition-colors flex items-center gap-1.5">
                 <Users className="h-3.5 w-3.5" />
                 {hireMut.isPending ? "Hiring..." : "Hire"}

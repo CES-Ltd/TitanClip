@@ -10,6 +10,7 @@ import {
 import type { AgentTemplate, CreateAgentTemplate } from "@titanclip/shared";
 import { Lock, LockOpen, ShieldCheck, KeyRound, Plus, Pencil, Trash2, FileText, Globe, EyeOff, Shield, Server, Database, AlertTriangle, Users, Bot, Clock } from "lucide-react";
 import { adminSettingsApi } from "@/api/adminSettings";
+import { api } from "@/api/client";
 import { permissionPoliciesApi } from "../api/permissionPolicies";
 import { agentsApi } from "../api/agents";
 import { useAdminSession } from "../context/AdminSessionContext";
@@ -47,6 +48,8 @@ export function InstanceAdminSettings() {
   const [pinDialogOpen, setPinDialogOpen] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
   const [activeSection, setActiveSection] = useState("adapters");
+  const [dbResetConfirm, setDbResetConfirm] = useState("");
+  const [dbResetLoading, setDbResetLoading] = useState(false);
 
   // Change PIN state
   const [currentPin, setCurrentPin] = useState("");
@@ -439,18 +442,13 @@ export function InstanceAdminSettings() {
                     <p className="text-xs text-muted-foreground text-center py-4">No models available from local adapter metadata</p>
                   )}
 
-                  {/* HTTP endpoint model discovery for openai_compatible / universal_llm */}
+                  {/* HTTP endpoint adapter management for openai_compatible / universal_llm */}
                   {(selectedAdapterForModels === "openai_compatible" || selectedAdapterForModels === "universal_llm") && (
                     <div className="mt-4 pt-4 border-t border-border">
                       <HttpEndpointModelFetcher
-                        allowedModels={allowedModels?.[selectedAdapterForModels] ?? null}
-                        onModelsChange={(models) => {
-                          updateMutation.mutate({
-                            allowedModelsPerAdapter: {
-                              ...(allowedModels ?? {}),
-                              [selectedAdapterForModels!]: models,
-                            },
-                          });
+                        httpAdapters={data?.httpAdapters ?? []}
+                        onAdaptersChange={(adapters) => {
+                          updateMutation.mutate({ httpAdapters: adapters });
                         }}
                         disabled={updateMutation.isPending}
                       />
@@ -575,7 +573,7 @@ export function InstanceAdminSettings() {
                 <span className="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full bg-indigo-500/10 text-indigo-500 border border-indigo-500/20">Beta</span>
               </div>
               <p className="max-w-2xl text-sm text-muted-foreground">
-                Allow Agent OS to create temporary session agents on-the-fly when no matching template is found.
+                Allow TitanClaw to create temporary session agents on-the-fly when no matching template is found.
                 Session agents inherit their parent's IAM permissions, require explicit user approval, and
                 automatically expire after 24 hours.
               </p>
@@ -837,6 +835,57 @@ export function InstanceAdminSettings() {
             </div>
           </div>
           <ComplianceDisclaimer severity="danger" />
+
+          {/* Database Reset */}
+          <div className="rounded-xl border border-red-500/30 bg-card p-5 mt-4">
+            <div className="space-y-1.5">
+              <div className="flex items-center gap-2">
+                <Database className="h-4 w-4 text-red-500" />
+                <h3 className="text-sm font-semibold">Reset & Reinitialize Database</h3>
+                <span className="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full bg-red-500/10 text-red-500 border border-red-500/20">
+                  Destructive
+                </span>
+              </div>
+              <p className="max-w-2xl text-sm text-muted-foreground">
+                This will <strong>permanently delete ALL data</strong> — teams, agents, issues, conversations, activity logs, and settings.
+                The database schema and migrations are preserved. The app will restart with a clean onboarding experience.
+              </p>
+            </div>
+            <div className="mt-3 flex items-center gap-2">
+              <input
+                value={dbResetConfirm}
+                onChange={(e) => setDbResetConfirm(e.target.value)}
+                placeholder='Type "RESET" to confirm'
+                className="rounded-md border border-red-500/30 bg-background px-3 py-1.5 text-sm w-48"
+              />
+              <button
+                disabled={dbResetConfirm !== "RESET" || dbResetLoading}
+                onClick={async () => {
+                  setDbResetLoading(true);
+                  try {
+                    await api.post("/instance/settings/admin/reset-db", {}, {
+                      headers: { "x-admin-token": token! },
+                    });
+                    setDbResetConfirm("");
+                    // Reload the app
+                    window.location.href = "/";
+                  } catch (err: any) {
+                    setActionError(err.message ?? "Reset failed");
+                  } finally {
+                    setDbResetLoading(false);
+                  }
+                }}
+                className={cn(
+                  "px-4 py-1.5 rounded-md text-sm font-medium transition-colors",
+                  dbResetConfirm === "RESET"
+                    ? "bg-red-600 text-white hover:bg-red-700"
+                    : "bg-muted text-muted-foreground cursor-not-allowed opacity-50"
+                )}
+              >
+                {dbResetLoading ? "Resetting..." : "Reset Database"}
+              </button>
+            </div>
+          </div>
         </div>
       )}
 

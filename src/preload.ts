@@ -8,4 +8,6 @@ contextBridge.exposeInMainWorld("electronAPI", {
   navCanGoBack: () => ipcRenderer.invoke("nav-can-go-back"),
   navCanGoForward: () => ipcRenderer.invoke("nav-can-go-forward"),
   setTheme: (theme: string) => ipcRenderer.invoke("set-theme", theme),
+  invoke: (channel: string, ...args: unknown[]) => ipcRenderer.invoke(channel, ...args),
+  showOpenDialog: (options: Record<string, unknown>) => ipcRenderer.invoke("dialog:open-file", options),
 });

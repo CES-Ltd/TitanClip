@@ -379,6 +379,43 @@ export function registerServiceIpcHandlers(svc: ServiceContainer): void {
   h("company-skills:import", (_, { companyId, ...data }: any) =>
     svc.companySkill.importFromSource(companyId, data));
 
+  // ── LLM Proxy ───────────────────────────────────────────────────────
+  // Proxy model discovery requests to external LLM APIs (avoids CORS)
+  h("llm-proxy:models", async (_, args: any) => {
+    const { baseUrl, apiKey, provider } = args ?? {};
+    if (!baseUrl || typeof baseUrl !== "string") throw new Error("baseUrl is required");
+
+    // Anthropic static model list
+    if (provider === "anthropic") {
+      return {
+        data: [
+          { id: "claude-opus-4-20250514", label: "Claude Opus 4" },
+          { id: "claude-sonnet-4-20250514", label: "Claude Sonnet 4" },
+          { id: "claude-haiku-4-20250514", label: "Claude Haiku 4" },
+          { id: "claude-3-5-sonnet-20241022", label: "Claude 3.5 Sonnet" },
+          { id: "claude-3-5-haiku-20241022", label: "Claude 3.5 Haiku" },
+        ],
+      };
+    }
+
+    let modelsUrl = baseUrl.replace(/\/+$/, "");
+    if (!modelsUrl.endsWith("/models")) modelsUrl += "/models";
+
+    const headers: Record<string, string> = { Accept: "application/json" };
+    if (apiKey) headers["Authorization"] = `Bearer ${apiKey}`;
+
+    const res = await fetch(modelsUrl, {
+      method: "GET",
+      headers,
+      signal: AbortSignal.timeout(15000),
+    });
+    if (!res.ok) {
+      const text = await res.text().catch(() => "");
+      throw new Error(`Upstream API returned ${res.status}: ${text.slice(0, 500)}`);
+    }
+    return res.json();
+  });
+
   // ── Live Events (main → renderer push) ────────────────────────────────
   // Subscribe to live events from services and push to renderer via IPC
   setupLiveEventForwarding(svc);

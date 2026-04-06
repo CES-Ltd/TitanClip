@@ -22,18 +22,18 @@
     <script>
       (() => {
         const key = "titanclip.theme";
-        const darkThemeColor = "#18181b";
-        const lightThemeColor = "#ffffff";
+        const themeColors = { light: "#FDFCFB", dark: "#1C1D28", titanclip: "#2A2520" };
+        const valid = ["light", "dark", "titanclip"];
         try {
           const stored = window.localStorage.getItem(key);
-          const theme = stored === "light" || stored === "dark" ? stored : "dark";
-          const isDark = theme === "dark";
-          document.documentElement.classList.toggle("dark", isDark);
-          document.documentElement.style.colorScheme = isDark ? "dark" : "light";
-          const themeColorMeta = document.querySelector('meta[name="theme-color"]');
-          if (themeColorMeta) {
-            themeColorMeta.setAttribute("content", isDark ? darkThemeColor : lightThemeColor);
-          }
+          const theme = valid.includes(stored) ? stored : "dark";
+          const root = document.documentElement;
+          root.classList.remove("dark", "titanclip");
+          if (theme === "dark") root.classList.add("dark");
+          if (theme === "titanclip") { root.classList.add("dark"); root.classList.add("titanclip"); }
+          root.style.colorScheme = theme === "light" ? "light" : "dark";
+          const meta = document.querySelector('meta[name="theme-color"]');
+          if (meta) meta.setAttribute("content", themeColors[theme] || themeColors.dark);
         } catch {
           document.documentElement.classList.add("dark");
           document.documentElement.style.colorScheme = "dark";

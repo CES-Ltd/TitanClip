@@ -16,7 +16,20 @@ export const instanceExperimentalSettingsSchema = z.object({
   enableIsolatedWorkspaces: z.boolean().default(false),
   autoRestartDevServerWhenIdle: z.boolean().default(false),
   enableAgentOs: z.boolean().default(false),
+  enableFunMode: z.boolean().default(false),
+  agentOsAdapterId: z.string().nullable().default(null),
 }).strict();
+
+export const httpAdapterSchema = z.object({
+  id: z.string().uuid(),
+  name: z.string().min(1).max(200),
+  provider: z.string().min(1),
+  baseUrl: z.string().min(1),
+  apiKey: z.string().optional(),
+  models: z.array(z.string()).default([]),
+  enabled: z.boolean().default(true),
+  createdAt: z.string(),
+});
 
 export const patchInstanceExperimentalSettingsSchema = instanceExperimentalSettingsSchema.partial();
 
@@ -66,6 +79,8 @@ export const instanceAdminSettingsSchema = z.object({
   enableSessionAgents: z.boolean().default(false),
   /** Danger Zone: allow agents to use "autonomous" autonomy level (unrestricted tool access) */
   allowAutonomousMode: z.boolean().default(false),
+  /** Named HTTP adapters for OpenAI-compatible endpoints */
+  httpAdapters: z.array(httpAdapterSchema).default([]),
 }).strict();
 
 export const patchInstanceAdminSettingsSchema = instanceAdminSettingsSchema

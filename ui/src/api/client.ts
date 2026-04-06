@@ -818,6 +818,14 @@ const ipcRoutes: IpcRoute[] = [
     args: (m, b) => ({ id: m[1], ...(b as object) }) },
   { method: "DELETE", pattern: /^\/user-credentials\/([^/]+)$/, channel: "user-credentials:revoke",
     args: (m) => ({ id: m[1] }) },
+
+  // ── LLM Proxy ───────────────────────────────────────────────────────
+  { method: "POST", pattern: /^\/llm-proxy\/models$/, channel: "llm-proxy:models",
+    args: (_, b) => b },
+
+  // ── Main Agent ─────────────────────────────────────────────────────
+  { method: "GET", pattern: /^\/companies\/([^/]+)\/main-agent$/, channel: "main-agent:get",
+    args: (m) => ({ companyId: m[1] }) },
 ];
 
 // ── IPC Transport ───────────────────────────────────────────────────────

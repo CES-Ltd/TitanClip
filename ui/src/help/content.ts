@@ -1106,4 +1106,95 @@ Each team is isolated with its own agents, tasks, budgets, and credentials.`,
 
 Policies are created in Instance Settings → Policies and linked to agents via templates or direct assignment.`,
   },
+
+  // --- TitanClaw & Chat ---
+  {
+    id: "titanclaw-overview",
+    title: "TitanClaw Agent Framework",
+    category: "Agent Management",
+    keywords: ["titanclaw", "agent os", "framework", "agentic", "tool calling", "titan claw"],
+    content: `TitanClaw is the built-in agentic AI framework in TitanClip. It provides autonomous task execution with tool calling, delegation, and memory.
+
+**Key Features:**
+- Agentic tool loop: LLM calls tools, processes results, and iterates until task is complete
+- 8 built-in tools: web_search, web_fetch, shell_exec, read_file, write_file, current_time, delegate_to_agent, hire_agent
+- Autonomy levels: sandboxed (no tools), supervised (destructive tools need approval), autonomous (all tools auto-execute)
+- Per-run cost budgeting with token limits
+- Streaming recovery: auto-compacts context when token budget is near limit
+- Cross-session memory with importance weighting and time decay
+
+**Navigate to:** Settings → TitanClaw Settings (sidebar → TitanClaw → LLM Settings)
+
+**Enable TitanClaw:** Instance Settings → Experimental → TitanClaw toggle`,
+  },
+  {
+    id: "chat-interface",
+    title: "Chat Interface",
+    category: "Getting Started",
+    keywords: ["chat", "message", "conversation", "talk", "command"],
+    content: `The Chat interface lets you interact with your team's main agent in real-time with streaming responses.
+
+**Features:**
+- Slash commands: /status, /plan, /review, /create-issue, /agents, /help
+- # mentions: type # to reference an issue (e.g., #DEL-2) — the agent gets full issue context
+- @ mentions: type @ to mention an agent — routes tasks or queries to that agent
+- Project context: select a project to scope your questions
+- Tool call cards: see agent tool usage as collapsible cards
+- Inline approvals: approve or reject agent actions directly in chat
+- Rich markdown: tables, code blocks, lists rendered in responses
+
+**Navigate to:** Sidebar → Chat`,
+  },
+  {
+    id: "http-adapters",
+    title: "HTTP Adapters",
+    category: "Agent Management",
+    keywords: ["adapter", "http", "openai", "endpoint", "provider", "model", "api key"],
+    content: `HTTP Adapters connect TitanClip to OpenAI-compatible LLM endpoints. You can create multiple named adapters for different providers.
+
+**Creating an Adapter:**
+1. Go to Instance Settings → Admin → Adapters section
+2. Select OpenAI Compatible from the adapter list
+3. Click "Add Adapter"
+4. Enter a name (e.g., "Production OpenAI")
+5. Select a provider preset (OpenAI, Anthropic, Ollama, etc.)
+6. Enter API key and click Connect
+7. Select models to enable
+8. Click Save Adapter
+
+**Navigate to:** Instance Settings → Admin (requires admin PIN)`,
+  },
+  {
+    id: "fun-mode",
+    title: "Fun Mode",
+    category: "Team Settings",
+    keywords: ["fun", "pixel art", "villain", "workplace", "game", "animation"],
+    content: `Fun Mode adds playful elements to TitanClip:
+
+- Pixel art villain animations on the team onboarding screen
+- Villain-themed agent names (Mogambo, Joker, Thanos, etc.) when hiring agents
+- Workplace gamified view in the sidebar
+
+**Toggle:** Click the sparkle icon in the title bar (next to the theme switcher)
+Or: Instance Settings → Experimental → Fun Mode`,
+  },
+  {
+    id: "soft-delete",
+    title: "Soft Delete Team Data",
+    category: "Team Settings",
+    keywords: ["delete", "soft delete", "clear", "reset", "memory", "logs"],
+    content: `Soft Delete removes agent memories, conversation history, and run logs while preserving audit trails and financial records.
+
+**What gets deleted:**
+- Agent memories (all types)
+- Conversations and messages
+- Heartbeat run event logs
+
+**What is preserved:**
+- Activity log (audit trail)
+- Cost events and financial records
+- Issues, agents, and projects
+
+**Navigate to:** Company Settings → Danger Zone → Soft Delete Team Data`,
+  },
 ];

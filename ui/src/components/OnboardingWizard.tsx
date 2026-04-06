@@ -38,6 +38,8 @@ import { DEFAULT_CURSOR_LOCAL_MODEL } from "@titanclip/adapter-cursor-local";
 import { DEFAULT_GEMINI_LOCAL_MODEL } from "@titanclip/adapter-gemini-local";
 import { resolveRouteOnboardingOptions } from "../lib/onboarding-route";
 import { AsciiArtAnimation } from "./AsciiArtAnimation";
+import { PixelArtAnimation } from "./PixelArtAnimation";
+import { instanceSettingsApi } from "../api/instanceSettings";
 import { OpenCodeLogoIcon } from "./OpenCodeLogoIcon";
 import {
   Building2,
@@ -68,19 +70,35 @@ type AdapterType =
   | "pi_local"
   | "cursor"
   | "http"
-  | "openclaw_gateway";
+  | "openclaw_gateway"
+  | "titanclaw_local";
 
-const DEFAULT_TASK_DESCRIPTION = `You are the Business Unit Head. You set the direction for the team.
+const DEFAULT_TASK_DESCRIPTION = `You are the Team Lead. Build your delivery team by hiring all available agent templates.
 
-- hire a founding engineer
-- write a hiring plan
-- break the roadmap into concrete tasks and start delegating work`;
+Use the hire_agent tool to hire each of the following roles from the available templates:
+- Tech Lead (cto)
+- Backend Engineer (engineer)
+- Frontend Engineer (engineer)
+- QA Engineer (qa)
+- DevOps Engineer (devops)
+- Security Engineer (engineer)
+- Product Manager (pm)
+- SRE Engineer (devops)
+- Documentation Engineer (general)
+- Performance Engineer (engineer)
+
+IMPORTANT: Only use the exact template names listed above. After hiring each agent, delegate an initial onboarding task to them. Post a team announcement to chatter once the full team is assembled.`;
 
 export function OnboardingWizard() {
   const { onboardingOpen, onboardingOptions, closeOnboarding } = useDialog();
   const { companies, setSelectedCompanyId, loading: companiesLoading } = useCompany();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
+  const { data: experimentalSettings } = useQuery({
+    queryKey: queryKeys.instance.experimentalSettings,
+    queryFn: () => instanceSettingsApi.getExperimental(),
+  });
+  const funModeEnabled = experimentalSettings?.enableFunMode === true;
   const location = useLocation();
   const { companyPrefix } = useParams<{ companyPrefix?: string }>();
   const [routeDismissed, setRouteDismissed] = useState(false);
@@ -130,7 +148,7 @@ export function OnboardingWizard() {
 
   // Step 3
   const [taskTitle, setTaskTitle] = useState(
-    "Hire your first engineer and create a hiring plan"
+    "Hire all available agent templates and build the delivery team"
   );
   const [taskDescription, setTaskDescription] = useState(
     DEFAULT_TASK_DESCRIPTION
@@ -299,7 +317,7 @@ export function OnboardingWizard() {
     setAdapterEnvLoading(false);
     setForceUnsetAnthropicApiKey(false);
     setUnsetAnthropicLoading(false);
-    setTaskTitle("Hire your first engineer and create a hiring plan");
+    setTaskTitle("Hire all available agent templates and build the delivery team");
     setTaskDescription(DEFAULT_TASK_DESCRIPTION);
     setCreatedCompanyId(null);
     setCreatedCompanyPrefix(null);
@@ -761,6 +779,13 @@ export function OnboardingWizard() {
                     <div className="grid grid-cols-2 gap-2">
                       {[
                         {
+                          value: "titanclaw_local" as const,
+                          label: "TitanClaw",
+                          icon: Sparkles,
+                          desc: "Agentic AI framework (CLI)",
+                          recommended: true
+                        },
+                        {
                           value: "claude_local" as const,
                           label: "Claude Code",
                           icon: Sparkles,
@@ -772,7 +797,7 @@ export function OnboardingWizard() {
                           label: "Codex",
                           icon: Code,
                           desc: "Local Codex agent",
-                          recommended: true
+                          recommended: false
                         }
                       ].map((opt) => (
                         <button
@@ -916,7 +941,8 @@ export function OnboardingWizard() {
                     adapterType === "hermes_local" ||
                     adapterType === "opencode_local" ||
                     adapterType === "pi_local" ||
-                    adapterType === "cursor") && (
+                    adapterType === "cursor" ||
+                    adapterType === "titanclaw_local") && (
                     <div className="space-y-3">
                       <div>
                         <label className="text-xs text-muted-foreground mb-1 block">
@@ -1340,7 +1366,7 @@ export function OnboardingWizard() {
               step === 1 ? "w-1/2 opacity-100" : "w-0 opacity-0"
             )}
           >
-            <AsciiArtAnimation />
+            {funModeEnabled ? <PixelArtAnimation /> : <AsciiArtAnimation />}
           </div>
         </div>
       </DialogPortal>

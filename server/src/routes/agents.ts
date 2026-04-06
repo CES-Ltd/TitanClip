@@ -73,6 +73,9 @@ export function agentRoutes(db: Db) {
     opencode_local: "instructionsFilePath",
     cursor: "instructionsFilePath",
     pi_local: "instructionsFilePath",
+    titan_claw: "instructionsRootPath",
+    universal_llm: "instructionsRootPath",
+    openai_compatible: "instructionsRootPath",
   };
   const DEFAULT_MANAGED_INSTRUCTIONS_ADAPTER_TYPES = new Set(Object.keys(DEFAULT_INSTRUCTIONS_PATH_KEYS));
   const KNOWN_INSTRUCTIONS_PATH_KEYS = new Set(["instructionsFilePath", "agentsMdPath"]);
@@ -1359,23 +1362,28 @@ export function agentRoutes(db: Db) {
 
     // Write template instruction files if template was used
     const appliedTemplate = (req as any)._agentTemplate;
+    console.log("[TitanClip] Template check:", appliedTemplate ? `Found: ${appliedTemplate.name}` : "No template applied", "| templateId from body:", req.body?.templateId);
     if (appliedTemplate) {
-      const agentConfig = agent.adapterConfig as Record<string, unknown> | undefined;
-      const rootPath = agentConfig?.instructionsRootPath as string | undefined;
+      // Use the actual instructions path from the materialized agent (company-based path)
+      const agentConfig = (agent.adapterConfig as Record<string, unknown>) ?? {};
+      const rootPath = (agentConfig.instructionsRootPath as string)
+        || (agentConfig.instructionsFilePath as string)?.replace(/\/[^/]+$/, "")
+        || null;
+
       if (rootPath) {
         const fs = await import("node:fs/promises");
         const path = await import("node:path");
         try {
           await fs.mkdir(rootPath, { recursive: true });
-          if (appliedTemplate.soulMd) {
-            await fs.writeFile(path.join(rootPath, "SOUL.md"), appliedTemplate.soulMd, "utf-8");
-          }
-          if (appliedTemplate.heartbeatMd) {
-            await fs.writeFile(path.join(rootPath, "HEARTBEAT.md"), appliedTemplate.heartbeatMd, "utf-8");
-          }
-          if (appliedTemplate.agentsMd) {
-            await fs.writeFile(path.join(rootPath, "AGENTS.md"), appliedTemplate.agentsMd, "utf-8");
-          }
+          // Write SOUL.md
+          const soulMd = appliedTemplate.soulMd || `# ${appliedTemplate.name}\n\nRole: ${appliedTemplate.role}\nYou are a ${appliedTemplate.name} agent.`;
+          await fs.writeFile(path.join(rootPath, "SOUL.md"), soulMd, "utf-8");
+          // Write HEARTBEAT.md
+          const heartbeatMd = appliedTemplate.heartbeatMd || `# Priorities\n\n1. Complete assigned tasks\n2. Report progress via issue comments\n3. Escalate blockers`;
+          await fs.writeFile(path.join(rootPath, "HEARTBEAT.md"), heartbeatMd, "utf-8");
+          // Write/overwrite AGENTS.md with template content
+          const agentsMd = appliedTemplate.agentsMd || `# ${appliedTemplate.name}\n\nRole: ${appliedTemplate.role}\n\n## Responsibilities\nFollow your SOUL.md principles and HEARTBEAT.md priorities.\nUse tools to accomplish tasks. Report progress via issue comments and chatter.`;
+          await fs.writeFile(path.join(rootPath, "AGENTS.md"), agentsMd, "utf-8");
         } catch (err) {
           console.error("[TitanClip] Failed to write template instruction files:", err);
         }
@@ -1499,6 +1507,8 @@ export function agentRoutes(db: Db) {
 
     const {
       desiredSkills: requestedDesiredSkills,
+      templateId: _galleryTemplateId,
+      hireSource: _hireSource,
       ...createInput
     } = req.body;
     const requestedAdapterConfig = applyCreateDefaultsByAdapterType(
@@ -1522,6 +1532,16 @@ export function agentRoutes(db: Db) {
       normalizedAdapterConfig,
     );
 
+    // Template application for /agents route (gallery hires)
+    const galleryTemplateId = _galleryTemplateId;
+    let galleryTemplate: any = null;
+    if (galleryTemplateId) {
+      galleryTemplate = await instanceSettings.getAgentTemplate(galleryTemplateId);
+      if (galleryTemplate) {
+        if (!createInput.role) createInput.role = galleryTemplate.role;
+      }
+    }
+
     const createdAgent = await svc.create(companyId, {
       ...createInput,
       adapterConfig: normalizedAdapterConfig,
@@ -1530,6 +1550,30 @@ export function agentRoutes(db: Db) {
       lastHeartbeatAt: null,
     });
     const agent = await materializeDefaultInstructionsBundleForNewAgent(createdAgent);
+
+    // Write template instruction files (SOUL.md, HEARTBEAT.md, AGENTS.md)
+    if (galleryTemplate) {
+      const agentConfig = (agent.adapterConfig as Record<string, unknown>) ?? {};
+      const rootPath = (agentConfig.instructionsRootPath as string)
+        || (agentConfig.instructionsFilePath as string)?.replace(/\/[^/]+$/, "")
+        || null;
+
+      if (rootPath) {
+        const fs = await import("node:fs/promises");
+        const path = await import("node:path");
+        try {
+          await fs.mkdir(rootPath, { recursive: true });
+          const soulMd = galleryTemplate.soulMd || `# ${galleryTemplate.name}\n\nRole: ${galleryTemplate.role}\nYou are a ${galleryTemplate.name} agent.`;
+          await fs.writeFile(path.join(rootPath, "SOUL.md"), soulMd, "utf-8");
+          const heartbeatMd = galleryTemplate.heartbeatMd || `# Priorities\n\n1. Complete assigned tasks\n2. Report progress via issue comments\n3. Escalate blockers`;
+          await fs.writeFile(path.join(rootPath, "HEARTBEAT.md"), heartbeatMd, "utf-8");
+          const agentsMd = galleryTemplate.agentsMd || `# ${galleryTemplate.name}\n\nRole: ${galleryTemplate.role}\n\n## Responsibilities\nFollow your SOUL.md principles and HEARTBEAT.md priorities.`;
+          await fs.writeFile(path.join(rootPath, "AGENTS.md"), agentsMd, "utf-8");
+        } catch (err) {
+          console.error("[TitanClip] Failed to write gallery template files:", err);
+        }
+      }
+    }
 
     const actor = getActorInfo(req);
     await logActivity(db, {

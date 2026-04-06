@@ -204,7 +204,7 @@ export class OpenAIProvider implements LLMProvider {
     }
   }
 
-  private formatMessages(messages: ChatMessage[], systemPrompt?: string): ChatMessage[] {
+  protected formatMessages(messages: ChatMessage[], systemPrompt?: string): ChatMessage[] {
     const result: ChatMessage[] = [];
     if (systemPrompt) {
       result.push({ role: "system", content: systemPrompt });

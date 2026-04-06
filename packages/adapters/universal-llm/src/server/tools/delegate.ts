@@ -34,7 +34,10 @@ export const delegateToAgentTool: RegisteredTool = {
       },
       required: ["agentName", "taskTitle", "taskDescription"],
     },
-    destructive: true, // Creates issues + wakes agents
+    destructive: false,
+    readOnly: false,
+    requiresApproval: false,
+    concurrencySafe: true,
   },
   handler: async (params): Promise<ToolResult> => {
     // In the tool loop, this tool is invoked but the actual issue creation

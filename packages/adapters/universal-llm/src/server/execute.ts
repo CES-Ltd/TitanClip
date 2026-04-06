@@ -28,11 +28,27 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
   const startTime = Date.now();
   const config = ctx.config ?? {};
 
-  // Provider config
-  const providerSlug = (config.provider as string) ?? "openai";
-  const model = (config.model as string) ?? "gpt-4o-mini";
+  // Provider config — infer provider from model string if not explicitly set
+  let providerSlug = (config.provider as string) ?? "";
+  let model = (config.model as string) ?? "gpt-4o-mini";
   const apiKey = (config.apiKey as string) ?? "";
   const baseUrl = (config.baseUrl as string) ?? undefined;
+
+  const KNOWN_PROVIDER_PREFIXES = ["openai", "anthropic", "ollama", "ollama_cloud", "ollama_local", "openrouter", "gemini", "azure", "vertex", "custom"];
+
+  if (model.includes("/")) {
+    const slashIdx = model.indexOf("/");
+    const prefix = model.slice(0, slashIdx).toLowerCase();
+    if (KNOWN_PROVIDER_PREFIXES.includes(prefix)) {
+      // Always strip the prefix from model name
+      model = model.slice(slashIdx + 1);
+      // Infer provider if not explicitly set
+      if (!providerSlug) {
+        providerSlug = prefix;
+      }
+    }
+  }
+  if (!providerSlug) providerSlug = "openai";
   const systemPrompt = (config.systemPrompt as string) ?? undefined;
   const temperature = config.temperature as number | undefined;
   const maxOutputTokens = (config.maxTokens as number) ?? 4096;
@@ -98,11 +114,24 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
 
       // ── Budget check ────────────────────────────────────────────────
       if (totalCostUsd >= maxCostPerRun) {
-        ctx.onLog("stderr", `\n[AgentOS] Run cost budget exceeded ($${totalCostUsd.toFixed(4)} >= $${maxCostPerRun}). Stopping.\n`);
+        ctx.onLog("stderr", `\n[TitanClaw] Run cost budget exceeded ($${totalCostUsd.toFixed(4)} >= $${maxCostPerRun}). Stopping.\n`);
         break;
       }
+
+      // ── Token budget overflow recovery (auto-compact) ──────────────
+      const estimatedTokens = loopMessages.reduce((sum, m) => sum + (m.content?.length ?? 0) / 4, 0);
+      if (estimatedTokens > maxTokensPerRun * 0.8) {
+        // Keep system prompt (first message if system) + last 6 messages
+        const systemMsg = loopMessages[0]?.role === "system" ? [loopMessages[0]] : [];
+        const recentMsgs = loopMessages.slice(-6);
+        const compactedCount = loopMessages.length - systemMsg.length - recentMsgs.length;
+        if (compactedCount > 0) {
+          loopMessages = [...systemMsg, ...recentMsgs];
+          ctx.onLog("stderr", `[TitanClaw] Auto-compacted ${compactedCount} older messages to stay within token budget.\n`);
+        }
+      }
       if (totalInputTokens + totalOutputTokens >= maxTokensPerRun) {
-        ctx.onLog("stderr", `\n[AgentOS] Token budget exceeded (${totalInputTokens + totalOutputTokens} >= ${maxTokensPerRun}). Stopping.\n`);
+        ctx.onLog("stderr", `\n[TitanClaw] Token budget exceeded (${totalInputTokens + totalOutputTokens} >= ${maxTokensPerRun}). Stopping.\n`);
         break;
       }
 
@@ -115,6 +144,8 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
         tools: openAITools,
       };
 
+      ctx.onLog("stderr", `[TitanClaw] Calling ${providerSlug}/${model} (iteration ${iterations})${baseUrl ? ` via ${baseUrl}` : ""}\n`);
+
       const response = await provider.chatStream(
         loopMessages,
         chatOptions,
@@ -126,6 +157,11 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
           }
         }
       );
+
+      // Warn if the LLM returned nothing
+      if (!response.content && !response.toolCalls?.length && response.usage.inputTokens === 0) {
+        ctx.onLog("stderr", `[TitanClaw] Warning: LLM returned empty response with 0 tokens. This may indicate a connection or model configuration issue.\n`);
+      }
 
       lastResponse = response;
       totalInputTokens += response.usage.inputTokens;
@@ -185,7 +221,7 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
               ? result.content
               : `Error: ${result.error ?? result.content}`;
             loopMessages.push({ role: "tool", content: resultMsg, tool_call_id: toolCall.id });
-            ctx.onLog("stdout", `[result] ${resultMsg.slice(0, 200)}${resultMsg.length > 200 ? "..." : ""}\n`);
+            ctx.onLog("stdout", `[result] ${resultMsg.slice(0, 2000)}${resultMsg.length > 2000 ? "..." : ""}\n`);
           } catch (err: any) {
             const errMsg = `Tool execution error: ${err.message}`;
             loopMessages.push({ role: "tool", content: errMsg, tool_call_id: toolCall.id });

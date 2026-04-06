@@ -57,12 +57,9 @@ import { SkillRouting } from "./pages/SkillRouting";
 import { Analytics } from "./pages/Analytics";
 import { Lifecycle } from "./pages/Lifecycle";
 import { AgentGallery } from "./pages/AgentGallery";
-import { AgentOS } from "./pages/AgentOS";
-import { AgentOSSettings } from "./pages/AgentOSSettings";
+// AgentOS pages removed — TitanClaw is now a separate CLI project
 import { AgentChat } from "./pages/AgentChat";
-import { AgentMemory } from "./pages/AgentMemory";
-import { ConversationHistory } from "./pages/ConversationHistory";
-import { SkillProposals } from "./pages/SkillProposals";
+// AgentMemory, ConversationHistory, SkillProposals removed — TitanClaw separated
 import { AppTitleBar } from "./components/AppTitleBar";
 import { NewAgent } from "./pages/NewAgent";
 import { AuthPage } from "./pages/Auth";
@@ -150,7 +147,9 @@ function boardRoutes() {
       <Route index element={<Navigate to="dashboard" replace />} />
       <Route path="dashboard" element={<Dashboard />} />
       <Route path="workplace" element={<Suspense fallback={<div className="flex items-center justify-center h-full text-muted-foreground">Loading Workplace...</div>}><Workplace /></Suspense>} />
-      <Route path="chat" element={<CommandCenter />} />
+      <Route path="chat" element={<AgentChat />} />
+      <Route path="chat/:conversationId" element={<AgentChat />} />
+      <Route path="ops" element={<CommandCenter />} />
       <Route path="vault" element={<VaultManagement />} />
       <Route path="credentials" element={<UserCredentials />} />
       <Route path="compliance" element={<Compliance />} />
@@ -396,16 +395,10 @@ export function App() {
           <Route path="projects/:projectId/configuration" element={<UnprefixedBoardRedirect />} />
           <Route path="execution-workspaces/:workspaceId" element={<UnprefixedBoardRedirect />} />
           <Route path="tests/ux/runs" element={<UnprefixedBoardRedirect />} />
-          {/* Agent OS routes — must be BEFORE :companyPrefix to avoid being caught as a company */}
-          <Route path="agent-os" element={<Layout />}>
-            <Route index element={<AgentOS />} />
-            <Route path="chat" element={<AgentChat />} />
-            <Route path="chat/:conversationId" element={<AgentChat />} />
-            <Route path="memory" element={<AgentMemory />} />
-            <Route path="memory/:agentId" element={<AgentMemory />} />
-            <Route path="conversations" element={<ConversationHistory />} />
-            <Route path="skills" element={<SkillProposals />} />
-            <Route path="settings" element={<AgentOSSettings />} />
+          {/* Chat routes — must be BEFORE :companyPrefix to avoid "chat" being caught as a company prefix */}
+          <Route path="chat" element={<Layout />}>
+            <Route index element={<AgentChat />} />
+            <Route path=":conversationId" element={<AgentChat />} />
           </Route>
           <Route path=":companyPrefix" element={<Layout />}>
             {boardRoutes()}

@@ -688,6 +688,18 @@ export function AgentDetail() {
       if (action === "invoke" && data && typeof data === "object" && "id" in data) {
         navigate(`/agents/${canonicalAgentRef}/runs/${(data as HeartbeatRun).id}`);
       }
+      if (action === "terminate") {
+        // Navigate to the next available agent or the dashboard
+        const otherAgents = (allAgents ?? []).filter(
+          (a) => a.id !== agent?.id && a.status !== "terminated"
+        );
+        if (otherAgents.length > 0) {
+          const next = otherAgents[0]!;
+          navigate(`/agents/${next.urlKey ?? next.id}`);
+        } else {
+          navigate("/dashboard");
+        }
+      }
     },
     onError: (err) => {
       setActionError(err instanceof Error ? err.message : "Action failed");
@@ -1655,7 +1667,11 @@ function PromptsTab({
     agent.adapterType === "opencode_local" ||
     agent.adapterType === "pi_local" ||
     agent.adapterType === "hermes_local" ||
-    agent.adapterType === "cursor";
+    agent.adapterType === "cursor" ||
+    agent.adapterType === "titanclaw_local" ||
+    agent.adapterType === "gemini_local" ||
+    agent.adapterType === "universal_llm" ||
+    agent.adapterType === "openai_compatible";
 
   const { data: bundle, isLoading: bundleLoading } = useQuery({
     queryKey: queryKeys.agents.instructionsBundle(agent.id),

@@ -4,11 +4,21 @@ import { AnthropicProvider } from "./anthropic.js";
 import { OpenRouterProvider } from "./openrouter.js";
 import { OllamaProvider } from "./ollama.js";
 
+const openaiProvider = new OpenAIProvider();
+const ollamaProvider = new OllamaProvider();
+
 const providers: Record<string, LLMProvider> = {
-  openai: new OpenAIProvider(),
+  openai: openaiProvider,
   anthropic: new AnthropicProvider(),
   openrouter: new OpenRouterProvider(),
-  ollama: new OllamaProvider(),
+  ollama: ollamaProvider,
+  // Aliases — these all use OpenAI-compatible API format
+  gemini: openaiProvider,
+  azure: openaiProvider,
+  vertex: openaiProvider,
+  ollama_cloud: ollamaProvider,
+  ollama_local: ollamaProvider,
+  custom: openaiProvider,
 };
 
 export function getProvider(slug: string): LLMProvider {

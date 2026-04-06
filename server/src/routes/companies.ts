@@ -12,6 +12,7 @@ import {
   updateCompanyBrandingSchema,
   updateCompanySchema,
 } from "@titanclip/shared";
+import { eq } from "drizzle-orm";
 import { badRequest, forbidden } from "../errors.js";
 import { validate } from "../middleware/validate.js";
 import {
@@ -288,53 +289,7 @@ export function companyRoutes(db: Db, storage?: StorageService) {
       );
     }
 
-    // Auto-onboard: create CEO agent + hiring task
-    try {
-      const ceoAgent = await agents.create(company.id, {
-        name: "Business Unit Head",
-        role: "ceo",
-        adapterType: "claude_local",
-        adapterConfig: {},
-        status: "idle",
-        spentMonthlyCents: 0,
-        lastHeartbeatAt: null,
-        runtimeConfig: {
-          heartbeat: { enabled: true, intervalSeconds: 3600, wakeOnDemand: true, maxConcurrentRuns: 1 },
-        },
-      } as any);
-
-      await logActivity(db, {
-        companyId: company.id,
-        actorType: "user",
-        actorId: req.actor.userId ?? "board",
-        action: "agent.created",
-        entityType: "agent",
-        entityId: ceoAgent.id,
-        details: { name: ceoAgent.name, role: "ceo", autoOnboarded: true },
-      });
-
-      // Create the initial hiring task assigned to CEO
-      const hiringTask = await issues.create(company.id, {
-        title: "Hire your first engineer and create a hiring plan",
-        description: "As the Business Unit Head, your first task is to:\n\n1. Assess the team's needs\n2. Create a hiring plan with roles and responsibilities\n3. Hire the first engineer agent to start building\n\nThis task was auto-created during team onboarding.",
-        priority: "high",
-        status: "todo",
-        assigneeAgentId: ceoAgent.id,
-      });
-
-      await logActivity(db, {
-        companyId: company.id,
-        actorType: "user",
-        actorId: req.actor.userId ?? "board",
-        action: "issue.created",
-        entityType: "issue",
-        entityId: hiringTask.id,
-        details: { title: hiringTask.title, autoOnboarded: true },
-      });
-    } catch (onboardErr) {
-      // Log but don't fail company creation if auto-onboard fails
-      console.error("[TitanClip] Auto-onboard failed (non-fatal):", onboardErr);
-    }
+    // Auto-onboard removed — user configures team via onboarding wizard
 
     res.status(201).json(company);
   });
@@ -439,6 +394,60 @@ export function companyRoutes(db: Db, storage?: StorageService) {
       entityId: companyId,
     });
     res.json(company);
+  });
+
+  // Soft delete team data — clears agent memories, conversations, run logs
+  // Preserves: audit logs, cost events, issues, agents, projects
+  router.post("/:companyId/soft-delete-data", async (req, res) => {
+    assertBoard(req);
+    const companyId = req.params.companyId as string;
+    assertCompanyAccess(req, companyId);
+
+    try {
+      // Delete agent memories
+      try {
+        const { agentMemories } = await import("@titanclip/db");
+        await db.delete(agentMemories).where(eq(agentMemories.companyId, companyId));
+      } catch { /* table may not exist */ }
+
+      // Delete conversations and messages
+      try {
+        const { conversations, conversationMessages } = await import("@titanclip/db");
+        // Get conversation IDs first
+        const convs = await db.select({ id: conversations.id }).from(conversations).where(eq(conversations.companyId, companyId));
+        for (const conv of convs) {
+          await db.delete(conversationMessages).where(eq(conversationMessages.conversationId, conv.id));
+        }
+        await db.delete(conversations).where(eq(conversations.companyId, companyId));
+      } catch { /* tables may not exist */ }
+
+      // Delete heartbeat run events (log data, not run records)
+      try {
+        const { heartbeatRunEvents, heartbeatRuns } = await import("@titanclip/db");
+        const runs = await db.select({ id: heartbeatRuns.id }).from(heartbeatRuns).where(eq(heartbeatRuns.companyId, companyId));
+        for (const run of runs) {
+          await db.delete(heartbeatRunEvents).where(eq(heartbeatRunEvents.runId, run.id));
+        }
+        // Clear log references on runs but keep run records
+        await db.update(heartbeatRuns)
+          .set({ logStore: null, logRef: null, logBytes: null, logSha256: null, logCompressed: null } as any)
+          .where(eq(heartbeatRuns.companyId, companyId));
+      } catch { /* tables may not exist */ }
+
+      await logActivity(db, {
+        companyId,
+        actorType: "user",
+        actorId: req.actor.userId ?? "board",
+        action: "company.soft_delete_data",
+        entityType: "company",
+        entityId: companyId,
+        details: { deletedTypes: ["agent_memories", "conversations", "run_logs"] },
+      });
+
+      res.json({ ok: true });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message ?? "Failed to soft delete data" });
+    }
   });
 
   router.delete("/:companyId", async (req, res) => {

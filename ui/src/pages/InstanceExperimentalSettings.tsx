@@ -25,7 +25,7 @@ export function InstanceExperimentalSettings() {
   });
 
   const toggleMutation = useMutation({
-    mutationFn: async (patch: { enableIsolatedWorkspaces?: boolean; autoRestartDevServerWhenIdle?: boolean; enableAgentOs?: boolean }) =>
+    mutationFn: async (patch: { enableIsolatedWorkspaces?: boolean; autoRestartDevServerWhenIdle?: boolean; enableAgentOs?: boolean; enableFunMode?: boolean }) =>
       instanceSettingsApi.updateExperimental(patch),
     onSuccess: async () => {
       setActionError(null);
@@ -55,7 +55,7 @@ export function InstanceExperimentalSettings() {
 
   const enableIsolatedWorkspaces = experimentalQuery.data?.enableIsolatedWorkspaces === true;
   const autoRestartDevServerWhenIdle = experimentalQuery.data?.autoRestartDevServerWhenIdle === true;
-  const enableAgentOs = experimentalQuery.data?.enableAgentOs === true;
+  const enableFunMode = experimentalQuery.data?.enableFunMode === true;
 
   return (
     <div className="max-w-4xl space-y-6">
@@ -150,41 +150,50 @@ export function InstanceExperimentalSettings() {
         </p>
       </div>
 
-      <section className="rounded-xl border border-indigo-500/20 bg-card p-5">
+
+      {/* Fun & Personalization Section */}
+      <div className="space-y-2 pt-4 border-t border-border">
+        <div className="flex items-center gap-2">
+          <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Fun & Personalization</h2>
+        </div>
+        <p className="text-xs text-muted-foreground">
+          Playful extras that add personality to the experience.
+        </p>
+      </div>
+
+      <section className="rounded-xl border border-border bg-card p-5">
         <div className="flex items-start justify-between gap-4">
           <div className="space-y-1.5">
             <div className="flex items-center gap-2">
-              <h2 className="text-sm font-semibold">Agent OS</h2>
-              <span className="text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full bg-indigo-500/10 text-indigo-500 border border-indigo-500/20">
-                Beta
+              <h2 className="text-sm font-semibold">Fun Mode</h2>
+              <span className="text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full bg-amber-500/10 text-amber-500 border border-amber-500/20">
+                Fun
               </span>
             </div>
             <p className="max-w-2xl text-sm text-muted-foreground">
-              Enable the Agent OS personal AI assistant with multi-LLM chat, persistent memory,
-              conversation history search, self-improving skills, and scheduled autonomous tasks.
-              Adds an "Agent OS" section to the sidebar.
+              Replaces the security animation on the team onboarding screen with randomly switching
+              pixel art characters. A playful Easter egg that doesn't affect functionality.
             </p>
           </div>
           <button
             type="button"
             data-slot="toggle"
-            aria-label="Toggle Agent OS beta feature"
+            aria-label="Toggle Fun Mode"
             disabled={toggleMutation.isPending}
             className={cn(
               "relative inline-flex h-5 w-9 items-center rounded-full transition-colors disabled:cursor-not-allowed disabled:opacity-60",
-              enableAgentOs ? "bg-indigo-600" : "bg-muted",
+              enableFunMode ? "bg-amber-500" : "bg-muted",
             )}
-            onClick={() => toggleMutation.mutate({ enableAgentOs: !enableAgentOs })}
+            onClick={() => toggleMutation.mutate({ enableFunMode: !enableFunMode })}
           >
             <span
               className={cn(
                 "inline-block h-3.5 w-3.5 rounded-full bg-white transition-transform",
-                enableAgentOs ? "translate-x-4.5" : "translate-x-0.5",
+                enableFunMode ? "translate-x-4.5" : "translate-x-0.5",
               )}
             />
           </button>
         </div>
-        <ComplianceDisclaimer severity="beta" />
       </section>
     </div>
   );

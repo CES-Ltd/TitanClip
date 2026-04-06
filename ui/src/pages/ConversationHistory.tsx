@@ -53,7 +53,7 @@ export function ConversationHistory() {
             {searchResults.map((r: ConversationSearchResult) => (
               <Link
                 key={r.messageId}
-                to={`/agent-os/chat/${r.conversationId}`}
+                to={`/chat/${r.conversationId}`}
                 className="block rounded-lg border border-border bg-card p-3 hover:border-blue-500/30"
               >
                 <div className="text-sm font-medium">{r.conversationTitle ?? "Untitled"}</div>
@@ -70,7 +70,7 @@ export function ConversationHistory() {
             {conversations.map((conv) => (
               <Link
                 key={conv.id}
-                to={`/agent-os/chat/${conv.id}`}
+                to={`/chat/${conv.id}`}
                 className="block rounded-lg border border-border bg-card p-4 hover:border-blue-500/30 transition-colors"
               >
                 <div className="flex items-center justify-between">
@@ -98,7 +98,7 @@ export function ConversationHistory() {
               <div className="text-center py-12 text-muted-foreground">
                 <MessageSquare className="h-8 w-8 mx-auto mb-2 opacity-40" />
                 <p>No conversations yet</p>
-                <Link to="/agent-os/chat" className="mt-2 text-blue-500 hover:text-blue-400 text-sm block">
+                <Link to="/chat" className="mt-2 text-blue-500 hover:text-blue-400 text-sm block">
                   Start your first chat
                 </Link>
               </div>

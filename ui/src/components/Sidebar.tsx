@@ -51,7 +51,7 @@ export function Sidebar() {
     queryKey: queryKeys.instance.experimentalSettings,
     queryFn: () => instanceSettingsApi.getExperimental(),
   });
-  const agentOsEnabled = experimentalSettings?.enableAgentOs === true;
+  const funModeEnabled = experimentalSettings?.enableFunMode === true;
   const { data: liveRuns } = useQuery({
     queryKey: queryKeys.liveRuns(selectedCompanyId!),
     queryFn: () => heartbeatsApi.liveRunsForCompany(selectedCompanyId!),
@@ -104,8 +104,9 @@ export function Sidebar() {
           </button>
           <SidebarNavItem to="/dashboard" label="Dashboard" icon={LayoutDashboard} liveCount={liveRunCount} />
           <SidebarNavItem to="/agent-gallery" label="Agent Gallery" icon={Store} />
-          <SidebarNavItem to="/workplace" label="Workplace" icon={Gamepad2} />
-          <SidebarNavItem to="/chat" label="Command Center" icon={Terminal} />
+          {funModeEnabled && <SidebarNavItem to="/workplace" label="Workplace" icon={Gamepad2} />}
+          <SidebarNavItem to="/chat" label="Chat" icon={MessageSquare} />
+          <SidebarNavItem to="/ops" label="Command Center" icon={Terminal} />
           <SidebarNavItem
             to="/inbox"
             label="Inbox"
@@ -154,16 +155,6 @@ export function Sidebar() {
           <SidebarNavItem to="/company/settings" label="Settings" icon={Settings} />
         </SidebarSection>
 
-        {agentOsEnabled && (
-          <SidebarSection label={<span className="flex items-center gap-1.5">Agent OS <span className="text-[9px] font-bold uppercase tracking-wider px-1 py-px rounded bg-indigo-500/15 text-indigo-400 border border-indigo-500/20">Beta</span></span>}>
-            <SidebarNavItem to="/agent-os" label="Hub" icon={Bot} />
-            <SidebarNavItem to="/agent-os/chat" label="Chat" icon={MessageSquare} />
-            <SidebarNavItem to="/agent-os/memory" label="Memory" icon={Brain} />
-            <SidebarNavItem to="/agent-os/conversations" label="History" icon={History} />
-            <SidebarNavItem to="/agent-os/skills" label="Skill Proposals" icon={Sparkles} />
-            <SidebarNavItem to="/agent-os/settings" label="LLM Settings" icon={Settings} />
-          </SidebarSection>
-        )}
 
         <PluginSlotOutlet
           slotTypes={["sidebarPanel"]}

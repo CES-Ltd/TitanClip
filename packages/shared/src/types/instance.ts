@@ -10,6 +10,19 @@ export interface InstanceExperimentalSettings {
   enableIsolatedWorkspaces: boolean;
   autoRestartDevServerWhenIdle: boolean;
   enableAgentOs: boolean;
+  enableFunMode: boolean;
+  agentOsAdapterId: string | null;
+}
+
+export interface HttpAdapter {
+  id: string;
+  name: string;
+  provider: string;
+  baseUrl: string;
+  apiKey?: string;
+  models: string[];
+  enabled: boolean;
+  createdAt: string;
 }
 
 export interface AgentTemplate {
@@ -59,6 +72,8 @@ export interface InstanceAdminSettings {
   enableSessionAgents: boolean;
   /** Danger Zone: allow agents to use "autonomous" autonomy level */
   allowAutonomousMode: boolean;
+  /** Named HTTP adapters for OpenAI-compatible endpoints */
+  httpAdapters: HttpAdapter[];
 }
 
 /** Public version of admin settings (PIN hash stripped) */

@@ -193,5 +193,55 @@ export function adminSettingsRoutes(db: Db, config: AdminRoutesConfig) {
     res.json(await settingsSvc.getAvailableTemplates());
   });
 
+  // POST reset database — drops all data and reinitializes
+  router.post("/instance/settings/admin/reset-db", async (req, res) => {
+    assertAdminSession(req);
+
+    try {
+      // Get all table names from the DB
+      const tables = await db.execute(
+        (await import("drizzle-orm")).sql`
+          SELECT tablename FROM pg_tables
+          WHERE schemaname = 'public'
+          AND tablename != '__drizzle_migrations'
+        `
+      );
+
+      // Truncate all tables (preserving schema + migrations)
+      for (const row of tables.rows as any[]) {
+        const tableName = row.tablename;
+        try {
+          await db.execute(
+            (await import("drizzle-orm")).sql.raw(`TRUNCATE TABLE "${tableName}" CASCADE`)
+          );
+        } catch { /* some tables may have constraints */ }
+      }
+
+      // Re-create the local board principal
+      try {
+        const { principals } = await import("@titanclip/db");
+        await db.insert(principals).values({
+          type: "user",
+          externalId: "local-board",
+          displayName: "Board",
+          status: "active",
+        } as any).onConflictDoNothing();
+      } catch { /* ok */ }
+
+      // Re-create default instance settings
+      try {
+        const { instanceSettings } = await import("@titanclip/db");
+        await db.insert(instanceSettings).values({
+          general: {},
+          experimental: {},
+        } as any).onConflictDoNothing();
+      } catch { /* ok */ }
+
+      res.json({ ok: true, message: "Database reset complete. Restart the app to reinitialize." });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message ?? "Database reset failed" });
+    }
+  });
+
   return router;
 }

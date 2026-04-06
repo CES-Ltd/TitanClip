@@ -43,6 +43,7 @@ import { skillProposalRoutes } from "./routes/skill-proposals.js";
 import { routineTemplateRoutes } from "./routes/routine-templates.js";
 import { agentChatRoutes } from "./routes/agent-chat.js";
 import { userCredentialRoutes } from "./routes/user-credentials.js";
+import { llmProxyRoutes } from "./routes/llm-proxy.js";
 import { llmRoutes } from "./routes/llms.js";
 import { assetRoutes } from "./routes/assets.js";
 import { accessRoutes } from "./routes/access.js";
@@ -155,6 +156,10 @@ export async function createApp(
   }
   app.use(llmRoutes(db));
 
+  // Set DB ref for TitanClaw adapter's dynamic model listing
+  const { setTitanClawDbRef } = await import("./adapters/registry.js");
+  setTitanClawDbRef(db);
+
   // Mount API routes
   const api = Router();
   api.use(boardMutationGuard());
@@ -205,6 +210,7 @@ export async function createApp(
   api.use(routineTemplateRoutes());
   api.use(agentChatRoutes(db));
   api.use(userCredentialRoutes(db));
+  api.use(llmProxyRoutes());
   const hostServicesDisposers = new Map<string, () => void>();
   const workerManager = createPluginWorkerManager();
   const pluginRegistry = pluginRegistryService(db);

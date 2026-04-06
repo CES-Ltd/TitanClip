@@ -1,7 +1,12 @@
 import { useState, useEffect } from "react";
-import { ChevronLeft, ChevronRight, BookOpen, Settings, Sun, Moon, Power } from "lucide-react";
+import { ChevronLeft, ChevronRight, BookOpen, Settings, Sun, Moon, Flame, Power, Sparkles, Home, SquarePen, MessageSquare } from "lucide-react";
 import { useLocation, useNavigate, Link } from "react-router-dom";
-import { useTheme } from "../context/ThemeContext";
+import { useDialog } from "../context/DialogContext";
+import { useCompany } from "../context/CompanyContext";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useTheme, type Theme } from "../context/ThemeContext";
+import { instanceSettingsApi } from "../api/instanceSettings";
+import { queryKeys } from "../lib/queryKeys";
 import { cn } from "../lib/utils";
 import { isElectron } from "../api/ipc-client";
 
@@ -9,17 +14,39 @@ const electronAPI = (window as any).electronAPI;
 const platform = electronAPI?.getPlatform?.() ?? (navigator.platform?.startsWith("Mac") ? "darwin" : "other");
 const isMac = platform === "darwin";
 
+const THEME_OPTIONS: { value: Theme; icon: typeof Sun; label: string }[] = [
+  { value: "light", icon: Sun, label: "Light" },
+  { value: "dark", icon: Moon, label: "Dark" },
+  { value: "titanclip", icon: Flame, label: "TitanClip" },
+];
+
 export function AppTitleBar() {
   const [canGoBack, setCanGoBack] = useState(false);
   const [canGoForward, setCanGoForward] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
-  const { theme, toggleTheme } = useTheme();
-  const nextTheme = theme === "dark" ? "light" : "dark";
+  const queryClient = useQueryClient();
+
+  // Fun Mode state
+  const { data: experimentalSettings } = useQuery({
+    queryKey: queryKeys.instance.experimentalSettings,
+    queryFn: () => instanceSettingsApi.getExperimental(),
+  });
+  const funModeEnabled = experimentalSettings?.enableFunMode === true;
+  const funModeMutation = useMutation({
+    mutationFn: () => instanceSettingsApi.updateExperimental({ enableFunMode: !funModeEnabled }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.instance.experimentalSettings });
+    },
+  });
+  const { theme, setTheme } = useTheme();
+  const { openNewIssue } = useDialog();
+  const { selectedCompany } = useCompany();
+  const prefix = selectedCompany?.issuePrefix?.toLowerCase() ?? "";
 
   // Sync theme to Electron title bar overlay (Windows)
   useEffect(() => {
-    electronAPI?.setTheme?.(theme);
+    electronAPI?.setTheme?.(theme === "light" ? "light" : "dark");
   }, [theme]);
 
   // Update nav button state on route change
@@ -81,12 +108,22 @@ export function AppTitleBar() {
         </button>
       </div>
 
-      {/* Title — draggable center */}
-      <div className="flex-1 text-center">
-        <span className="text-[11px] text-muted-foreground/60 font-medium tracking-wide">TitanClip</span>
+      {/* Center — quick shortcuts */}
+      <div className="flex-1 flex items-center justify-center">
+        <div className="flex items-center gap-0.5" style={{ WebkitAppRegion: "no-drag" } as any}>
+          <Link to={prefix ? `/${prefix}/dashboard` : "/dashboard"} className={cn(btnClass, "gap-1 w-auto px-2")} title="Home">
+            <Home className="h-3.5 w-3.5" />
+          </Link>
+          <button onClick={() => openNewIssue()} className={cn(btnClass, "gap-1 w-auto px-2")} title="New Issue">
+            <SquarePen className="h-3.5 w-3.5" />
+          </button>
+          <Link to="/chat" className={cn(btnClass, "gap-1 w-auto px-2")} title="Chat">
+            <MessageSquare className="h-3.5 w-3.5" />
+          </Link>
+        </div>
       </div>
 
-      {/* Right actions: Help, Settings, Theme, Quit */}
+      {/* Right actions: Help, Settings, Theme Switcher, Quit */}
       <div className="flex items-center gap-0.5 px-2" style={{ WebkitAppRegion: "no-drag" } as any}>
         <Link to="/help" className={cn(btnClass, "gap-1 w-auto px-2")} title="Help & Documentation">
           <BookOpen className="h-3.5 w-3.5" />
@@ -97,9 +134,44 @@ export function AppTitleBar() {
           <Settings className="h-3.5 w-3.5" />
         </Link>
 
-        <button onClick={toggleTheme} className={btnClass}
-          title={`Switch to ${nextTheme} mode`}>
-          {theme === "dark" ? <Sun className="h-3.5 w-3.5" /> : <Moon className="h-3.5 w-3.5" />}
+        {/* 3-segment theme switcher */}
+        <div
+          className="flex items-center h-7 rounded-md border border-border bg-muted/50 overflow-hidden"
+          role="radiogroup"
+          aria-label="Theme"
+        >
+          {THEME_OPTIONS.map(({ value, icon: Icon, label }) => (
+            <button
+              key={value}
+              role="radio"
+              aria-checked={theme === value}
+              onClick={() => setTheme(value)}
+              className={cn(
+                "flex items-center justify-center w-7 h-full transition-colors",
+                theme === value
+                  ? "bg-accent text-foreground"
+                  : "text-muted-foreground hover:text-foreground hover:bg-accent/30"
+              )}
+              title={label}
+            >
+              <Icon className="h-3.5 w-3.5" />
+            </button>
+          ))}
+        </div>
+
+        {/* Fun Mode toggle */}
+        <button
+          onClick={() => funModeMutation.mutate()}
+          disabled={funModeMutation.isPending}
+          className={cn(
+            btnClass,
+            funModeEnabled
+              ? "text-amber-400 hover:text-amber-300"
+              : "text-muted-foreground/40 hover:text-muted-foreground"
+          )}
+          title={funModeEnabled ? "Fun Mode (on)" : "Fun Mode (off)"}
+        >
+          <Sparkles className="h-3.5 w-3.5" />
         </button>
 
         {isElectron && (

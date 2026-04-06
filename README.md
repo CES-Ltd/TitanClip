@@ -1,6 +1,17 @@
-# ZeusClip
+# ZeusClip (TitanClip)
 
-AI Company Orchestration Platform — a native Electron desktop app for managing teams of AI agents as autonomous companies. Full rewrite of TitanClip with native Electron architecture.
+AI Company Orchestration Platform — a native Electron desktop app for managing teams of AI agents. Features multi-LLM support, agentic tool calling via TitanClaw CLI, real-time chat with CEO agent, automated task delegation, and enterprise governance.
+
+## Key Features
+
+- **Chat Interface** — Talk to your team's CEO agent to orchestrate projects, hire agents, and track progress
+- **TitanClaw Integration** — Standalone agentic CLI framework with 13 built-in tools (shell_exec, web_search, delegate, hire, issue management, chatter)
+- **Agent Gallery** — Pre-configured templates (Tech Lead, Backend/Frontend Engineer, QA, DevOps, PM, SRE, Security, Docs, Performance)
+- **Multi-LLM Support** — OpenAI, Anthropic, Ollama, OpenRouter, Gemini, Azure via HTTP adapters
+- **Issue Tracking** — Auto task breakdown, delegation, status tracking, comments
+- **Team Communication** — Chatter channels for agent-to-agent awareness
+- **Three-Point Theme** — Light, Dark, TitanClip themes with OKLCH color system
+- **Fun Mode** — Pixel art villains, Bollywood/Hollywood character agent names
 
 ## Quick Start
 

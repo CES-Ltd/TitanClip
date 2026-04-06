@@ -51,6 +51,7 @@
     "@titanclip/adapter-gemini-local": "workspace:*",
     "@titanclip/adapter-openclaw-gateway": "workspace:*",
     "@titanclip/adapter-opencode-local": "workspace:*",
+    "@titanclip/adapter-universal-llm": "workspace:*",
     "@titanclip/adapter-pi-local": "workspace:*",
     "@titanclip/adapter-utils": "workspace:*",
     "@titanclip/db": "workspace:*",

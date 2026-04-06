@@ -35,7 +35,7 @@ import { PROJECT_COLORS } from "@titanclip/shared";
 import { cn } from "../lib/utils";
 import { MarkdownEditor, type MarkdownEditorRef, type MentionOption } from "./MarkdownEditor";
 import { StatusBadge } from "./StatusBadge";
-import { ChoosePathButton } from "./PathInstructionsModal";
+// ChoosePathButton removed — using native Finder dialog instead
 
 const projectStatuses = [
   { value: "backlog", label: "Backlog" },
@@ -306,14 +306,14 @@ export function NewProjectDialog() {
 
           <div>
             <div className="mb-1 flex items-center gap-1.5">
-              <label className="block text-xs text-muted-foreground">Local folder</label>
+              <label className="block text-xs text-muted-foreground">Workspace</label>
               <span className="text-xs text-muted-foreground/50">optional</span>
               <Tooltip delayDuration={300}>
                 <TooltipTrigger asChild>
                   <HelpCircle className="h-3 w-3 text-muted-foreground/50 cursor-help" />
                 </TooltipTrigger>
                 <TooltipContent side="top" className="max-w-[240px] text-xs">
-                  Set an absolute path on this machine where local agents will read and write files for this project.
+                  Set the workspace directory where agents will read and write files for this project.
                 </TooltipContent>
               </Tooltip>
             </div>
@@ -322,9 +322,29 @@ export function NewProjectDialog() {
                 className="w-full rounded border border-border bg-transparent px-2 py-1 text-xs font-mono outline-none"
                 value={workspaceLocalPath}
                 onChange={(e) => { setWorkspaceLocalPath(e.target.value); setWorkspaceError(null); }}
-                placeholder="/absolute/path/to/workspace"
+                placeholder="Select workspace directory..."
+                readOnly
               />
-              <ChoosePathButton />
+              <button
+                type="button"
+                className="inline-flex items-center rounded-md border border-border px-2 py-0.5 text-xs text-muted-foreground hover:bg-accent/50 transition-colors shrink-0"
+                onClick={async () => {
+                  const electronAPI = (window as any).electronAPI;
+                  if (!electronAPI?.openFileDialog) return;
+                  try {
+                    const result = await electronAPI.openFileDialog({
+                      properties: ["openDirectory", "createDirectory"],
+                      title: "Select Project Workspace",
+                    });
+                    if (!result.canceled && result.filePaths?.[0]) {
+                      setWorkspaceLocalPath(result.filePaths[0]);
+                      setWorkspaceError(null);
+                    }
+                  } catch { /* dialog failed */ }
+                }}
+              >
+                Browse
+              </button>
             </div>
           </div>
 

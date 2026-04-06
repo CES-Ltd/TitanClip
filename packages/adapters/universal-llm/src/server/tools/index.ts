@@ -19,6 +19,12 @@ export interface ToolDefinition {
   parameters: Record<string, unknown>;
   /** Whether this tool has side effects (writes, deletes, executes commands) */
   destructive: boolean;
+  /** Whether the tool only reads data (no side effects at all) */
+  readOnly: boolean;
+  /** Whether this tool should require human approval even in supervised mode */
+  requiresApproval: boolean;
+  /** Whether this tool is safe to run in parallel with others */
+  concurrencySafe: boolean;
 }
 
 export interface ToolResult {
@@ -48,6 +54,9 @@ const webSearchTool: RegisteredTool = {
       required: ["query"],
     },
     destructive: false,
+    readOnly: true,
+    requiresApproval: false,
+    concurrencySafe: true,
   },
   handler: async (params) => {
     const query = params.query as string;
@@ -72,6 +81,9 @@ const webFetchTool: RegisteredTool = {
       required: ["url"],
     },
     destructive: false,
+    readOnly: true,
+    requiresApproval: false,
+    concurrencySafe: true,
   },
   handler: async (params) => {
     const url = params.url as string;
@@ -104,6 +116,9 @@ const shellExecTool: RegisteredTool = {
       required: ["command"],
     },
     destructive: true,
+    readOnly: false,
+    requiresApproval: true,
+    concurrencySafe: false,
   },
   handler: async (params) => {
     const command = params.command as string;
@@ -139,6 +154,9 @@ const readFileTool: RegisteredTool = {
       required: ["path"],
     },
     destructive: false,
+    readOnly: true,
+    requiresApproval: false,
+    concurrencySafe: true,
   },
   handler: async (params) => {
     const filePath = params.path as string;
@@ -165,6 +183,9 @@ const writeFileTool: RegisteredTool = {
       required: ["path", "content"],
     },
     destructive: true,
+    readOnly: false,
+    requiresApproval: false,
+    concurrencySafe: true,
   },
   handler: async (params) => {
     const filePath = params.path as string;
@@ -187,6 +208,9 @@ const currentTimeTool: RegisteredTool = {
     description: "Get the current date, time, and timezone.",
     parameters: { type: "object", properties: {} },
     destructive: false,
+    readOnly: true,
+    requiresApproval: false,
+    concurrencySafe: true,
   },
   handler: async () => {
     const now = new Date();
@@ -201,6 +225,11 @@ const currentTimeTool: RegisteredTool = {
 
 import { delegateToAgentTool } from "./delegate.js";
 import { hireAgentTool } from "./hire-agent.js";
+import { updateIssueTool } from "./update-issue.js";
+import { issueCommentTool } from "./issue-comment.js";
+import { postChatterTool } from "./post-chatter.js";
+import { readIssueTool } from "./read-issue.js";
+import { listAgentsTool } from "./list-agents.js";
 
 const BUILT_IN_TOOLS: RegisteredTool[] = [
   webSearchTool,
@@ -211,6 +240,11 @@ const BUILT_IN_TOOLS: RegisteredTool[] = [
   currentTimeTool,
   delegateToAgentTool,
   hireAgentTool,
+  updateIssueTool,
+  issueCommentTool,
+  postChatterTool,
+  readIssueTool,
+  listAgentsTool,
 ];
 
 const toolMap = new Map<string, RegisteredTool>(

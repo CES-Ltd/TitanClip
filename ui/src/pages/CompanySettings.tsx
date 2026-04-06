@@ -55,6 +55,8 @@ export function CompanySettings() {
   const [inviteSnippet, setInviteSnippet] = useState<string | null>(null);
   const [snippetCopied, setSnippetCopied] = useState(false);
   const [snippetCopyDelightId, setSnippetCopyDelightId] = useState(0);
+  const [workspacePath, setWorkspacePath] = useState((selectedCompany as any)?.defaultWorkspacePath ?? "");
+  const [softDeleteConfirm, setSoftDeleteConfirm] = useState("");
 
   const generalDirty =
     !!selectedCompany &&
@@ -219,6 +221,14 @@ export function CompanySettings() {
         queryKey: queryKeys.companies.stats
       });
     }
+  });
+
+  const softDeleteMutation = useMutation({
+    mutationFn: (companyId: string) =>
+      companiesApi.softDeleteData(companyId),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: queryKeys.companies.all });
+    },
   });
 
   useEffect(() => {
@@ -458,84 +468,6 @@ export function CompanySettings() {
         </div>
       </div>
 
-      {/* Invites */}
-      <div className="space-y-4" data-testid="company-settings-invites-section">
-        <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-          Invites
-        </div>
-        <div className="space-y-3 rounded-md border border-border px-4 py-4">
-          <div className="flex items-center gap-1.5">
-            <span className="text-xs text-muted-foreground">
-              Generate an OpenClaw agent invite snippet.
-            </span>
-            <HintIcon text="Creates a short-lived OpenClaw agent invite and renders a copy-ready prompt." />
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <Button
-              data-testid="company-settings-invites-generate-button"
-              size="sm"
-              onClick={() => inviteMutation.mutate()}
-              disabled={inviteMutation.isPending}
-            >
-              {inviteMutation.isPending
-                ? "Generating..."
-                : "Generate OpenClaw Invite Prompt"}
-            </Button>
-          </div>
-          {inviteError && (
-            <p className="text-sm text-destructive">{inviteError}</p>
-          )}
-          {inviteSnippet && (
-            <div
-              className="rounded-md border border-border bg-muted/30 p-2"
-              data-testid="company-settings-invites-snippet"
-            >
-              <div className="flex items-center justify-between gap-2">
-                <div className="text-xs text-muted-foreground">
-                  OpenClaw Invite Prompt
-                </div>
-                {snippetCopied && (
-                  <span
-                    key={snippetCopyDelightId}
-                    className="flex items-center gap-1 text-xs text-green-600 animate-pulse"
-                  >
-                    <Check className="h-3 w-3" />
-                    Copied
-                  </span>
-                )}
-              </div>
-              <div className="mt-1 space-y-1.5">
-                <textarea
-                  data-testid="company-settings-invites-snippet-textarea"
-                  className="h-[28rem] w-full rounded-md border border-border bg-background px-2 py-1.5 font-mono text-xs outline-none"
-                  value={inviteSnippet}
-                  readOnly
-                />
-                <div className="flex justify-end">
-                  <Button
-                    data-testid="company-settings-invites-copy-button"
-                    size="sm"
-                    variant="ghost"
-                    onClick={async () => {
-                      try {
-                        await navigator.clipboard.writeText(inviteSnippet);
-                        setSnippetCopied(true);
-                        setSnippetCopyDelightId((prev) => prev + 1);
-                        setTimeout(() => setSnippetCopied(false), 2000);
-                      } catch {
-                        /* clipboard may not be available */
-                      }
-                    }}
-                  >
-                    {snippetCopied ? "Copied snippet" : "Copy snippet"}
-                  </Button>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-
       {/* Import / Export */}
       <div className="space-y-4">
         <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
@@ -563,6 +495,70 @@ export function CompanySettings() {
         </div>
       </div>
 
+      {/* Agent Workspace */}
+      <div className="space-y-4">
+        <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+          Agent Workspace
+        </div>
+        <div className="space-y-3 rounded-md border border-border px-4 py-4">
+          <p className="text-sm text-muted-foreground">
+            Set a default workspace directory for agents. Agents with file access tools will operate within this directory.
+          </p>
+          <div className="flex items-center gap-2">
+            <input
+              readOnly
+              value={workspacePath}
+              placeholder="No workspace configured"
+              className="flex-1 rounded-md border border-border bg-background px-3 py-2 text-sm font-mono text-muted-foreground"
+            />
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={async () => {
+                const electronAPI = (window as any).electronAPI;
+                if (!electronAPI?.openFileDialog) return;
+                try {
+                  const result = await electronAPI.openFileDialog({
+                    properties: ["openDirectory", "createDirectory"],
+                    title: "Select Agent Workspace Directory",
+                  });
+                  if (!result.canceled && result.filePaths?.[0]) {
+                    const path = result.filePaths[0];
+                    setWorkspacePath(path);
+                    if (selectedCompanyId) {
+                      companiesApi.update(selectedCompanyId, { defaultWorkspacePath: path } as any);
+                    }
+                  }
+                } catch (e) {
+                  console.warn("Directory picker failed:", e);
+                }
+              }}
+            >
+              Browse
+            </Button>
+            {workspacePath && (
+              <Button
+                size="sm"
+                variant="ghost"
+                className="text-muted-foreground"
+                onClick={() => {
+                  setWorkspacePath("");
+                  if (selectedCompanyId) {
+                    companiesApi.update(selectedCompanyId, { defaultWorkspacePath: null } as any);
+                  }
+                }}
+              >
+                Clear
+              </Button>
+            )}
+          </div>
+          <p className="text-[10px] text-muted-foreground">
+            Agents using TitanClaw or local adapters will have read/write access to this directory.
+            Choose a directory you trust agents to work in.
+          </p>
+        </div>
+      </div>
+
       {/* Danger Zone */}
       <div className="space-y-4">
         <div className="text-xs font-medium text-destructive uppercase tracking-wide">
@@ -583,10 +579,6 @@ export function CompanySettings() {
               }
               onClick={() => {
                 if (!selectedCompanyId) return;
-                const confirmed = window.confirm(
-                  `Archive company "${selectedCompany.name}"? It will be hidden from the sidebar.`
-                );
-                if (!confirmed) return;
                 const nextCompanyId =
                   companies.find(
                     (company) =>
@@ -611,6 +603,47 @@ export function CompanySettings() {
                   ? archiveMutation.error.message
                   : "Failed to archive company"}
               </span>
+            )}
+          </div>
+        </div>
+
+        {/* Soft Delete Team Data */}
+        <div className="space-y-3 rounded-md border border-amber-500/40 bg-amber-500/5 px-4 py-4 mt-4">
+          <h3 className="text-sm font-semibold text-amber-500">Soft Delete Team Data</h3>
+          <p className="text-sm text-muted-foreground">
+            This will permanently remove all <strong>agent memories</strong>, <strong>conversation history</strong>,
+            and <strong>local run logs</strong> for this team. Audit logs and financial records will be
+            preserved for compliance. This action cannot be undone.
+          </p>
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <input
+                value={softDeleteConfirm}
+                onChange={(e) => setSoftDeleteConfirm(e.target.value)}
+                placeholder={`Type "${selectedCompany?.name}" to confirm`}
+                className="flex-1 rounded-md border border-amber-500/30 bg-background px-3 py-1.5 text-sm"
+              />
+              <Button
+                size="sm"
+                variant="outline"
+                className="border-amber-500/30 text-amber-500 hover:bg-amber-500/10"
+                disabled={softDeleteMutation?.isPending || softDeleteConfirm !== selectedCompany?.name}
+                onClick={() => {
+                  if (!selectedCompanyId) return;
+                  softDeleteMutation?.mutate(selectedCompanyId);
+                  setSoftDeleteConfirm("");
+                }}
+              >
+                {softDeleteMutation?.isPending ? "Deleting data..." : "Soft Delete"}
+              </Button>
+            </div>
+            {softDeleteMutation?.isError && (
+              <span className="text-xs text-destructive">
+                {softDeleteMutation.error instanceof Error ? softDeleteMutation.error.message : "Failed"}
+              </span>
+            )}
+            {softDeleteMutation?.isSuccess && (
+              <span className="text-xs text-emerald-500">Team data has been cleared.</span>
             )}
           </div>
         </div>

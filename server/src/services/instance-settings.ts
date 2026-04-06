@@ -43,12 +43,16 @@ function normalizeExperimentalSettings(raw: unknown): InstanceExperimentalSettin
       enableIsolatedWorkspaces: parsed.data.enableIsolatedWorkspaces ?? false,
       autoRestartDevServerWhenIdle: parsed.data.autoRestartDevServerWhenIdle ?? false,
       enableAgentOs: parsed.data.enableAgentOs ?? false,
+      enableFunMode: parsed.data.enableFunMode ?? false,
+      agentOsAdapterId: parsed.data.agentOsAdapterId ?? null,
     };
   }
   return {
     enableIsolatedWorkspaces: false,
     autoRestartDevServerWhenIdle: false,
     enableAgentOs: false,
+    enableFunMode: false,
+    agentOsAdapterId: null,
   };
 }
 
@@ -76,6 +80,7 @@ function normalizeAdminSettings(raw: unknown): InstanceAdminSettings {
       otelSampleRate: parsed.data.otelSampleRate ?? 1.0,
       enableSessionAgents: parsed.data.enableSessionAgents ?? false,
       allowAutonomousMode: parsed.data.allowAutonomousMode ?? false,
+      httpAdapters: parsed.data.httpAdapters ?? [],
     };
   }
   return {
@@ -99,6 +104,7 @@ function normalizeAdminSettings(raw: unknown): InstanceAdminSettings {
     otelSampleRate: 1.0,
     enableSessionAgents: false,
     allowAutonomousMode: false,
+    httpAdapters: [],
   };
 }
 

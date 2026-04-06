@@ -9,19 +9,19 @@ import { useQuery } from "@tanstack/react-query";
 import { Brain, MessageSquare, Sparkles, Clock, Settings, Zap, Bot } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useCompany } from "../context/CompanyContext";
-import { llmProvidersApi } from "../api/llmProviders";
+import { adminSettingsApi } from "../api/adminSettings";
+import { queryKeys } from "../lib/queryKeys";
 
 export function AgentOS() {
   const { selectedCompany } = useCompany();
   const companyId = selectedCompany?.id;
 
-  const { data: providers = [] } = useQuery({
-    queryKey: ["llm-providers", companyId],
-    queryFn: () => llmProvidersApi.list(companyId!),
-    enabled: !!companyId,
+  const { data: adminSettings } = useQuery({
+    queryKey: queryKeys.instance.adminSettings,
+    queryFn: () => adminSettingsApi.get(),
   });
-
-  const activeProviders = providers.filter((p) => p.status === "active");
+  const httpAdapters = (adminSettings as any)?.httpAdapters ?? [];
+  const enabledAdapters = httpAdapters.filter((a: any) => a.enabled);
 
   return (
     <div className="flex-1 overflow-auto p-6">
@@ -29,8 +29,8 @@ export function AgentOS() {
         {/* Header */}
         <div>
           <h1 className="text-2xl font-bold flex items-center gap-2">
-            <Bot className="h-7 w-7 text-indigo-500" />
-            Agent OS
+            <img src="/titan-claw-logo.png" alt="TitanClaw" className="h-7 w-7 rounded-md" />
+            TitanClaw
           </h1>
           <p className="text-muted-foreground mt-1">
             Your personal AI assistant that grows and learns with you
@@ -77,44 +77,49 @@ export function AgentOS() {
           <QuickActionCard
             icon={<Settings className="h-5 w-5" />}
             title="Settings"
-            description={`${activeProviders.length} LLM provider${activeProviders.length !== 1 ? "s" : ""} configured`}
+            description={`${enabledAdapters.length} LLM provider${enabledAdapters.length !== 1 ? "s" : ""} configured`}
             href="settings"
             color="slate"
           />
         </div>
 
-        {/* Provider Status */}
-        {activeProviders.length > 0 && (
+        {/* LLM Provider Status */}
+        {enabledAdapters.length > 0 && (
           <div className="rounded-lg border border-border bg-card p-4">
             <h3 className="text-sm font-medium text-muted-foreground mb-3">
-              Connected Providers
+              Available LLM Providers ({enabledAdapters.length} enabled)
             </h3>
-            <div className="flex flex-wrap gap-2">
-              {activeProviders.map((p) => (
-                <div
-                  key={p.id}
-                  className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-green-500/10 text-green-600 text-sm"
-                >
-                  <Zap className="h-3 w-3" />
-                  {p.label}
+            <div className="space-y-2">
+              {enabledAdapters.map((a: any) => (
+                <div key={a.id} className="flex items-center gap-3 rounded-lg border border-border bg-background p-3">
+                  <div className="w-8 h-8 rounded-lg bg-amber-500/10 flex items-center justify-center shrink-0">
+                    <Zap className="h-4 w-4 text-amber-500" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm font-medium">{a.name}</div>
+                    <div className="text-xs text-muted-foreground">
+                      {a.provider} · {a.models?.length ?? 0} models
+                    </div>
+                  </div>
+                  <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-500 font-medium">Active</span>
                 </div>
               ))}
             </div>
           </div>
         )}
 
-        {activeProviders.length === 0 && (
+        {enabledAdapters.length === 0 && (
           <div className="rounded-lg border border-dashed border-border bg-card/50 p-6 text-center">
             <Zap className="h-8 w-8 mx-auto text-muted-foreground/40 mb-2" />
             <h3 className="font-medium">No LLM Providers Configured</h3>
             <p className="text-sm text-muted-foreground mt-1">
-              Connect an LLM provider to start using Agent OS
+              Add an HTTP adapter in Instance Settings to connect TitanClaw to an LLM provider
             </p>
             <Link
-              to="settings"
+              to="/instance/settings/admin"
               className="inline-block mt-3 px-4 py-2 rounded-md bg-indigo-600 text-white text-sm hover:bg-indigo-700"
             >
-              Configure Provider
+              Configure Adapters
             </Link>
           </div>
         )}

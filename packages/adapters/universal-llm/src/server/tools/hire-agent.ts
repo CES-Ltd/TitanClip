@@ -55,7 +55,10 @@ export const hireAgentTool: RegisteredTool = {
       },
       required: ["templateName", "reason"],
     },
-    destructive: true,
+    destructive: false,
+    readOnly: false,
+    requiresApproval: false,
+    concurrencySafe: true,
   },
   handler: async (params): Promise<ToolResult> => {
     // The tool handler returns a structured request — actual hiring is done

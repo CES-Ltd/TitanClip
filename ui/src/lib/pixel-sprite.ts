@@ -140,3 +140,22 @@ export function generateAgentNumber(seed: string): number {
   }
   return 1000 + (Math.abs(h) % 9000); // 1000-9999
 }
+
+/** Famous villain character names for Fun Mode agent naming */
+export const VILLAIN_NAMES = [
+  // Bollywood
+  "Mogambo", "Gabbar", "Shakaal", "Bulla", "GoGo", "Kancha",
+  "Ranjeet", "Danny", "Gulshan", "Ballu", "Ramadhir", "Sultan",
+  "Langda", "Chedi", "Ajgar", "Prem",
+  // Hollywood
+  "Joker", "Thanos", "Magneto", "Bane", "Loki", "Moriarty",
+  "Hannibal", "Vader", "Voldemort", "Krueger", "Pennywise",
+  "Sauron", "Ultron", "Scarecrow", "Jigsaw", "Draco",
+];
+
+/** Generate a fun mode agent name using a random villain name */
+export function generateVillainAgentName(): string {
+  const name = VILLAIN_NAMES[Math.floor(Math.random() * VILLAIN_NAMES.length)]!;
+  const num = Math.floor(1000 + Math.random() * 9000);
+  return `${name}_${num}`;
+}

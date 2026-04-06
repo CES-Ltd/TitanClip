@@ -467,7 +467,8 @@ export async function startServer(): Promise<StartedServer> {
     | undefined;
   if (config.deploymentMode === "local_trusted") {
     await ensureLocalTrustedBoardPrincipal(db as any);
-    await seedFirstTeamAndAgent(db as any);
+    // Removed auto-seeding — user configures via onboarding wizard
+    // await seedFirstTeamAndAgent(db as any);
   }
   if (config.deploymentMode === "authenticated") {
     const {

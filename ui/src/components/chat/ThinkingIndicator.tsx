@@ -136,77 +136,25 @@ function MorphingBlob() {
       {/* Morphing circles */}
       <div className="absolute inset-0" style={{ filter: "url(#goo)" }}>
         <div
-          className="absolute rounded-full bg-indigo-500/80"
-          style={{
-            width: "22px",
-            height: "22px",
-            left: "6px",
-            top: "6px",
-            animation: "morphA 3s ease-in-out infinite",
-          }}
+          className="absolute rounded-full bg-indigo-500/80 animate-morph-a"
+          style={{ width: "22px", height: "22px", left: "6px", top: "6px" }}
         />
         <div
-          className="absolute rounded-full bg-purple-500/70"
-          style={{
-            width: "18px",
-            height: "18px",
-            left: "14px",
-            top: "12px",
-            animation: "morphB 3s ease-in-out infinite 0.5s",
-          }}
+          className="absolute rounded-full bg-purple-500/70 animate-morph-b"
+          style={{ width: "18px", height: "18px", left: "14px", top: "12px" }}
         />
         <div
-          className="absolute rounded-full bg-indigo-400/60"
-          style={{
-            width: "14px",
-            height: "14px",
-            left: "4px",
-            top: "16px",
-            animation: "morphC 3s ease-in-out infinite 1s",
-          }}
+          className="absolute rounded-full bg-indigo-400/60 animate-morph-c"
+          style={{ width: "14px", height: "14px", left: "4px", top: "16px" }}
         />
       </div>
 
       {/* Inner glow */}
       <div className="absolute inset-0 flex items-center justify-center">
         <div
-          className="w-3 h-3 rounded-full bg-white/20"
-          style={{ animation: "pulse-glow 2s ease-in-out infinite" }}
+          className="w-3 h-3 rounded-full bg-white/20 animate-pulse-glow"
         />
       </div>
-
-      {/* CSS keyframes */}
-      <style>{`
-        @keyframes morphA {
-          0%, 100% { transform: translate(0, 0) scale(1); }
-          25% { transform: translate(4px, -3px) scale(1.1); }
-          50% { transform: translate(-2px, 4px) scale(0.9); }
-          75% { transform: translate(3px, 2px) scale(1.05); }
-        }
-        @keyframes morphB {
-          0%, 100% { transform: translate(0, 0) scale(1); }
-          25% { transform: translate(-5px, 3px) scale(0.9); }
-          50% { transform: translate(3px, -4px) scale(1.15); }
-          75% { transform: translate(-2px, -2px) scale(0.95); }
-        }
-        @keyframes morphC {
-          0%, 100% { transform: translate(0, 0) scale(1); }
-          25% { transform: translate(3px, 4px) scale(1.1); }
-          50% { transform: translate(-3px, -2px) scale(0.85); }
-          75% { transform: translate(5px, -3px) scale(1.05); }
-        }
-        @keyframes pulse-glow {
-          0%, 100% { opacity: 0.3; transform: scale(1); }
-          50% { opacity: 0.7; transform: scale(1.5); }
-        }
-        @keyframes shimmer {
-          0% { transform: translateX(-200%); }
-          100% { transform: translateX(400%); }
-        }
-        .animate-shimmer {
-          animation: shimmer 2s ease-in-out infinite;
-        }
-      `}</style>
     </div>
   );
 }
