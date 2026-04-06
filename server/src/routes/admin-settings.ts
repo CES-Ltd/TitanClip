@@ -193,31 +193,48 @@ export function adminSettingsRoutes(db: Db, config: AdminRoutesConfig) {
     res.json(await settingsSvc.getAvailableTemplates());
   });
 
-  // POST reset database — drops all data and reinitializes
+  // POST reset database — hard reset: truncate all tables + wipe on-disk data
   router.post("/instance/settings/admin/reset-db", async (req, res) => {
     assertAdminSession(req);
 
     try {
-      // Get all table names from the DB
-      const tables = await db.execute(
-        (await import("drizzle-orm")).sql`
-          SELECT tablename FROM pg_tables
-          WHERE schemaname = 'public'
-          AND tablename != '__drizzle_migrations'
-        `
-      );
+      const { sql } = await import("drizzle-orm");
+      const path = await import("node:path");
+      const fs = await import("node:fs");
+      const os = await import("node:os");
 
-      // Truncate all tables (preserving schema + migrations)
-      for (const row of (tables as any).rows as any[]) {
-        const tableName = row.tablename;
+      // 1. Truncate all tables (preserving schema + migrations)
+      const tables = await db.execute(
+        sql`SELECT tablename FROM pg_tables WHERE schemaname = 'public' AND tablename != '__drizzle_migrations'`
+      );
+      const tableRows = Array.isArray(tables) ? tables : (tables as any).rows ?? [];
+      for (const row of tableRows) {
+        const tableName = (row as any).tablename;
+        if (!tableName) continue;
         try {
-          await db.execute(
-            (await import("drizzle-orm")).sql.raw(`TRUNCATE TABLE "${tableName}" CASCADE`)
-          );
-        } catch { /* some tables may have constraints */ }
+          await db.execute(sql.raw(`TRUNCATE TABLE "${tableName}" CASCADE`));
+        } catch { /* constraints ok */ }
       }
 
-      // Re-create the local board principal
+      // 2. Wipe on-disk instance data (workspaces, agents, companies, run-logs, projects)
+      const homeDir = process.env.PAPERCLIP_HOME || path.join(os.homedir(), ".titanclip");
+      const instanceId = process.env.PAPERCLIP_INSTANCE_ID || "default";
+      const instanceRoot = path.join(homeDir, "instances", instanceId);
+
+      const dirsToWipe = ["companies", "agents", "workspaces", "projects", "data/run-logs"];
+      for (const dir of dirsToWipe) {
+        const fullPath = path.join(instanceRoot, dir);
+        try {
+          fs.rmSync(fullPath, { recursive: true, force: true });
+        } catch { /* may not exist */ }
+      }
+
+      // 3. Remove JWT secret so it regenerates on restart
+      try {
+        fs.unlinkSync(path.join(instanceRoot, "jwt-secret"));
+      } catch { /* may not exist */ }
+
+      // 4. Re-seed minimal required data
       try {
         const { principals } = await import("@titanclip/db") as any;
         await db.insert(principals).values({
@@ -228,7 +245,6 @@ export function adminSettingsRoutes(db: Db, config: AdminRoutesConfig) {
         } as any).onConflictDoNothing();
       } catch { /* ok */ }
 
-      // Re-create default instance settings
       try {
         const { instanceSettings } = await import("@titanclip/db");
         await db.insert(instanceSettings).values({
@@ -237,7 +253,7 @@ export function adminSettingsRoutes(db: Db, config: AdminRoutesConfig) {
         } as any).onConflictDoNothing();
       } catch { /* ok */ }
 
-      res.json({ ok: true, message: "Database reset complete. Restart the app to reinitialize." });
+      res.json({ ok: true, message: "Hard reset complete. Restart the app to reinitialize." });
     } catch (err: any) {
       res.status(500).json({ error: err.message ?? "Database reset failed" });
     }
