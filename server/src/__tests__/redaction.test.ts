@@ -19,7 +19,7 @@ describe("redaction", () => {
           type: "plain",
           value: "sk-plain",
         },
-        TITANCLIP_API_URL: "http://localhost:3100",
+        PAPERCLIP_API_URL: "http://localhost:3100",
       },
     };
 
@@ -40,7 +40,7 @@ describe("redaction", () => {
         type: "plain",
         value: REDACTED_EVENT_VALUE,
       },
-      TITANCLIP_API_URL: "http://localhost:3100",
+      PAPERCLIP_API_URL: "http://localhost:3100",
     });
   });
 

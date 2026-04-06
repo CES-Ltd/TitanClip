@@ -368,7 +368,7 @@ pnpm --filter my-plugin test
 
 # 4. Install locally in TitanClip
 # In TitanClip instance, install from absolute path
-curl -X POST "$TITANCLIP_API_URL/api/companies/$COMPANY_ID/plugins" \
+curl -X POST "$PAPERCLIP_API_URL/api/companies/$COMPANY_ID/plugins" \
   -H "Authorization: Bearer $API_KEY" \
   -d '{"source": "/absolute/path/to/my-plugin"}'
 ```
@@ -383,7 +383,7 @@ pnpm build
 npm publish --access public
 
 # 3. Install in TitanClip
-curl -X POST "$TITANCLIP_API_URL/api/companies/$COMPANY_ID/plugins" \
+curl -X POST "$PAPERCLIP_API_URL/api/companies/$COMPANY_ID/plugins" \
   -H "Authorization: Bearer $API_KEY" \
   -d '{"source": "@acme/my-plugin@1.0.0"}'
 ```

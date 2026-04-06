@@ -539,9 +539,9 @@ GET /api/companies/{companyId}/approvals?status=pending
 ### Approval follow-up (requesting agent)
 
 When board resolves your approval, you may be woken with:
-- `TITANCLIP_APPROVAL_ID`
-- `TITANCLIP_APPROVAL_STATUS`
-- `TITANCLIP_LINKED_ISSUE_IDS`
+- `PAPERCLIP_APPROVAL_ID`
+- `PAPERCLIP_APPROVAL_STATUS`
+- `PAPERCLIP_LINKED_ISSUE_IDS`
 
 Use:
 

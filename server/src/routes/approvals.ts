@@ -32,7 +32,7 @@ export function approvalRoutes(db: Db) {
   const heartbeat = heartbeatService(db);
   const issueApprovalsSvc = issueApprovalService(db);
   const secretsSvc = secretService(db);
-  const strictSecretsMode = process.env.TITANCLIP_SECRETS_STRICT_MODE === "true";
+  const strictSecretsMode = process.env.PAPERCLIP_SECRETS_STRICT_MODE === "true";
 
   router.get("/companies/:companyId/approvals", async (req, res) => {
     const companyId = req.params.companyId as string;

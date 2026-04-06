@@ -70,7 +70,7 @@ function buildChatConfig(adapterConfig: Record<string, unknown>, httpAdapters?: 
   let baseUrl = (adapterConfig.baseUrl as string) || "";
   let apiKey = (adapterConfig.apiKey as string) || "";
 
-  // For titan_claw agents: look up credentials from the matching httpAdapter
+  // For agents: look up credentials from the matching httpAdapter
   if (httpAdapters?.length && (!apiKey || !baseUrl)) {
     // Find adapter matching the provider prefix from the model string
     const matchingAdapter = httpAdapters.find((a: any) =>
@@ -82,6 +82,19 @@ function buildChatConfig(adapterConfig: Record<string, unknown>, httpAdapters?: 
       if (!apiKey && matchingAdapter.apiKey) apiKey = matchingAdapter.apiKey;
       if (!baseUrl && matchingAdapter.baseUrl) baseUrl = matchingAdapter.baseUrl;
       if (!provider || provider === "openai") provider = matchingAdapter.provider;
+    }
+  }
+
+  // Env var fallback if still no API key after adapter config and httpAdapters
+  if (!apiKey) {
+    if (provider === "anthropic") {
+      apiKey = process.env.ANTHROPIC_API_KEY || "";
+    } else if (provider === "openai") {
+      apiKey = process.env.OPENAI_API_KEY || "";
+    } else if (provider === "openrouter") {
+      apiKey = process.env.OPENROUTER_API_KEY || "";
+    } else {
+      apiKey = process.env.OPENAI_API_KEY || process.env.ANTHROPIC_API_KEY || "";
     }
   }
 
@@ -407,7 +420,7 @@ ${templateList}
                 // Process structured tool actions from result JSON
                 processToolAction(db, resultText, {
                   companyId, agentId, agent, httpAdapters, sendSSE, chatSvc, heartbeat, projectId: effectiveProjectId,
-                }).catch((e) => console.warn("[TitanClaw] Tool action error:", e.message));
+                }).catch((e) => console.warn("[paperclip] Tool action error:", e.message));
 
                 // Log result to chatter
                 chatSvc.postMessage(companyId, {
@@ -784,7 +797,7 @@ async function cmdCreateIssue(description: string, ctx: SlashContext) {
 
   const title = description.length > 80 ? description.slice(0, 77) + "..." : description;
 
-  // Auto-assign to the best available agent (TitanClaw logic)
+  // Auto-assign to the best available agent (auto-assignment logic)
   let assigneeAgentId: string | null = null;
   let assigneeName = "";
   try {
@@ -860,7 +873,7 @@ async function cmdCreateIssue(description: string, ctx: SlashContext) {
       action: "issue.created",
       entityType: "issue",
       entityId: newIssue.id,
-      details: { title, origin: "titan_claw_chat_command", projectId: resolvedProjectId },
+      details: { title, origin: "paperclip_chat_command", projectId: resolvedProjectId },
     });
 
     // Wake the assigned agent so it starts working on the task
@@ -1130,30 +1143,12 @@ async function processHireFromToolResult(
     return;
   }
 
-  // Determine adapter: use TitanClaw if enabled, otherwise inherit main agent's config
+  // Determine adapter: inherit main agent's config
   const experimental = await settingsSvc.getExperimental();
-  const useTitanClaw = experimental.enableAgentOs === true;
-
-  let hireAdapterType: string;
-  let hireAdapterConfig: Record<string, unknown>;
-
-  if (useTitanClaw) {
-    // Pick a random model from enabled httpAdapters
-    const enabledAdapters = ctx.httpAdapters.filter((a: any) => a.enabled && a.models?.length > 0);
-    let selectedModel = "";
-    if (enabledAdapters.length > 0) {
-      const adapter = enabledAdapters[Math.floor(Math.random() * enabledAdapters.length)];
-      const model = adapter.models[Math.floor(Math.random() * adapter.models.length)];
-      selectedModel = `${adapter.provider}/${model}`;
-    }
-    hireAdapterType = "titanclaw_local";
-    hireAdapterConfig = selectedModel ? { model: selectedModel } : {};
-  } else {
-    // Inherit main agent's adapter config
-    const mainConfig = (ctx.agent.adapterConfig as Record<string, unknown>) ?? {};
-    hireAdapterType = ctx.agent.adapterType ?? "opencode_local";
-    hireAdapterConfig = { ...mainConfig };
-  }
+  // Inherit the hiring agent's adapter config for the new hire
+  const mainConfig = (ctx.agent.adapterConfig as Record<string, unknown>) ?? {};
+  let hireAdapterType: string = ctx.agent.adapterType ?? "opencode_local";
+  let hireAdapterConfig: Record<string, unknown> = { ...mainConfig };
 
   // Generate unique name: TemplateName_UUID
   const shortId = crypto.randomUUID().slice(0, 8);
@@ -1195,7 +1190,7 @@ async function processHireFromToolResult(
     const agentsMd = template.agentsMd || `# ${template.name}\n\nRole: ${template.role}\n\n## Responsibilities\n\nYou are a ${template.name} agent. Follow your SOUL.md principles and HEARTBEAT.md priorities.\n\n## Tools Available\n\nUse the tools provided to accomplish your tasks. Report progress via issue comments and chatter.`;
     writeFileSync(join(instructionsRoot, "AGENTS.md"), agentsMd, "utf-8");
   } catch (e) {
-    console.warn("[TitanClaw] Failed to write instructions:", (e as Error).message);
+    console.warn("[paperclip] Failed to write instructions:", (e as Error).message);
   }
 
   // Log activity
@@ -1286,10 +1281,10 @@ async function processHireFromToolResult(
       action: "issue.created",
       entityType: "issue",
       entityId: hireIssue.id,
-      details: { title: issueTitle, assignee: agentName, origin: "titan_claw_auto_hire" },
+      details: { title: issueTitle, assignee: agentName, origin: "paperclip_auto_hire" },
     });
   } catch (e) {
-    console.warn("[TitanClaw] Failed to create issue for hired agent:", (e as Error).message);
+    console.warn("[paperclip] Failed to create issue for hired agent:", (e as Error).message);
   }
 }
 

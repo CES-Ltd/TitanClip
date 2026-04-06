@@ -71,7 +71,6 @@ type AdapterType =
   | "cursor"
   | "http"
   | "openclaw_gateway"
-  | "titanclaw_local";
 
 const DEFAULT_TASK_DESCRIPTION = `You are the Team Lead. Build your delivery team by hiring all available agent templates.
 
@@ -779,8 +778,6 @@ export function OnboardingWizard() {
                     <div className="grid grid-cols-2 gap-2">
                       {[
                         {
-                          value: "titanclaw_local" as const,
-                          label: "TitanClaw",
                           icon: Sparkles,
                           desc: "Agentic AI framework (CLI)",
                           recommended: true
@@ -942,7 +939,7 @@ export function OnboardingWizard() {
                     adapterType === "opencode_local" ||
                     adapterType === "pi_local" ||
                     adapterType === "cursor" ||
-                    adapterType === "titanclaw_local") && (
+                    false) && (
                     <div className="space-y-3">
                       <div>
                         <label className="text-xs text-muted-foreground mb-1 block">

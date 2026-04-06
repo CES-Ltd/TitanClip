@@ -29,8 +29,8 @@ export function AgentOS() {
         {/* Header */}
         <div>
           <h1 className="text-2xl font-bold flex items-center gap-2">
-            <img src="/titan-claw-logo.png" alt="TitanClaw" className="h-7 w-7 rounded-md" />
-            TitanClaw
+            <img src="/brands/titanclip-logo.png" alt="Paperclip Agent" className="h-7 w-7 rounded-md" />
+            Paperclip Agent
           </h1>
           <p className="text-muted-foreground mt-1">
             Your personal AI assistant that grows and learns with you
@@ -113,7 +113,7 @@ export function AgentOS() {
             <Zap className="h-8 w-8 mx-auto text-muted-foreground/40 mb-2" />
             <h3 className="font-medium">No LLM Providers Configured</h3>
             <p className="text-sm text-muted-foreground mt-1">
-              Add an HTTP adapter in Instance Settings to connect TitanClaw to an LLM provider
+              Add an HTTP adapter in Instance Settings to connect Paperclip Agent to an LLM provider
             </p>
             <Link
               to="/instance/settings/admin"

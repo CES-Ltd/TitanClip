@@ -73,7 +73,7 @@ export function agentRoutes(db: Db) {
     opencode_local: "instructionsFilePath",
     cursor: "instructionsFilePath",
     pi_local: "instructionsFilePath",
-    titan_claw: "instructionsRootPath",
+    paperclip_chat: "instructionsRootPath",
     universal_llm: "instructionsRootPath",
     openai_compatible: "instructionsRootPath",
   };
@@ -99,7 +99,7 @@ export function agentRoutes(db: Db) {
   const companySkills = companySkillService(db);
   const workspaceOperations = workspaceOperationService(db);
   const instanceSettings = instanceSettingsService(db);
-  const strictSecretsMode = process.env.TITANCLIP_SECRETS_STRICT_MODE === "true";
+  const strictSecretsMode = process.env.PAPERCLIP_SECRETS_STRICT_MODE === "true";
 
   async function getCurrentUserRedactionOptions() {
     return {

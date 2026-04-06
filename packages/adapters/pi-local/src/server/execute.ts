@@ -27,7 +27,7 @@ import { ensurePiModelConfiguredAndAvailable } from "./models.js";
 
 const __moduleDir = path.dirname(fileURLToPath(import.meta.url));
 
-const TITANCLIP_SESSIONS_DIR = path.join(os.homedir(), ".pi", "paperclips");
+const PAPERCLIP_SESSIONS_DIR = path.join(os.homedir(), ".pi", "paperclips");
 const PI_AGENT_SKILLS_DIR = path.join(os.homedir(), ".pi", "agent", "skills");
 
 function firstNonEmptyLine(text: string): string {
@@ -97,13 +97,13 @@ function resolvePiBiller(env: Record<string, string>, provider: string | null): 
 }
 
 async function ensureSessionsDir(): Promise<string> {
-  await fs.mkdir(TITANCLIP_SESSIONS_DIR, { recursive: true });
-  return TITANCLIP_SESSIONS_DIR;
+  await fs.mkdir(PAPERCLIP_SESSIONS_DIR, { recursive: true });
+  return PAPERCLIP_SESSIONS_DIR;
 }
 
 function buildSessionPath(agentId: string, timestamp: string): string {
   const safeTimestamp = timestamp.replace(/[:.]/g, "-");
-  return path.join(TITANCLIP_SESSIONS_DIR, `${safeTimestamp}-${agentId}.jsonl`);
+  return path.join(PAPERCLIP_SESSIONS_DIR, `${safeTimestamp}-${agentId}.jsonl`);
 }
 
 export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExecutionResult> {
@@ -150,9 +150,9 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
   // Build environment
   const envConfig = parseObject(config.env);
   const hasExplicitApiKey =
-    typeof envConfig.TITANCLIP_API_KEY === "string" && envConfig.TITANCLIP_API_KEY.trim().length > 0;
+    typeof envConfig.PAPERCLIP_API_KEY === "string" && envConfig.PAPERCLIP_API_KEY.trim().length > 0;
   const env: Record<string, string> = { ...buildTitanClipEnv(agent) };
-  env.TITANCLIP_RUN_ID = runId;
+  env.PAPERCLIP_RUN_ID = runId;
   
   const wakeTaskId =
     (typeof context.taskId === "string" && context.taskId.trim().length > 0 && context.taskId.trim()) ||
@@ -178,25 +178,25 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
     ? context.issueIds.filter((value): value is string => typeof value === "string" && value.trim().length > 0)
     : [];
     
-  if (wakeTaskId) env.TITANCLIP_TASK_ID = wakeTaskId;
-  if (wakeReason) env.TITANCLIP_WAKE_REASON = wakeReason;
-  if (wakeCommentId) env.TITANCLIP_WAKE_COMMENT_ID = wakeCommentId;
-  if (approvalId) env.TITANCLIP_APPROVAL_ID = approvalId;
-  if (approvalStatus) env.TITANCLIP_APPROVAL_STATUS = approvalStatus;
-  if (linkedIssueIds.length > 0) env.TITANCLIP_LINKED_ISSUE_IDS = linkedIssueIds.join(",");
-  if (workspaceCwd) env.TITANCLIP_WORKSPACE_CWD = workspaceCwd;
-  if (workspaceSource) env.TITANCLIP_WORKSPACE_SOURCE = workspaceSource;
-  if (workspaceId) env.TITANCLIP_WORKSPACE_ID = workspaceId;
-  if (workspaceRepoUrl) env.TITANCLIP_WORKSPACE_REPO_URL = workspaceRepoUrl;
-  if (workspaceRepoRef) env.TITANCLIP_WORKSPACE_REPO_REF = workspaceRepoRef;
+  if (wakeTaskId) env.PAPERCLIP_TASK_ID = wakeTaskId;
+  if (wakeReason) env.PAPERCLIP_WAKE_REASON = wakeReason;
+  if (wakeCommentId) env.PAPERCLIP_WAKE_COMMENT_ID = wakeCommentId;
+  if (approvalId) env.PAPERCLIP_APPROVAL_ID = approvalId;
+  if (approvalStatus) env.PAPERCLIP_APPROVAL_STATUS = approvalStatus;
+  if (linkedIssueIds.length > 0) env.PAPERCLIP_LINKED_ISSUE_IDS = linkedIssueIds.join(",");
+  if (workspaceCwd) env.PAPERCLIP_WORKSPACE_CWD = workspaceCwd;
+  if (workspaceSource) env.PAPERCLIP_WORKSPACE_SOURCE = workspaceSource;
+  if (workspaceId) env.PAPERCLIP_WORKSPACE_ID = workspaceId;
+  if (workspaceRepoUrl) env.PAPERCLIP_WORKSPACE_REPO_URL = workspaceRepoUrl;
+  if (workspaceRepoRef) env.PAPERCLIP_WORKSPACE_REPO_REF = workspaceRepoRef;
   if (agentHome) env.AGENT_HOME = agentHome;
-  if (workspaceHints.length > 0) env.TITANCLIP_WORKSPACES_JSON = JSON.stringify(workspaceHints);
+  if (workspaceHints.length > 0) env.PAPERCLIP_WORKSPACES_JSON = JSON.stringify(workspaceHints);
 
   for (const [key, value] of Object.entries(envConfig)) {
     if (typeof value === "string") env[key] = value;
   }
   if (!hasExplicitApiKey && authToken) {
-    env.TITANCLIP_API_KEY = authToken;
+    env.PAPERCLIP_API_KEY = authToken;
   }
   
   const runtimeEnv = Object.fromEntries(

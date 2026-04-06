@@ -156,9 +156,6 @@ export async function createApp(
   }
   app.use(llmRoutes(db));
 
-  // Set DB ref for TitanClaw adapter's dynamic model listing
-  const { setTitanClawDbRef } = await import("./adapters/registry.js");
-  setTitanClawDbRef(db);
 
   // Mount API routes
   const api = Router();

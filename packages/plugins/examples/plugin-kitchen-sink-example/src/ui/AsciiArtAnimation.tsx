@@ -4,7 +4,7 @@ const CHARS = [" ", ".", "·", "▪", "▫", "○"] as const;
 const TARGET_FPS = 24;
 const FRAME_INTERVAL_MS = 1000 / TARGET_FPS;
 
-const TITANCLIP_SPRITES = [
+const PAPERCLIP_SPRITES = [
   [
     "  ╭────╮ ",
     " ╭╯╭──╮│ ",
@@ -27,7 +27,7 @@ const TITANCLIP_SPRITES = [
   ],
 ] as const;
 
-type PaperclipSprite = (typeof TITANCLIP_SPRITES)[number];
+type PaperclipSprite = (typeof PAPERCLIP_SPRITES)[number];
 
 interface Clip {
   x: number;
@@ -130,7 +130,7 @@ export function AsciiArtAnimation() {
       for (let baseRow = 1; baseRow < rows - 9; baseRow += gapY) {
         const startX = Math.floor(baseRow / gapY) % 2 === 0 ? 2 : 10;
         for (let baseCol = startX; baseCol < cols - 10; baseCol += gapX) {
-          const sprite = TITANCLIP_SPRITES[(baseCol + baseRow) % TITANCLIP_SPRITES.length]!;
+          const sprite = PAPERCLIP_SPRITES[(baseCol + baseRow) % PAPERCLIP_SPRITES.length]!;
           for (let sr = 0; sr < sprite.length; sr++) {
             const line = sprite[sr]!;
             for (let sc = 0; sc < line.length; sc++) {
@@ -151,7 +151,7 @@ export function AsciiArtAnimation() {
     }
 
     function spawnClip() {
-      const sprite = TITANCLIP_SPRITES[Math.floor(Math.random() * TITANCLIP_SPRITES.length)]!;
+      const sprite = PAPERCLIP_SPRITES[Math.floor(Math.random() * PAPERCLIP_SPRITES.length)]!;
       const size = spriteSize(sprite);
       const edge = Math.random();
       let x = 0;

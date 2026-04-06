@@ -515,9 +515,9 @@ pnpm test -- --changed
 
 ```bash
 # .env.test
-TITANCLIP_COMPANY_ID=test-company-id
-TITANCLIP_API_KEY=test-api-key
-TITANCLIP_DATABASE_URL=sqlite:test.db
+PAPERCLIP_COMPANY_ID=test-company-id
+PAPERCLIP_API_KEY=test-api-key
+PAPERCLIP_DATABASE_URL=sqlite:test.db
 ```
 
 ## Writing Effective Tests

@@ -5,7 +5,7 @@
   "main": "dist/main/index.js",
   "scripts": {
     "dev": "tsc -p tsconfig.electron.json && electron .",
-    "dev:native": "tsc -p tsconfig.electron.json && TITANCLIP_STARTUP_MODE=native electron .",
+    "dev:native": "tsc -p tsconfig.electron.json && PAPERCLIP_STARTUP_MODE=native electron .",
     "build": "pnpm -r build",
     "build:ui-electron": "cd ui && ELECTRON_BUILD=true pnpm run build",
     "build:electron": "tsc -p tsconfig.electron.json",

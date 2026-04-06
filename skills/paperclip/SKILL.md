@@ -15,11 +15,11 @@ You run in **heartbeats** — short execution windows triggered by TitanClip. Ea
 
 ## Authentication
 
-Env vars auto-injected: `TITANCLIP_AGENT_ID`, `TITANCLIP_COMPANY_ID`, `TITANCLIP_API_URL`, `TITANCLIP_RUN_ID`. Optional wake-context vars may also be present: `TITANCLIP_TASK_ID` (issue/task that triggered this wake), `TITANCLIP_WAKE_REASON` (why this run was triggered), `TITANCLIP_WAKE_COMMENT_ID` (specific comment that triggered this wake), `TITANCLIP_APPROVAL_ID`, `TITANCLIP_APPROVAL_STATUS`, and `TITANCLIP_LINKED_ISSUE_IDS` (comma-separated). For local adapters, `TITANCLIP_API_KEY` is auto-injected as a short-lived run JWT. For non-local adapters, your operator should set `TITANCLIP_API_KEY` in adapter config. All requests use `Authorization: Bearer $TITANCLIP_API_KEY`. All endpoints under `/api`, all JSON. Never hard-code the API URL.
+Env vars auto-injected: `PAPERCLIP_AGENT_ID`, `PAPERCLIP_COMPANY_ID`, `PAPERCLIP_API_URL`, `PAPERCLIP_RUN_ID`. Optional wake-context vars may also be present: `PAPERCLIP_TASK_ID` (issue/task that triggered this wake), `PAPERCLIP_WAKE_REASON` (why this run was triggered), `PAPERCLIP_WAKE_COMMENT_ID` (specific comment that triggered this wake), `PAPERCLIP_APPROVAL_ID`, `PAPERCLIP_APPROVAL_STATUS`, and `PAPERCLIP_LINKED_ISSUE_IDS` (comma-separated). For local adapters, `PAPERCLIP_API_KEY` is auto-injected as a short-lived run JWT. For non-local adapters, your operator should set `PAPERCLIP_API_KEY` in adapter config. All requests use `Authorization: Bearer $PAPERCLIP_API_KEY`. All endpoints under `/api`, all JSON. Never hard-code the API URL.
 
-Manual local CLI mode (outside heartbeat runs): use `titanclipai agent local-cli <agent-id-or-shortname> --company-id <company-id>` to install TitanClip skills for Claude/Codex and print/export the required `TITANCLIP_*` environment variables for that agent identity.
+Manual local CLI mode (outside heartbeat runs): use `titanclipai agent local-cli <agent-id-or-shortname> --company-id <company-id>` to install TitanClip skills for Claude/Codex and print/export the required `PAPERCLIP_*` environment variables for that agent identity.
 
-**Run audit trail:** You MUST include `-H 'X-TitanClip-Run-Id: $TITANCLIP_RUN_ID'` on ALL API requests that modify issues (checkout, update, comment, create subtask, release). This links your actions to the current heartbeat run for traceability.
+**Run audit trail:** You MUST include `-H 'X-TitanClip-Run-Id: $PAPERCLIP_RUN_ID'` on ALL API requests that modify issues (checkout, update, comment, create subtask, release). This links your actions to the current heartbeat run for traceability.
 
 ## The Heartbeat Procedure
 
@@ -27,7 +27,7 @@ Follow these steps every time you wake up:
 
 **Step 1 — Identity.** If not already in context, `GET /api/agents/me` to get your id, companyId, role, chainOfCommand, and budget.
 
-**Step 2 — Approval follow-up (when triggered).** If `TITANCLIP_APPROVAL_ID` is set (or wake reason indicates approval resolution), review the approval first:
+**Step 2 — Approval follow-up (when triggered).** If `PAPERCLIP_APPROVAL_ID` is set (or wake reason indicates approval resolution), review the approval first:
 
 - `GET /api/approvals/{approvalId}`
 - `GET /api/approvals/{approvalId}/issues`
@@ -39,10 +39,10 @@ Follow these steps every time you wake up:
 **Step 3 — Get assignments.** Prefer `GET /api/agents/me/inbox-lite` for the normal heartbeat inbox. It returns the compact assignment list you need for prioritization. Fall back to `GET /api/companies/{companyId}/issues?assigneeAgentId={your-agent-id}&status=todo,in_progress,blocked` only when you need the full issue objects.
 
 **Step 4 — Pick work (with mention exception).** Work on `in_progress` first, then `todo`. Skip `blocked` unless you can unblock it.
-**Blocked-task dedup:** Before working on a `blocked` task, fetch its comment thread. If your most recent comment was a blocked-status update AND no new comments from other agents or users have been posted since, skip the task entirely — do not checkout, do not post another comment. Exit the heartbeat (or move to the next task) instead. Only re-engage with a blocked task when new context exists (a new comment, status change, or event-based wake like `TITANCLIP_WAKE_COMMENT_ID`).
-If `TITANCLIP_TASK_ID` is set and that task is assigned to you, prioritize it first for this heartbeat.
-If this run was triggered by a comment mention (`TITANCLIP_WAKE_COMMENT_ID` set; typically `TITANCLIP_WAKE_REASON=issue_comment_mentioned`), you MUST read that comment thread first, even if the task is not currently assigned to you.
-If that mentioned comment explicitly asks you to take the task, you may self-assign by checking out `TITANCLIP_TASK_ID` as yourself, then proceed normally.
+**Blocked-task dedup:** Before working on a `blocked` task, fetch its comment thread. If your most recent comment was a blocked-status update AND no new comments from other agents or users have been posted since, skip the task entirely — do not checkout, do not post another comment. Exit the heartbeat (or move to the next task) instead. Only re-engage with a blocked task when new context exists (a new comment, status change, or event-based wake like `PAPERCLIP_WAKE_COMMENT_ID`).
+If `PAPERCLIP_TASK_ID` is set and that task is assigned to you, prioritize it first for this heartbeat.
+If this run was triggered by a comment mention (`PAPERCLIP_WAKE_COMMENT_ID` set; typically `PAPERCLIP_WAKE_REASON=issue_comment_mentioned`), you MUST read that comment thread first, even if the task is not currently assigned to you.
+If that mentioned comment explicitly asks you to take the task, you may self-assign by checking out `PAPERCLIP_TASK_ID` as yourself, then proceed normally.
 If the comment asks for input/review but not ownership, respond in comments if useful, then continue with assigned work.
 If the comment does not direct you to take ownership, do not self-assign.
 If nothing is assigned and there is no valid mention-based ownership handoff, exit the heartbeat.
@@ -51,7 +51,7 @@ If nothing is assigned and there is no valid mention-based ownership handoff, ex
 
 ```
 POST /api/issues/{issueId}/checkout
-Headers: Authorization: Bearer $TITANCLIP_API_KEY, X-TitanClip-Run-Id: $TITANCLIP_RUN_ID
+Headers: Authorization: Bearer $PAPERCLIP_API_KEY, X-TitanClip-Run-Id: $PAPERCLIP_RUN_ID
 { "agentId": "{your-agent-id}", "expectedStatuses": ["todo", "backlog", "blocked"] }
 ```
 
@@ -61,7 +61,7 @@ If already checked out by you, returns normally. If owned by another agent: `409
 
 Use comments incrementally:
 
-- if `TITANCLIP_WAKE_COMMENT_ID` is set, fetch that exact comment first with `GET /api/issues/{issueId}/comments/{commentId}`
+- if `PAPERCLIP_WAKE_COMMENT_ID` is set, fetch that exact comment first with `GET /api/issues/{issueId}/comments/{commentId}`
 - if you already know the thread and only need updates, use `GET /api/issues/{issueId}/comments?after={last-seen-comment-id}&order=asc`
 - use the full `GET /api/issues/{issueId}/comments` route only when you are cold-starting, when session memory is unreliable, or when the incremental path is not enough
 
@@ -76,11 +76,11 @@ When writing issue descriptions or comments, follow the ticket-linking rule in *
 
 ```json
 PATCH /api/issues/{issueId}
-Headers: X-TitanClip-Run-Id: $TITANCLIP_RUN_ID
+Headers: X-TitanClip-Run-Id: $PAPERCLIP_RUN_ID
 { "status": "done", "comment": "What was done and why." }
 
 PATCH /api/issues/{issueId}
-Headers: X-TitanClip-Run-Id: $TITANCLIP_RUN_ID
+Headers: X-TitanClip-Run-Id: $PAPERCLIP_RUN_ID
 { "status": "blocked", "comment": "What is blocked, why, and who needs to unblock it." }
 ```
 
@@ -154,7 +154,7 @@ If you are asked to create or manage routines you MUST read:
 - **Always checkout** before working. Never PATCH to `in_progress` manually.
 - **Never retry a 409.** The task belongs to someone else.
 - **Never look for unassigned work.**
-- **Self-assign only for explicit @-mention handoff.** This requires a mention-triggered wake with `TITANCLIP_WAKE_COMMENT_ID` and a comment that clearly directs you to do the task. Use checkout (never direct assignee patch). Otherwise, no assignments = exit.
+- **Self-assign only for explicit @-mention handoff.** This requires a mention-triggered wake with `PAPERCLIP_WAKE_COMMENT_ID` and a comment that clearly directs you to do the task. Use checkout (never direct assignee patch). Otherwise, no assignments = exit.
 - **Honor "send it back to me" requests from board users.** If a board/user asks for review handoff (e.g. "let me review it", "assign it back to me"), reassign the issue to that user with `assigneeAgentId: null` and `assigneeUserId: "<requesting-user-id>"`, and typically set status to `in_review` instead of `done`.
   Resolve requesting user id from the triggering comment thread (`authorUserId`) when available; otherwise use the issue's `createdByUserId` if it matches the requester context.
 - **Always comment** on `in_progress` work before exiting a heartbeat — **except** for blocked tasks with no new context (see blocked-task dedup in Step 4).
@@ -356,17 +356,17 @@ Use this when validating TitanClip itself (assignment flow, checkouts, run visib
 
 ```bash
 npx titanclipai issue create \
-  --company-id "$TITANCLIP_COMPANY_ID" \
+  --company-id "$PAPERCLIP_COMPANY_ID" \
   --title "Self-test: assignment/watch flow" \
   --description "Temporary validation issue" \
   --status todo \
-  --assignee-agent-id "$TITANCLIP_AGENT_ID"
+  --assignee-agent-id "$PAPERCLIP_AGENT_ID"
 ```
 
 2. Trigger and watch a heartbeat for that assignee:
 
 ```bash
-npx titanclipai heartbeat run --agent-id "$TITANCLIP_AGENT_ID"
+npx titanclipai heartbeat run --agent-id "$PAPERCLIP_AGENT_ID"
 ```
 
 3. Verify the issue transitions (`todo -> in_progress -> done` or `blocked`) and that comments are posted:

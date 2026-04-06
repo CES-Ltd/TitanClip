@@ -28,7 +28,7 @@ const ROLE_BADGE_COLORS: Record<string, string> = {
 };
 
 const SUPPORTED_ADAPTERS = [
-  "titanclaw_local", "claude_local", "codex_local", "gemini_local", "opencode_local",
+  "claude_local", "codex_local", "gemini_local", "opencode_local",
   "pi_local", "cursor", "hermes_local", "openclaw_gateway",
 ];
 

@@ -67,7 +67,6 @@ export const adapterLabels: Record<string, string> = {
   hermes_local: "Hermes Agent",
   process: "Process",
   http: "HTTP",
-  titanclaw_local: "TitanClaw",
   universal_llm: "OpenAI Compatible",
   openai_compatible: "OpenAI Compatible",
 };

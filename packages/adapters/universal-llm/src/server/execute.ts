@@ -114,7 +114,7 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
 
       // ── Budget check ────────────────────────────────────────────────
       if (totalCostUsd >= maxCostPerRun) {
-        ctx.onLog("stderr", `\n[TitanClaw] Run cost budget exceeded ($${totalCostUsd.toFixed(4)} >= $${maxCostPerRun}). Stopping.\n`);
+        ctx.onLog("stderr", `\n[paperclip] Run cost budget exceeded ($${totalCostUsd.toFixed(4)} >= $${maxCostPerRun}). Stopping.\n`);
         break;
       }
 
@@ -127,11 +127,11 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
         const compactedCount = loopMessages.length - systemMsg.length - recentMsgs.length;
         if (compactedCount > 0) {
           loopMessages = [...systemMsg, ...recentMsgs];
-          ctx.onLog("stderr", `[TitanClaw] Auto-compacted ${compactedCount} older messages to stay within token budget.\n`);
+          ctx.onLog("stderr", `[paperclip] Auto-compacted ${compactedCount} older messages to stay within token budget.\n`);
         }
       }
       if (totalInputTokens + totalOutputTokens >= maxTokensPerRun) {
-        ctx.onLog("stderr", `\n[TitanClaw] Token budget exceeded (${totalInputTokens + totalOutputTokens} >= ${maxTokensPerRun}). Stopping.\n`);
+        ctx.onLog("stderr", `\n[paperclip] Token budget exceeded (${totalInputTokens + totalOutputTokens} >= ${maxTokensPerRun}). Stopping.\n`);
         break;
       }
 
@@ -144,7 +144,7 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
         tools: openAITools,
       };
 
-      ctx.onLog("stderr", `[TitanClaw] Calling ${providerSlug}/${model} (iteration ${iterations})${baseUrl ? ` via ${baseUrl}` : ""}\n`);
+      ctx.onLog("stderr", `[paperclip] Calling ${providerSlug}/${model} (iteration ${iterations})${baseUrl ? ` via ${baseUrl}` : ""}\n`);
 
       const response = await provider.chatStream(
         loopMessages,
@@ -160,7 +160,7 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
 
       // Warn if the LLM returned nothing
       if (!response.content && !response.toolCalls?.length && response.usage.inputTokens === 0) {
-        ctx.onLog("stderr", `[TitanClaw] Warning: LLM returned empty response with 0 tokens. This may indicate a connection or model configuration issue.\n`);
+        ctx.onLog("stderr", `[paperclip] Warning: LLM returned empty response with 0 tokens. This may indicate a connection or model configuration issue.\n`);
       }
 
       lastResponse = response;

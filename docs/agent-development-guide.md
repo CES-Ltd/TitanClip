@@ -79,7 +79,7 @@ TitanClip provides pre-configured agent templates for common roles:
 ### Via API
 
 ```bash
-curl -X POST "$TITANCLIP_API_URL/api/companies/$COMPANY_ID/agents" \
+curl -X POST "$PAPERCLIP_API_URL/api/companies/$COMPANY_ID/agents" \
   -H "Authorization: Bearer $API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
@@ -94,7 +94,7 @@ curl -X POST "$TITANCLIP_API_URL/api/companies/$COMPANY_ID/agents" \
 ### Via Agent Hire Endpoint
 
 ```bash
-curl -X POST "$TITANCLIP_API_URL/api/companies/$COMPANY_ID/agent-hires" \
+curl -X POST "$PAPERCLIP_API_URL/api/companies/$COMPANY_ID/agent-hires" \
   -H "Authorization: Bearer $API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
@@ -152,7 +152,7 @@ Each adapter has specific configuration options:
 ### Setting Adapter Configuration
 
 ```bash
-curl -X PATCH "$TITANCLIP_API_URL/api/agents/$AGENT_ID" \
+curl -X PATCH "$PAPERCLIP_API_URL/api/agents/$AGENT_ID" \
   -H "Authorization: Bearer $API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
@@ -178,7 +178,7 @@ Skills are reusable capabilities that can be assigned to agents. They include:
 
 ```bash
 # Import from skills.sh (preferred)
-curl -X POST "$TITANCLIP_API_URL/api/companies/$COMPANY_ID/skills/import" \
+curl -X POST "$PAPERCLIP_API_URL/api/companies/$COMPANY_ID/skills/import" \
   -H "Authorization: Bearer $API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
@@ -186,7 +186,7 @@ curl -X POST "$TITANCLIP_API_URL/api/companies/$COMPANY_ID/skills/import" \
   }'
 
 # Import from GitHub
-curl -X POST "$TITANCLIP_API_URL/api/companies/$COMPANY_ID/skills/import" \
+curl -X POST "$PAPERCLIP_API_URL/api/companies/$COMPANY_ID/skills/import" \
   -H "Authorization: Bearer $API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
@@ -197,7 +197,7 @@ curl -X POST "$TITANCLIP_API_URL/api/companies/$COMPANY_ID/skills/import" \
 ### Assigning Skills to Agents
 
 ```bash
-curl -X POST "$TITANCLIP_API_URL/api/agents/$AGENT_ID/skills/sync" \
+curl -X POST "$PAPERCLIP_API_URL/api/agents/$AGENT_ID/skills/sync" \
   -H "Authorization: Bearer $API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
@@ -208,7 +208,7 @@ curl -X POST "$TITANCLIP_API_URL/api/agents/$AGENT_ID/skills/sync" \
 ### Listing Agent Skills
 
 ```bash
-curl "$TITANCLIP_API_URL/api/agents/$AGENT_ID/skills" \
+curl "$PAPERCLIP_API_URL/api/agents/$AGENT_ID/skills" \
   -H "Authorization: Bearer $API_KEY"
 ```
 
@@ -365,11 +365,11 @@ If documentation requirements are unclear, ask the Product Manager for clarifica
 
 ```bash
 # Get recent runs for an agent
-curl "$TITANCLIP_API_URL/api/agents/$AGENT_ID/runs?limit=10" \
+curl "$PAPERCLIP_API_URL/api/agents/$AGENT_ID/runs?limit=10" \
   -H "Authorization: Bearer $API_KEY"
 
 # Get specific run details
-curl "$TITANCLIP_API_URL/api/runs/$RUN_ID" \
+curl "$PAPERCLIP_API_URL/api/runs/$RUN_ID" \
   -H "Authorization: Bearer $API_KEY"
 ```
 
@@ -377,7 +377,7 @@ curl "$TITANCLIP_API_URL/api/runs/$RUN_ID" \
 
 ```bash
 # Create a simple test task
-curl -X POST "$TITANCLIP_API_URL/api/companies/$COMPANY_ID/issues" \
+curl -X POST "$PAPERCLIP_API_URL/api/companies/$COMPANY_ID/issues" \
   -H "Authorization: Bearer $API_KEY" \
   -H "Content-Type: application/json" \
   -d '{

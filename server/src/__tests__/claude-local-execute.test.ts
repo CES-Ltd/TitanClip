@@ -8,7 +8,7 @@ async function writeFakeClaudeCommand(commandPath: string): Promise<void> {
   const script = `#!/usr/bin/env node
 const fs = require("node:fs");
 
-const capturePath = process.env.TITANCLIP_TEST_CAPTURE_PATH;
+const capturePath = process.env.PAPERCLIP_TEST_CAPTURE_PATH;
 const payload = {
   argv: process.argv.slice(2),
   prompt: fs.readFileSync(0, "utf8"),
@@ -67,7 +67,7 @@ describe("claude execute", () => {
           command: "claude",
           cwd: workspace,
           env: {
-            TITANCLIP_TEST_CAPTURE_PATH: capturePath,
+            PAPERCLIP_TEST_CAPTURE_PATH: capturePath,
           },
           promptTemplate: "Follow the paperclip heartbeat.",
         },
@@ -85,7 +85,7 @@ describe("claude execute", () => {
       expect(loggedCommand).toBe(commandPath);
       expect(loggedEnv.HOME).toBe(root);
       expect(loggedEnv.CLAUDE_CONFIG_DIR).toBe(claudeConfigDir);
-      expect(loggedEnv.TITANCLIP_RESOLVED_COMMAND).toBe(commandPath);
+      expect(loggedEnv.PAPERCLIP_RESOLVED_COMMAND).toBe(commandPath);
     } finally {
       if (previousHome === undefined) delete process.env.HOME;
       else process.env.HOME = previousHome;

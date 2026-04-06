@@ -206,7 +206,7 @@ function EmptyState({ agentName }: { agentName?: string }) {
         <div className="w-16 h-16 rounded-2xl bg-indigo-500/10 flex items-center justify-center mx-auto mb-4">
           <Bot className="h-8 w-8 text-indigo-500/40" />
         </div>
-        <h2 className="text-lg font-medium mb-1">TitanClaw</h2>
+        <h2 className="text-lg font-medium mb-1">Paperclip Agent</h2>
         <p className="text-sm text-muted-foreground mb-6">
           Chat with {agentName ?? "your agent"}, manage tasks, and monitor your team.
         </p>

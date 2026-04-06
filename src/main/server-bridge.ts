@@ -35,11 +35,11 @@ export function startServer(): void {
     PORT: String(SERVER_PORT),
     HOST: "127.0.0.1",
     SERVE_UI: "true",
-    TITANCLIP_ELECTRON: "1",
-    TITANCLIP_MIGRATION_AUTO_APPLY: "true",
-    TITANCLIP_MIGRATION_PROMPT: "never",
-    TITANCLIP_DEPLOYMENT_MODE: "local_trusted",
-    TITANCLIP_OPEN_ON_LISTEN: "false",
+    PAPERCLIP_ELECTRON: "1",
+    PAPERCLIP_MIGRATION_AUTO_APPLY: "true",
+    PAPERCLIP_MIGRATION_PROMPT: "never",
+    PAPERCLIP_DEPLOYMENT_MODE: "local_trusted",
+    PAPERCLIP_OPEN_ON_LISTEN: "false",
     PATH: fullPath,
   };
 

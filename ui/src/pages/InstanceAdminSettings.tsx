@@ -573,7 +573,7 @@ export function InstanceAdminSettings() {
                 <span className="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full bg-indigo-500/10 text-indigo-500 border border-indigo-500/20">Beta</span>
               </div>
               <p className="max-w-2xl text-sm text-muted-foreground">
-                Allow TitanClaw to create temporary session agents on-the-fly when no matching template is found.
+                Allow Paperclip Agent to create temporary session agents on-the-fly when no matching template is found.
                 Session agents inherit their parent's IAM permissions, require explicit user approval, and
                 automatically expire after 24 hours.
               </p>

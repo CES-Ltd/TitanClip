@@ -8,13 +8,13 @@ async function writeFakeCodexCommand(commandPath: string): Promise<void> {
   const script = `#!/usr/bin/env node
 const fs = require("node:fs");
 
-const capturePath = process.env.TITANCLIP_TEST_CAPTURE_PATH;
+const capturePath = process.env.PAPERCLIP_TEST_CAPTURE_PATH;
 const payload = {
   argv: process.argv.slice(2),
   prompt: fs.readFileSync(0, "utf8"),
   codexHome: process.env.CODEX_HOME || null,
   paperclipEnvKeys: Object.keys(process.env)
-    .filter((key) => key.startsWith("TITANCLIP_"))
+    .filter((key) => key.startsWith("PAPERCLIP_"))
     .sort(),
 };
 if (capturePath) {
@@ -63,14 +63,14 @@ describe("codex execute", () => {
     await writeFakeCodexCommand(commandPath);
 
     const previousHome = process.env.HOME;
-    const previousTitanClipHome = process.env.TITANCLIP_HOME;
-    const previousTitanClipInstanceId = process.env.TITANCLIP_INSTANCE_ID;
-    const previousTitanClipInWorktree = process.env.TITANCLIP_IN_WORKTREE;
+    const previousTitanClipHome = process.env.PAPERCLIP_HOME;
+    const previousTitanClipInstanceId = process.env.PAPERCLIP_INSTANCE_ID;
+    const previousTitanClipInWorktree = process.env.PAPERCLIP_IN_WORKTREE;
     const previousCodexHome = process.env.CODEX_HOME;
     process.env.HOME = root;
-    process.env.TITANCLIP_HOME = paperclipHome;
-    delete process.env.TITANCLIP_INSTANCE_ID;
-    delete process.env.TITANCLIP_IN_WORKTREE;
+    process.env.PAPERCLIP_HOME = paperclipHome;
+    delete process.env.PAPERCLIP_INSTANCE_ID;
+    delete process.env.PAPERCLIP_IN_WORKTREE;
     process.env.CODEX_HOME = sharedCodexHome;
 
     try {
@@ -94,7 +94,7 @@ describe("codex execute", () => {
           command: commandPath,
           cwd: workspace,
           env: {
-            TITANCLIP_TEST_CAPTURE_PATH: capturePath,
+            PAPERCLIP_TEST_CAPTURE_PATH: capturePath,
           },
           promptTemplate: "Follow the paperclip heartbeat.",
         },
@@ -127,12 +127,12 @@ describe("codex execute", () => {
     } finally {
       if (previousHome === undefined) delete process.env.HOME;
       else process.env.HOME = previousHome;
-      if (previousTitanClipHome === undefined) delete process.env.TITANCLIP_HOME;
-      else process.env.TITANCLIP_HOME = previousTitanClipHome;
-      if (previousTitanClipInstanceId === undefined) delete process.env.TITANCLIP_INSTANCE_ID;
-      else process.env.TITANCLIP_INSTANCE_ID = previousTitanClipInstanceId;
-      if (previousTitanClipInWorktree === undefined) delete process.env.TITANCLIP_IN_WORKTREE;
-      else process.env.TITANCLIP_IN_WORKTREE = previousTitanClipInWorktree;
+      if (previousTitanClipHome === undefined) delete process.env.PAPERCLIP_HOME;
+      else process.env.PAPERCLIP_HOME = previousTitanClipHome;
+      if (previousTitanClipInstanceId === undefined) delete process.env.PAPERCLIP_INSTANCE_ID;
+      else process.env.PAPERCLIP_INSTANCE_ID = previousTitanClipInstanceId;
+      if (previousTitanClipInWorktree === undefined) delete process.env.PAPERCLIP_IN_WORKTREE;
+      else process.env.PAPERCLIP_IN_WORKTREE = previousTitanClipInWorktree;
       if (previousCodexHome === undefined) delete process.env.CODEX_HOME;
       else process.env.CODEX_HOME = previousCodexHome;
       await fs.rm(root, { recursive: true, force: true });
@@ -171,7 +171,7 @@ describe("codex execute", () => {
           command: commandPath,
           cwd: workspace,
           env: {
-            TITANCLIP_TEST_CAPTURE_PATH: capturePath,
+            PAPERCLIP_TEST_CAPTURE_PATH: capturePath,
           },
           promptTemplate: "Follow the paperclip heartbeat.",
         },
@@ -232,7 +232,7 @@ describe("codex execute", () => {
           command: "codex",
           cwd: workspace,
           env: {
-            TITANCLIP_TEST_CAPTURE_PATH: capturePath,
+            PAPERCLIP_TEST_CAPTURE_PATH: capturePath,
           },
           promptTemplate: "Follow the paperclip heartbeat.",
         },
@@ -249,7 +249,7 @@ describe("codex execute", () => {
       expect(result.errorMessage).toBeNull();
       expect(loggedCommand).toBe(commandPath);
       expect(loggedEnv.HOME).toBe(root);
-      expect(loggedEnv.TITANCLIP_RESOLVED_COMMAND).toBe(commandPath);
+      expect(loggedEnv.PAPERCLIP_RESOLVED_COMMAND).toBe(commandPath);
     } finally {
       if (previousHome === undefined) delete process.env.HOME;
       else process.env.HOME = previousHome;
@@ -282,14 +282,14 @@ describe("codex execute", () => {
     await writeFakeCodexCommand(commandPath);
 
     const previousHome = process.env.HOME;
-    const previousTitanClipHome = process.env.TITANCLIP_HOME;
-    const previousTitanClipInstanceId = process.env.TITANCLIP_INSTANCE_ID;
-    const previousTitanClipInWorktree = process.env.TITANCLIP_IN_WORKTREE;
+    const previousTitanClipHome = process.env.PAPERCLIP_HOME;
+    const previousTitanClipInstanceId = process.env.PAPERCLIP_INSTANCE_ID;
+    const previousTitanClipInWorktree = process.env.PAPERCLIP_IN_WORKTREE;
     const previousCodexHome = process.env.CODEX_HOME;
     process.env.HOME = root;
-    process.env.TITANCLIP_HOME = paperclipHome;
-    process.env.TITANCLIP_INSTANCE_ID = "worktree-1";
-    process.env.TITANCLIP_IN_WORKTREE = "true";
+    process.env.PAPERCLIP_HOME = paperclipHome;
+    process.env.PAPERCLIP_INSTANCE_ID = "worktree-1";
+    process.env.PAPERCLIP_IN_WORKTREE = "true";
     process.env.CODEX_HOME = sharedCodexHome;
 
     try {
@@ -313,7 +313,7 @@ describe("codex execute", () => {
           command: commandPath,
           cwd: workspace,
           env: {
-            TITANCLIP_TEST_CAPTURE_PATH: capturePath,
+            PAPERCLIP_TEST_CAPTURE_PATH: capturePath,
           },
           promptTemplate: "Follow the paperclip heartbeat.",
         },
@@ -333,11 +333,11 @@ describe("codex execute", () => {
       expect(capture.prompt).toContain("Follow the paperclip heartbeat.");
       expect(capture.paperclipEnvKeys).toEqual(
         expect.arrayContaining([
-          "TITANCLIP_AGENT_ID",
-          "TITANCLIP_API_KEY",
-          "TITANCLIP_API_URL",
-          "TITANCLIP_COMPANY_ID",
-          "TITANCLIP_RUN_ID",
+          "PAPERCLIP_AGENT_ID",
+          "PAPERCLIP_API_KEY",
+          "PAPERCLIP_API_URL",
+          "PAPERCLIP_COMPANY_ID",
+          "PAPERCLIP_RUN_ID",
         ]),
       );
 
@@ -364,12 +364,12 @@ describe("codex execute", () => {
     } finally {
       if (previousHome === undefined) delete process.env.HOME;
       else process.env.HOME = previousHome;
-      if (previousTitanClipHome === undefined) delete process.env.TITANCLIP_HOME;
-      else process.env.TITANCLIP_HOME = previousTitanClipHome;
-      if (previousTitanClipInstanceId === undefined) delete process.env.TITANCLIP_INSTANCE_ID;
-      else process.env.TITANCLIP_INSTANCE_ID = previousTitanClipInstanceId;
-      if (previousTitanClipInWorktree === undefined) delete process.env.TITANCLIP_IN_WORKTREE;
-      else process.env.TITANCLIP_IN_WORKTREE = previousTitanClipInWorktree;
+      if (previousTitanClipHome === undefined) delete process.env.PAPERCLIP_HOME;
+      else process.env.PAPERCLIP_HOME = previousTitanClipHome;
+      if (previousTitanClipInstanceId === undefined) delete process.env.PAPERCLIP_INSTANCE_ID;
+      else process.env.PAPERCLIP_INSTANCE_ID = previousTitanClipInstanceId;
+      if (previousTitanClipInWorktree === undefined) delete process.env.PAPERCLIP_IN_WORKTREE;
+      else process.env.PAPERCLIP_IN_WORKTREE = previousTitanClipInWorktree;
       if (previousCodexHome === undefined) delete process.env.CODEX_HOME;
       else process.env.CODEX_HOME = previousCodexHome;
       await fs.rm(root, { recursive: true, force: true });
@@ -390,14 +390,14 @@ describe("codex execute", () => {
     await writeFakeCodexCommand(commandPath);
 
     const previousHome = process.env.HOME;
-    const previousTitanClipHome = process.env.TITANCLIP_HOME;
-    const previousTitanClipInstanceId = process.env.TITANCLIP_INSTANCE_ID;
-    const previousTitanClipInWorktree = process.env.TITANCLIP_IN_WORKTREE;
+    const previousTitanClipHome = process.env.PAPERCLIP_HOME;
+    const previousTitanClipInstanceId = process.env.PAPERCLIP_INSTANCE_ID;
+    const previousTitanClipInWorktree = process.env.PAPERCLIP_IN_WORKTREE;
     const previousCodexHome = process.env.CODEX_HOME;
     process.env.HOME = root;
-    process.env.TITANCLIP_HOME = paperclipHome;
-    process.env.TITANCLIP_INSTANCE_ID = "worktree-1";
-    process.env.TITANCLIP_IN_WORKTREE = "true";
+    process.env.PAPERCLIP_HOME = paperclipHome;
+    process.env.PAPERCLIP_INSTANCE_ID = "worktree-1";
+    process.env.PAPERCLIP_IN_WORKTREE = "true";
     process.env.CODEX_HOME = sharedCodexHome;
 
     try {
@@ -420,7 +420,7 @@ describe("codex execute", () => {
           command: commandPath,
           cwd: workspace,
           env: {
-            TITANCLIP_TEST_CAPTURE_PATH: capturePath,
+            PAPERCLIP_TEST_CAPTURE_PATH: capturePath,
             CODEX_HOME: explicitCodexHome,
           },
           promptTemplate: "Follow the paperclip heartbeat.",
@@ -440,12 +440,12 @@ describe("codex execute", () => {
     } finally {
       if (previousHome === undefined) delete process.env.HOME;
       else process.env.HOME = previousHome;
-      if (previousTitanClipHome === undefined) delete process.env.TITANCLIP_HOME;
-      else process.env.TITANCLIP_HOME = previousTitanClipHome;
-      if (previousTitanClipInstanceId === undefined) delete process.env.TITANCLIP_INSTANCE_ID;
-      else process.env.TITANCLIP_INSTANCE_ID = previousTitanClipInstanceId;
-      if (previousTitanClipInWorktree === undefined) delete process.env.TITANCLIP_IN_WORKTREE;
-      else process.env.TITANCLIP_IN_WORKTREE = previousTitanClipInWorktree;
+      if (previousTitanClipHome === undefined) delete process.env.PAPERCLIP_HOME;
+      else process.env.PAPERCLIP_HOME = previousTitanClipHome;
+      if (previousTitanClipInstanceId === undefined) delete process.env.PAPERCLIP_INSTANCE_ID;
+      else process.env.PAPERCLIP_INSTANCE_ID = previousTitanClipInstanceId;
+      if (previousTitanClipInWorktree === undefined) delete process.env.PAPERCLIP_IN_WORKTREE;
+      else process.env.PAPERCLIP_IN_WORKTREE = previousTitanClipInWorktree;
       if (previousCodexHome === undefined) delete process.env.CODEX_HOME;
       else process.env.CODEX_HOME = previousCodexHome;
       await fs.rm(root, { recursive: true, force: true });

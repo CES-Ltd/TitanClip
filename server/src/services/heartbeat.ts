@@ -2660,7 +2660,7 @@ export function heartbeatService(db: Db) {
             runId: run.id,
             adapterType: agent.adapterType,
           },
-          "local agent jwt secret missing or invalid; running without injected TITANCLIP_API_KEY",
+          "local agent jwt secret missing or invalid; running without injected PAPERCLIP_API_KEY",
         );
       }
       // ── Agent OS: Pre-execution hook (memory injection) ──────────────

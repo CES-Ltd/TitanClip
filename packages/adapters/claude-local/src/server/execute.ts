@@ -143,9 +143,9 @@ async function buildClaudeRuntimeConfig(input: ClaudeExecutionInput): Promise<Cl
 
   const envConfig = parseObject(config.env);
   const hasExplicitApiKey =
-    typeof envConfig.TITANCLIP_API_KEY === "string" && envConfig.TITANCLIP_API_KEY.trim().length > 0;
+    typeof envConfig.PAPERCLIP_API_KEY === "string" && envConfig.PAPERCLIP_API_KEY.trim().length > 0;
   const env: Record<string, string> = { ...buildTitanClipEnv(agent) };
-  env.TITANCLIP_RUN_ID = runId;
+  env.PAPERCLIP_RUN_ID = runId;
 
   const wakeTaskId =
     (typeof context.taskId === "string" && context.taskId.trim().length > 0 && context.taskId.trim()) ||
@@ -172,61 +172,61 @@ async function buildClaudeRuntimeConfig(input: ClaudeExecutionInput): Promise<Cl
     : [];
 
   if (wakeTaskId) {
-    env.TITANCLIP_TASK_ID = wakeTaskId;
+    env.PAPERCLIP_TASK_ID = wakeTaskId;
   }
   if (wakeReason) {
-    env.TITANCLIP_WAKE_REASON = wakeReason;
+    env.PAPERCLIP_WAKE_REASON = wakeReason;
   }
   if (wakeCommentId) {
-    env.TITANCLIP_WAKE_COMMENT_ID = wakeCommentId;
+    env.PAPERCLIP_WAKE_COMMENT_ID = wakeCommentId;
   }
   if (approvalId) {
-    env.TITANCLIP_APPROVAL_ID = approvalId;
+    env.PAPERCLIP_APPROVAL_ID = approvalId;
   }
   if (approvalStatus) {
-    env.TITANCLIP_APPROVAL_STATUS = approvalStatus;
+    env.PAPERCLIP_APPROVAL_STATUS = approvalStatus;
   }
   if (linkedIssueIds.length > 0) {
-    env.TITANCLIP_LINKED_ISSUE_IDS = linkedIssueIds.join(",");
+    env.PAPERCLIP_LINKED_ISSUE_IDS = linkedIssueIds.join(",");
   }
   if (effectiveWorkspaceCwd) {
-    env.TITANCLIP_WORKSPACE_CWD = effectiveWorkspaceCwd;
+    env.PAPERCLIP_WORKSPACE_CWD = effectiveWorkspaceCwd;
   }
   if (workspaceSource) {
-    env.TITANCLIP_WORKSPACE_SOURCE = workspaceSource;
+    env.PAPERCLIP_WORKSPACE_SOURCE = workspaceSource;
   }
   if (workspaceStrategy) {
-    env.TITANCLIP_WORKSPACE_STRATEGY = workspaceStrategy;
+    env.PAPERCLIP_WORKSPACE_STRATEGY = workspaceStrategy;
   }
   if (workspaceId) {
-    env.TITANCLIP_WORKSPACE_ID = workspaceId;
+    env.PAPERCLIP_WORKSPACE_ID = workspaceId;
   }
   if (workspaceRepoUrl) {
-    env.TITANCLIP_WORKSPACE_REPO_URL = workspaceRepoUrl;
+    env.PAPERCLIP_WORKSPACE_REPO_URL = workspaceRepoUrl;
   }
   if (workspaceRepoRef) {
-    env.TITANCLIP_WORKSPACE_REPO_REF = workspaceRepoRef;
+    env.PAPERCLIP_WORKSPACE_REPO_REF = workspaceRepoRef;
   }
   if (workspaceBranch) {
-    env.TITANCLIP_WORKSPACE_BRANCH = workspaceBranch;
+    env.PAPERCLIP_WORKSPACE_BRANCH = workspaceBranch;
   }
   if (workspaceWorktreePath) {
-    env.TITANCLIP_WORKSPACE_WORKTREE_PATH = workspaceWorktreePath;
+    env.PAPERCLIP_WORKSPACE_WORKTREE_PATH = workspaceWorktreePath;
   }
   if (agentHome) {
     env.AGENT_HOME = agentHome;
   }
   if (workspaceHints.length > 0) {
-    env.TITANCLIP_WORKSPACES_JSON = JSON.stringify(workspaceHints);
+    env.PAPERCLIP_WORKSPACES_JSON = JSON.stringify(workspaceHints);
   }
   if (runtimeServiceIntents.length > 0) {
-    env.TITANCLIP_RUNTIME_SERVICE_INTENTS_JSON = JSON.stringify(runtimeServiceIntents);
+    env.PAPERCLIP_RUNTIME_SERVICE_INTENTS_JSON = JSON.stringify(runtimeServiceIntents);
   }
   if (runtimeServices.length > 0) {
-    env.TITANCLIP_RUNTIME_SERVICES_JSON = JSON.stringify(runtimeServices);
+    env.PAPERCLIP_RUNTIME_SERVICES_JSON = JSON.stringify(runtimeServices);
   }
   if (runtimePrimaryUrl) {
-    env.TITANCLIP_RUNTIME_PRIMARY_URL = runtimePrimaryUrl;
+    env.PAPERCLIP_RUNTIME_PRIMARY_URL = runtimePrimaryUrl;
   }
 
   for (const [key, value] of Object.entries(envConfig)) {
@@ -234,7 +234,7 @@ async function buildClaudeRuntimeConfig(input: ClaudeExecutionInput): Promise<Cl
   }
 
   if (!hasExplicitApiKey && authToken) {
-    env.TITANCLIP_API_KEY = authToken;
+    env.PAPERCLIP_API_KEY = authToken;
   }
 
   const runtimeEnv = ensurePathInEnv({ ...process.env, ...env });

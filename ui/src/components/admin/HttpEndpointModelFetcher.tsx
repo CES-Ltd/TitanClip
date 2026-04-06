@@ -4,7 +4,7 @@
  * Users can:
  * 1. Create named adapters by selecting a provider, connecting, picking models, and saving
  * 2. View saved adapters with enable/disable toggles
- * 3. Toggle "Use in TitanClaw" for each adapter
+ * 3. Toggle "Use in Paperclip Agent" for each adapter
  * 4. Delete saved adapters
  */
 

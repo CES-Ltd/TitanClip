@@ -159,8 +159,8 @@ async function startPluginWorker(opts: {
       serviceName: `plugin-${opts.pluginKey}`,
       env: {
         ...process.env,
-        TITANCLIP_PLUGIN_ID: opts.pluginId,
-        TITANCLIP_PLUGIN_KEY: opts.pluginKey,
+        PAPERCLIP_PLUGIN_ID: opts.pluginId,
+        PAPERCLIP_PLUGIN_KEY: opts.pluginKey,
         ...(opts.env ?? {}),
       },
     });

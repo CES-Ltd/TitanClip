@@ -1,8 +1,8 @@
 /**
- * TitanClaw Settings — configuration and status overview.
+ * Paperclip Agent Settings — configuration and status overview.
  *
- * Shows available HTTP adapters for the TitanClaw agent framework
- * and allows selecting which adapters TitanClaw agents can use.
+ * Shows available HTTP adapters for the Paperclip Agent agent framework
+ * and allows selecting which adapters Paperclip Agent agents can use.
  */
 
 import { useQuery } from "@tanstack/react-query";
@@ -33,21 +33,21 @@ export function AgentOSSettings() {
   const enabledAdapters = httpAdapters.filter((a: any) => a.enabled);
 
   const titanClawAgents = agents.filter(
-    (a) => a.adapterType === "titanclaw_local"
+    (a) => false
   );
   const otherAgents = agents.filter(
-    (a) => a.adapterType !== "titanclaw_local"
+    (a) => true
   );
 
   return (
     <div className="flex-1 overflow-auto p-6">
       <div className="max-w-3xl mx-auto space-y-6">
         <div className="flex items-center gap-3">
-          <img src="/titan-claw-logo.png" alt="TitanClaw" className="h-8 w-8 rounded-lg" />
+          <img src="/brands/titanclip-logo.png" alt="Paperclip Agent" className="h-8 w-8 rounded-lg" />
           <div>
-            <h1 className="text-xl font-bold">TitanClaw Settings</h1>
+            <h1 className="text-xl font-bold">Paperclip Agent Settings</h1>
             <p className="text-sm text-muted-foreground">
-              Configure the TitanClaw agent framework and available LLM providers.
+              Configure the Paperclip Agent agent framework and available LLM providers.
             </p>
           </div>
         </div>
@@ -87,7 +87,7 @@ export function AgentOSSettings() {
           )}
 
           <div className="rounded-lg bg-accent/30 p-3 text-xs text-muted-foreground">
-            <p><strong>How it works:</strong> TitanClaw agents use the enabled HTTP adapters above. When creating an agent with the TitanClaw adapter, select any model from these providers. The framework randomly picks from available adapters when needed for load distribution.</p>
+            <p><strong>How it works:</strong> Paperclip Agent agents use the enabled HTTP adapters above. When creating an agent with the Paperclip Agent adapter, select any model from these providers. The framework randomly picks from available adapters when needed for load distribution.</p>
           </div>
         </div>
 
@@ -100,12 +100,12 @@ export function AgentOSSettings() {
           {titanClawAgents.length > 0 && (
             <div className="space-y-2">
               <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                TitanClaw Agents ({titanClawAgents.length})
+                Paperclip Agent Agents ({titanClawAgents.length})
               </h3>
               {titanClawAgents.map((a) => (
                 <div key={a.id} className="rounded-lg border border-amber-500/20 bg-card p-3 flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <img src="/titan-claw-logo.png" alt="" className="h-5 w-5 rounded" />
+                    <img src="/brands/titanclip-logo.png" alt="" className="h-5 w-5 rounded" />
                     <div>
                       <span className="font-medium text-sm">{a.name}</span>
                       <span className="text-xs text-muted-foreground ml-2">
@@ -153,7 +153,7 @@ export function AgentOSSettings() {
             <div className="text-center py-8 text-muted-foreground">
               <Bot className="h-8 w-8 mx-auto mb-2 opacity-40" />
               <p>No agents configured</p>
-              <p className="text-xs mt-1">Create an agent with the TitanClaw adapter to get started</p>
+              <p className="text-xs mt-1">Create an agent with the Paperclip Agent adapter to get started</p>
             </div>
           )}
         </div>

@@ -57,9 +57,9 @@ import { SkillRouting } from "./pages/SkillRouting";
 import { Analytics } from "./pages/Analytics";
 import { Lifecycle } from "./pages/Lifecycle";
 import { AgentGallery } from "./pages/AgentGallery";
-// AgentOS pages removed — TitanClaw is now a separate CLI project
+// AgentOS pages removed — Paperclip Agent is now a separate CLI project
 import { AgentChat } from "./pages/AgentChat";
-// AgentMemory, ConversationHistory, SkillProposals removed — TitanClaw separated
+// AgentMemory, ConversationHistory, SkillProposals removed — Paperclip Agent separated
 import { AppTitleBar } from "./components/AppTitleBar";
 import { NewAgent } from "./pages/NewAgent";
 import { AuthPage } from "./pages/Auth";

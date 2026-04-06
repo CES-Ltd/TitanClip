@@ -34,7 +34,7 @@
   "scripts": {
     "preflight:workspace-links": "tsx ../scripts/ensure-workspace-package-links.ts",
     "dev": "pnpm run preflight:workspace-links && tsx src/index.ts",
-    "dev:watch": "pnpm run preflight:workspace-links && cross-env TITANCLIP_MIGRATION_PROMPT=never TITANCLIP_MIGRATION_AUTO_APPLY=true tsx ./scripts/dev-watch.ts",
+    "dev:watch": "pnpm run preflight:workspace-links && cross-env PAPERCLIP_MIGRATION_PROMPT=never PAPERCLIP_MIGRATION_AUTO_APPLY=true tsx ./scripts/dev-watch.ts",
     "prepare:ui-dist": "bash ../scripts/prepare-server-ui-dist.sh",
     "build": "tsc && mkdir -p dist/onboarding-assets && cp -R src/onboarding-assets/. dist/onboarding-assets/",
     "prepack": "pnpm run prepare:ui-dist",

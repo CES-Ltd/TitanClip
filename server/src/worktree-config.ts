@@ -114,16 +114,16 @@ function resolveWorktreeRuntimeContext(
   env: NodeJS.ProcessEnv,
   overrideConfigPath?: string,
 ): WorktreeRuntimeContext | null {
-  if (env.TITANCLIP_IN_WORKTREE !== "true") return null;
+  if (env.PAPERCLIP_IN_WORKTREE !== "true") return null;
 
   const configPath = resolveTitanClipConfigPath(overrideConfigPath);
   const envPath = resolveTitanClipEnvPath(configPath);
   const worktreeRoot = path.resolve(path.dirname(configPath), "..");
-  const worktreeName = nonEmpty(env.TITANCLIP_WORKTREE_NAME) ?? path.basename(worktreeRoot);
-  const instanceId = nonEmpty(env.TITANCLIP_INSTANCE_ID) ?? sanitizeWorktreeInstanceId(worktreeName);
+  const worktreeName = nonEmpty(env.PAPERCLIP_WORKTREE_NAME) ?? path.basename(worktreeRoot);
+  const instanceId = nonEmpty(env.PAPERCLIP_INSTANCE_ID) ?? sanitizeWorktreeInstanceId(worktreeName);
   const homeDir = resolveHomeAwarePath(
-    nonEmpty(env.TITANCLIP_HOME) ??
-      nonEmpty(env.TITANCLIP_WORKTREES_DIR) ??
+    nonEmpty(env.PAPERCLIP_HOME) ??
+      nonEmpty(env.PAPERCLIP_WORKTREES_DIR) ??
       "~/.paperclip-worktrees",
   );
   const instanceRoot = path.resolve(homeDir, "instances", instanceId);
@@ -372,11 +372,11 @@ export function maybeRepairLegacyWorktreeConfigAndEnvFiles(): {
     return { repairedConfig: false, repairedEnv: false };
   }
 
-  process.env.TITANCLIP_HOME = context.homeDir;
-  process.env.TITANCLIP_INSTANCE_ID = context.instanceId;
-  process.env.TITANCLIP_CONFIG = context.configPath;
-  process.env.TITANCLIP_CONTEXT = context.contextPath;
-  process.env.TITANCLIP_WORKTREE_NAME = context.worktreeName;
+  process.env.PAPERCLIP_HOME = context.homeDir;
+  process.env.PAPERCLIP_INSTANCE_ID = context.instanceId;
+  process.env.PAPERCLIP_CONFIG = context.configPath;
+  process.env.PAPERCLIP_CONTEXT = context.contextPath;
+  process.env.PAPERCLIP_WORKTREE_NAME = context.worktreeName;
 
   let repairedConfig = false;
   if (fs.existsSync(context.configPath)) {
@@ -420,12 +420,12 @@ export function maybeRepairLegacyWorktreeConfigAndEnvFiles(): {
   const existingEnvEntries = readEnvEntries(context.envPath);
   const desiredEnvEntries: Record<string, string> = {
     ...existingEnvEntries,
-    TITANCLIP_HOME: context.homeDir,
-    TITANCLIP_INSTANCE_ID: context.instanceId,
-    TITANCLIP_CONFIG: context.configPath,
-    TITANCLIP_CONTEXT: context.contextPath,
-    TITANCLIP_IN_WORKTREE: "true",
-    TITANCLIP_WORKTREE_NAME: context.worktreeName,
+    PAPERCLIP_HOME: context.homeDir,
+    PAPERCLIP_INSTANCE_ID: context.instanceId,
+    PAPERCLIP_CONFIG: context.configPath,
+    PAPERCLIP_CONTEXT: context.contextPath,
+    PAPERCLIP_IN_WORKTREE: "true",
+    PAPERCLIP_WORKTREE_NAME: context.worktreeName,
   };
 
   const repairedEnv = Object.entries(desiredEnvEntries).some(

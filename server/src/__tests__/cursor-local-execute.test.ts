@@ -8,12 +8,12 @@ async function writeFakeCursorCommand(commandPath: string): Promise<void> {
   const script = `#!/usr/bin/env node
 const fs = require("node:fs");
 
-const capturePath = process.env.TITANCLIP_TEST_CAPTURE_PATH;
+const capturePath = process.env.PAPERCLIP_TEST_CAPTURE_PATH;
 const payload = {
   argv: process.argv.slice(2),
   prompt: fs.readFileSync(0, "utf8"),
   paperclipEnvKeys: Object.keys(process.env)
-    .filter((key) => key.startsWith("TITANCLIP_"))
+    .filter((key) => key.startsWith("PAPERCLIP_"))
     .sort(),
 };
 if (capturePath) {
@@ -87,7 +87,7 @@ describe("cursor execute", () => {
           cwd: workspace,
           model: "auto",
           env: {
-            TITANCLIP_TEST_CAPTURE_PATH: capturePath,
+            PAPERCLIP_TEST_CAPTURE_PATH: capturePath,
           },
           promptTemplate: "Follow the paperclip heartbeat.",
         },
@@ -108,17 +108,17 @@ describe("cursor execute", () => {
       expect(capture.argv).not.toContain("ask");
       expect(capture.paperclipEnvKeys).toEqual(
         expect.arrayContaining([
-          "TITANCLIP_AGENT_ID",
-          "TITANCLIP_API_KEY",
-          "TITANCLIP_API_URL",
-          "TITANCLIP_COMPANY_ID",
-          "TITANCLIP_RUN_ID",
+          "PAPERCLIP_AGENT_ID",
+          "PAPERCLIP_API_KEY",
+          "PAPERCLIP_API_URL",
+          "PAPERCLIP_COMPANY_ID",
+          "PAPERCLIP_RUN_ID",
         ]),
       );
       expect(capture.prompt).toContain("TitanClip runtime note:");
-      expect(capture.prompt).toContain("TITANCLIP_API_KEY");
+      expect(capture.prompt).toContain("PAPERCLIP_API_KEY");
       expect(invocationPrompt).toContain("TitanClip runtime note:");
-      expect(invocationPrompt).toContain("TITANCLIP_API_URL");
+      expect(invocationPrompt).toContain("PAPERCLIP_API_URL");
     } finally {
       if (previousHome === undefined) {
         delete process.env.HOME;
@@ -162,7 +162,7 @@ describe("cursor execute", () => {
           model: "auto",
           mode: "ask",
           env: {
-            TITANCLIP_TEST_CAPTURE_PATH: capturePath,
+            PAPERCLIP_TEST_CAPTURE_PATH: capturePath,
           },
           promptTemplate: "Follow the paperclip heartbeat.",
         },

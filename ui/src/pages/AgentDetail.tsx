@@ -1668,7 +1668,6 @@ function PromptsTab({
     agent.adapterType === "pi_local" ||
     agent.adapterType === "hermes_local" ||
     agent.adapterType === "cursor" ||
-    agent.adapterType === "titanclaw_local" ||
     agent.adapterType === "gemini_local" ||
     agent.adapterType === "universal_llm" ||
     agent.adapterType === "openai_compatible";

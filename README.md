@@ -283,13 +283,13 @@ A retro pixel-art office powered by **Phaser 3**:
 DATABASE_URL=postgresql://user:pass@host:5432/dbname
 
 # Microsoft SSO (production, optional)
-TITANCLIP_SSO_CLIENT_ID=your-client-id
-TITANCLIP_SSO_TENANT_ID=your-tenant-id
-TITANCLIP_SSO_CLIENT_SECRET=your-client-secret
+PAPERCLIP_SSO_CLIENT_ID=your-client-id
+PAPERCLIP_SSO_TENANT_ID=your-tenant-id
+PAPERCLIP_SSO_CLIENT_SECRET=your-client-secret
 
 # Deployment mode
-TITANCLIP_DEPLOYMENT_MODE=local_trusted    # or "authenticated"
-TITANCLIP_DEPLOYMENT_EXPOSURE=private      # or "public"
+PAPERCLIP_DEPLOYMENT_MODE=local_trusted    # or "authenticated"
+PAPERCLIP_DEPLOYMENT_EXPOSURE=private      # or "public"
 ```
 
 ### Admin Settings

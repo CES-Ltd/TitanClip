@@ -409,7 +409,7 @@ Custom skills are entered as free-text and automatically normalized to lowercase
 3. Enter current PIN, new PIN, and confirm
 4. Click "Change PIN"
 
-**SSO Mode:** When TITANCLIP_SSO_CLIENT_ID is configured, PIN is replaced by Microsoft SSO. Change PIN option is hidden in SSO mode.`,
+**SSO Mode:** When PAPERCLIP_SSO_CLIENT_ID is configured, PIN is replaced by Microsoft SSO. Change PIN option is hidden in SSO mode.`,
   },
   {
     id: "permission-policies",
@@ -1107,13 +1107,13 @@ Each team is isolated with its own agents, tasks, budgets, and credentials.`,
 Policies are created in Instance Settings → Policies and linked to agents via templates or direct assignment.`,
   },
 
-  // --- TitanClaw & Chat ---
+  // --- Paperclip Agent & Chat ---
   {
-    id: "titanclaw-overview",
-    title: "TitanClaw Agent Framework",
+    id: "paperclip-agent-overview",
+    title: "Paperclip Agent Agent Framework",
     category: "Agent Management",
-    keywords: ["titanclaw", "agent os", "framework", "agentic", "tool calling", "titan claw"],
-    content: `TitanClaw is the built-in agentic AI framework in TitanClip. It provides autonomous task execution with tool calling, delegation, and memory.
+    keywords: ["paperclip-agent", "agent os", "framework", "agentic", "tool calling", "paperclip agent"],
+    content: `Paperclip Agent is the built-in agentic AI framework in TitanClip. It provides autonomous task execution with tool calling, delegation, and memory.
 
 **Key Features:**
 - Agentic tool loop: LLM calls tools, processes results, and iterates until task is complete
@@ -1123,9 +1123,9 @@ Policies are created in Instance Settings → Policies and linked to agents via 
 - Streaming recovery: auto-compacts context when token budget is near limit
 - Cross-session memory with importance weighting and time decay
 
-**Navigate to:** Settings → TitanClaw Settings (sidebar → TitanClaw → LLM Settings)
+**Navigate to:** Settings → Paperclip Agent Settings (sidebar → Paperclip Agent → LLM Settings)
 
-**Enable TitanClaw:** Instance Settings → Experimental → TitanClaw toggle`,
+**Enable Paperclip Agent:** Instance Settings → Experimental → Paperclip Agent toggle`,
   },
   {
     id: "chat-interface",

@@ -38,7 +38,7 @@ export const runningProcesses = new Map<string, RunningProcess>();
 export const MAX_CAPTURE_BYTES = 4 * 1024 * 1024;
 export const MAX_EXCERPT_BYTES = 32 * 1024;
 const SENSITIVE_ENV_KEY = /(key|token|secret|password|passwd|authorization|cookie)/i;
-const TITANCLIP_SKILL_ROOT_RELATIVE_CANDIDATES = [
+const PAPERCLIP_SKILL_ROOT_RELATIVE_CANDIDATES = [
   "../../skills",
   "../../../../../skills",
 ];
@@ -222,7 +222,7 @@ export function buildInvocationEnvForLogs(
 
   const resolvedCommand = options.resolvedCommand?.trim();
   if (resolvedCommand) {
-    merged[options.resolvedCommandEnvKey ?? "TITANCLIP_RESOLVED_COMMAND"] = resolvedCommand;
+    merged[options.resolvedCommandEnvKey ?? "PAPERCLIP_RESOLVED_COMMAND"] = resolvedCommand;
   }
 
   return redactEnvForLogs(merged);
@@ -236,15 +236,15 @@ export function buildTitanClipEnv(agent: { id: string; companyId: string }): Rec
     return host;
   };
   const vars: Record<string, string> = {
-    TITANCLIP_AGENT_ID: agent.id,
-    TITANCLIP_COMPANY_ID: agent.companyId,
+    PAPERCLIP_AGENT_ID: agent.id,
+    PAPERCLIP_COMPANY_ID: agent.companyId,
   };
   const runtimeHost = resolveHostForUrl(
-    process.env.TITANCLIP_LISTEN_HOST ?? process.env.HOST ?? "localhost",
+    process.env.PAPERCLIP_LISTEN_HOST ?? process.env.HOST ?? "localhost",
   );
-  const runtimePort = process.env.TITANCLIP_LISTEN_PORT ?? process.env.PORT ?? "3100";
-  const apiUrl = process.env.TITANCLIP_API_URL ?? `http://${runtimeHost}:${runtimePort}`;
-  vars.TITANCLIP_API_URL = apiUrl;
+  const runtimePort = process.env.PAPERCLIP_LISTEN_PORT ?? process.env.PORT ?? "3100";
+  const apiUrl = process.env.PAPERCLIP_API_URL ?? `http://${runtimeHost}:${runtimePort}`;
+  vars.PAPERCLIP_API_URL = apiUrl;
   return vars;
 }
 
@@ -379,7 +379,7 @@ export async function resolveTitanClipSkillsDir(
   additionalCandidates: string[] = [],
 ): Promise<string | null> {
   const candidates = [
-    ...TITANCLIP_SKILL_ROOT_RELATIVE_CANDIDATES.map((relativePath) => path.resolve(moduleDir, relativePath)),
+    ...PAPERCLIP_SKILL_ROOT_RELATIVE_CANDIDATES.map((relativePath) => path.resolve(moduleDir, relativePath)),
     ...additionalCandidates.map((candidate) => path.resolve(candidate)),
   ];
   const seenRoots = new Set<string>();

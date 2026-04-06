@@ -553,7 +553,7 @@ export function CompanySettings() {
             )}
           </div>
           <p className="text-[10px] text-muted-foreground">
-            Agents using TitanClaw or local adapters will have read/write access to this directory.
+            Agents using Paperclip Agent or local adapters will have read/write access to this directory.
             Choose a directory you trust agents to work in.
           </p>
         </div>

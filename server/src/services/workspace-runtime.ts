@@ -125,7 +125,7 @@ function stableStringify(value: unknown): string {
 export function sanitizeRuntimeServiceBaseEnv(baseEnv: NodeJS.ProcessEnv): NodeJS.ProcessEnv {
   const env: NodeJS.ProcessEnv = { ...baseEnv };
   for (const key of Object.keys(env)) {
-    if (key.startsWith("TITANCLIP_")) {
+    if (key.startsWith("PAPERCLIP_")) {
       delete env[key];
     }
   }
@@ -356,24 +356,24 @@ function buildWorkspaceCommandEnv(input: {
   created: boolean;
 }) {
   const env: NodeJS.ProcessEnv = { ...process.env };
-  env.TITANCLIP_WORKSPACE_CWD = input.worktreePath;
-  env.TITANCLIP_WORKSPACE_PATH = input.worktreePath;
-  env.TITANCLIP_WORKSPACE_WORKTREE_PATH = input.worktreePath;
-  env.TITANCLIP_WORKSPACE_BRANCH = input.branchName;
-  env.TITANCLIP_WORKSPACE_BASE_CWD = input.base.baseCwd;
-  env.TITANCLIP_WORKSPACE_REPO_ROOT = input.repoRoot;
-  env.TITANCLIP_WORKSPACE_SOURCE = input.base.source;
-  env.TITANCLIP_WORKSPACE_REPO_REF = input.base.repoRef ?? "";
-  env.TITANCLIP_WORKSPACE_REPO_URL = input.base.repoUrl ?? "";
-  env.TITANCLIP_WORKSPACE_CREATED = input.created ? "true" : "false";
-  env.TITANCLIP_PROJECT_ID = input.base.projectId ?? "";
-  env.TITANCLIP_PROJECT_WORKSPACE_ID = input.base.workspaceId ?? "";
-  env.TITANCLIP_AGENT_ID = input.agent.id ?? "";
-  env.TITANCLIP_AGENT_NAME = input.agent.name;
-  env.TITANCLIP_COMPANY_ID = input.agent.companyId;
-  env.TITANCLIP_ISSUE_ID = input.issue?.id ?? "";
-  env.TITANCLIP_ISSUE_IDENTIFIER = input.issue?.identifier ?? "";
-  env.TITANCLIP_ISSUE_TITLE = input.issue?.title ?? "";
+  env.PAPERCLIP_WORKSPACE_CWD = input.worktreePath;
+  env.PAPERCLIP_WORKSPACE_PATH = input.worktreePath;
+  env.PAPERCLIP_WORKSPACE_WORKTREE_PATH = input.worktreePath;
+  env.PAPERCLIP_WORKSPACE_BRANCH = input.branchName;
+  env.PAPERCLIP_WORKSPACE_BASE_CWD = input.base.baseCwd;
+  env.PAPERCLIP_WORKSPACE_REPO_ROOT = input.repoRoot;
+  env.PAPERCLIP_WORKSPACE_SOURCE = input.base.source;
+  env.PAPERCLIP_WORKSPACE_REPO_REF = input.base.repoRef ?? "";
+  env.PAPERCLIP_WORKSPACE_REPO_URL = input.base.repoUrl ?? "";
+  env.PAPERCLIP_WORKSPACE_CREATED = input.created ? "true" : "false";
+  env.PAPERCLIP_PROJECT_ID = input.base.projectId ?? "";
+  env.PAPERCLIP_PROJECT_WORKSPACE_ID = input.base.workspaceId ?? "";
+  env.PAPERCLIP_AGENT_ID = input.agent.id ?? "";
+  env.PAPERCLIP_AGENT_NAME = input.agent.name;
+  env.PAPERCLIP_COMPANY_ID = input.agent.companyId;
+  env.PAPERCLIP_ISSUE_ID = input.issue?.id ?? "";
+  env.PAPERCLIP_ISSUE_IDENTIFIER = input.issue?.identifier ?? "";
+  env.PAPERCLIP_ISSUE_TITLE = input.issue?.title ?? "";
   return env;
 }
 
@@ -561,18 +561,18 @@ function buildExecutionWorkspaceCleanupEnv(input: {
   projectWorkspaceCwd?: string | null;
 }) {
   const env: NodeJS.ProcessEnv = sanitizeRuntimeServiceBaseEnv(process.env);
-  env.TITANCLIP_WORKSPACE_CWD = input.workspace.cwd ?? "";
-  env.TITANCLIP_WORKSPACE_PATH = input.workspace.cwd ?? "";
-  env.TITANCLIP_WORKSPACE_WORKTREE_PATH =
+  env.PAPERCLIP_WORKSPACE_CWD = input.workspace.cwd ?? "";
+  env.PAPERCLIP_WORKSPACE_PATH = input.workspace.cwd ?? "";
+  env.PAPERCLIP_WORKSPACE_WORKTREE_PATH =
     input.workspace.providerRef ?? input.workspace.cwd ?? "";
-  env.TITANCLIP_WORKSPACE_BRANCH = input.workspace.branchName ?? "";
-  env.TITANCLIP_WORKSPACE_BASE_CWD = input.projectWorkspaceCwd ?? "";
-  env.TITANCLIP_WORKSPACE_REPO_ROOT = input.projectWorkspaceCwd ?? "";
-  env.TITANCLIP_WORKSPACE_REPO_URL = input.workspace.repoUrl ?? "";
-  env.TITANCLIP_WORKSPACE_REPO_REF = input.workspace.baseRef ?? "";
-  env.TITANCLIP_PROJECT_ID = input.workspace.projectId ?? "";
-  env.TITANCLIP_PROJECT_WORKSPACE_ID = input.workspace.projectWorkspaceId ?? "";
-  env.TITANCLIP_ISSUE_ID = input.workspace.sourceIssueId ?? "";
+  env.PAPERCLIP_WORKSPACE_BRANCH = input.workspace.branchName ?? "";
+  env.PAPERCLIP_WORKSPACE_BASE_CWD = input.projectWorkspaceCwd ?? "";
+  env.PAPERCLIP_WORKSPACE_REPO_ROOT = input.projectWorkspaceCwd ?? "";
+  env.PAPERCLIP_WORKSPACE_REPO_URL = input.workspace.repoUrl ?? "";
+  env.PAPERCLIP_WORKSPACE_REPO_REF = input.workspace.baseRef ?? "";
+  env.PAPERCLIP_PROJECT_ID = input.workspace.projectId ?? "";
+  env.PAPERCLIP_PROJECT_WORKSPACE_ID = input.workspace.projectWorkspaceId ?? "";
+  env.PAPERCLIP_ISSUE_ID = input.workspace.sourceIssueId ?? "";
   return env;
 }
 

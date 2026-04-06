@@ -97,22 +97,22 @@ describe("worktree config repair", () => {
       envPath,
       [
         "# TitanClip environment variables",
-        "TITANCLIP_IN_WORKTREE=true",
-        "TITANCLIP_WORKTREE_NAME=PAP-884-ai-commits-component",
-        "TITANCLIP_AGENT_JWT_SECRET=shared-secret",
+        "PAPERCLIP_IN_WORKTREE=true",
+        "PAPERCLIP_WORKTREE_NAME=PAP-884-ai-commits-component",
+        "PAPERCLIP_AGENT_JWT_SECRET=shared-secret",
         "",
       ].join("\n"),
       "utf8",
     );
 
     process.chdir(worktreeRoot);
-    process.env.TITANCLIP_IN_WORKTREE = "true";
-    process.env.TITANCLIP_WORKTREE_NAME = "PAP-884-ai-commits-component";
-    process.env.TITANCLIP_WORKTREES_DIR = isolatedHome;
-    delete process.env.TITANCLIP_HOME;
-    delete process.env.TITANCLIP_INSTANCE_ID;
-    delete process.env.TITANCLIP_CONFIG;
-    delete process.env.TITANCLIP_CONTEXT;
+    process.env.PAPERCLIP_IN_WORKTREE = "true";
+    process.env.PAPERCLIP_WORKTREE_NAME = "PAP-884-ai-commits-component";
+    process.env.PAPERCLIP_WORKTREES_DIR = isolatedHome;
+    delete process.env.PAPERCLIP_HOME;
+    delete process.env.PAPERCLIP_INSTANCE_ID;
+    delete process.env.PAPERCLIP_CONFIG;
+    delete process.env.PAPERCLIP_CONTEXT;
 
     const result = maybeRepairLegacyWorktreeConfigAndEnvFiles();
 
@@ -130,13 +130,13 @@ describe("worktree config repair", () => {
     expect(repairedConfig.logging.logDir).toBe(path.join(instanceRoot, "logs"));
     expect(repairedConfig.storage.localDisk.baseDir).toBe(path.join(instanceRoot, "data", "storage"));
     expect(repairedConfig.secrets.localEncrypted.keyFilePath).toBe(path.join(instanceRoot, "secrets", "master.key"));
-    expect(repairedEnv).toContain(`TITANCLIP_HOME=${JSON.stringify(isolatedHome)}`);
-    expect(repairedEnv).toContain('TITANCLIP_INSTANCE_ID="pap-884-ai-commits-component"');
-    expect(repairedEnv).toContain(`TITANCLIP_CONFIG=${JSON.stringify(await fs.realpath(configPath))}`);
-    expect(repairedEnv).toContain(`TITANCLIP_CONTEXT=${JSON.stringify(path.join(isolatedHome, "context.json"))}`);
-    expect(repairedEnv).toContain('TITANCLIP_AGENT_JWT_SECRET="shared-secret"');
-    expect(process.env.TITANCLIP_HOME).toBe(isolatedHome);
-    expect(process.env.TITANCLIP_INSTANCE_ID).toBe("pap-884-ai-commits-component");
+    expect(repairedEnv).toContain(`PAPERCLIP_HOME=${JSON.stringify(isolatedHome)}`);
+    expect(repairedEnv).toContain('PAPERCLIP_INSTANCE_ID="pap-884-ai-commits-component"');
+    expect(repairedEnv).toContain(`PAPERCLIP_CONFIG=${JSON.stringify(await fs.realpath(configPath))}`);
+    expect(repairedEnv).toContain(`PAPERCLIP_CONTEXT=${JSON.stringify(path.join(isolatedHome, "context.json"))}`);
+    expect(repairedEnv).toContain('PAPERCLIP_AGENT_JWT_SECRET="shared-secret"');
+    expect(process.env.PAPERCLIP_HOME).toBe(isolatedHome);
+    expect(process.env.PAPERCLIP_INSTANCE_ID).toBe("pap-884-ai-commits-component");
   });
 
   it("avoids sibling worktree ports when repairing legacy configs", async () => {
@@ -156,8 +156,8 @@ describe("worktree config repair", () => {
       envPath,
       [
         "# TitanClip environment variables",
-        "TITANCLIP_IN_WORKTREE=true",
-        "TITANCLIP_WORKTREE_NAME=PAP-880-thumbs-capture-for-evals-feature",
+        "PAPERCLIP_IN_WORKTREE=true",
+        "PAPERCLIP_WORKTREE_NAME=PAP-880-thumbs-capture-for-evals-feature",
         "",
       ].join("\n"),
       "utf8",
@@ -194,9 +194,9 @@ describe("worktree config repair", () => {
     );
 
     process.chdir(worktreeRoot);
-    process.env.TITANCLIP_IN_WORKTREE = "true";
-    process.env.TITANCLIP_WORKTREE_NAME = "PAP-880-thumbs-capture-for-evals-feature";
-    process.env.TITANCLIP_WORKTREES_DIR = isolatedHome;
+    process.env.PAPERCLIP_IN_WORKTREE = "true";
+    process.env.PAPERCLIP_WORKTREE_NAME = "PAP-880-thumbs-capture-for-evals-feature";
+    process.env.PAPERCLIP_WORKTREES_DIR = isolatedHome;
 
     const result = maybeRepairLegacyWorktreeConfigAndEnvFiles();
     const repairedConfig = JSON.parse(await fs.readFile(configPath, "utf8"));
@@ -278,8 +278,8 @@ describe("worktree config repair", () => {
       envPath,
       [
         "# TitanClip environment variables",
-        "TITANCLIP_IN_WORKTREE=true",
-        "TITANCLIP_WORKTREE_NAME=PAP-884-ai-commits-component",
+        "PAPERCLIP_IN_WORKTREE=true",
+        "PAPERCLIP_WORKTREE_NAME=PAP-884-ai-commits-component",
         "",
       ].join("\n"),
       "utf8",
@@ -316,9 +316,9 @@ describe("worktree config repair", () => {
     );
 
     process.chdir(currentWorktreeRoot);
-    process.env.TITANCLIP_IN_WORKTREE = "true";
-    process.env.TITANCLIP_WORKTREE_NAME = "PAP-884-ai-commits-component";
-    process.env.TITANCLIP_WORKTREES_DIR = isolatedHome;
+    process.env.PAPERCLIP_IN_WORKTREE = "true";
+    process.env.PAPERCLIP_WORKTREE_NAME = "PAP-884-ai-commits-component";
+    process.env.PAPERCLIP_WORKTREES_DIR = isolatedHome;
 
     const result = maybeRepairLegacyWorktreeConfigAndEnvFiles();
     const repairedConfig = JSON.parse(await fs.readFile(configPath, "utf8"));
@@ -392,11 +392,11 @@ describe("worktree config repair", () => {
     );
 
     process.chdir(worktreeRoot);
-    process.env.TITANCLIP_IN_WORKTREE = "true";
-    process.env.TITANCLIP_WORKTREE_NAME = "PAP-878-create-a-mine-tab-in-inbox";
-    process.env.TITANCLIP_HOME = isolatedHome;
-    process.env.TITANCLIP_INSTANCE_ID = "pap-878-create-a-mine-tab-in-inbox";
-    process.env.TITANCLIP_CONFIG = configPath;
+    process.env.PAPERCLIP_IN_WORKTREE = "true";
+    process.env.PAPERCLIP_WORKTREE_NAME = "PAP-878-create-a-mine-tab-in-inbox";
+    process.env.PAPERCLIP_HOME = isolatedHome;
+    process.env.PAPERCLIP_INSTANCE_ID = "pap-878-create-a-mine-tab-in-inbox";
+    process.env.PAPERCLIP_CONFIG = configPath;
 
     maybePersistWorktreeRuntimePorts({
       serverPort: 3103,

@@ -34,7 +34,6 @@ export const AGENT_ADAPTER_TYPES = [
   "hermes_local",
   "universal_llm",
   "openai_compatible",
-  "titanclaw_local",
 ] as const;
 export type AgentAdapterType = (typeof AGENT_ADAPTER_TYPES)[number];
 

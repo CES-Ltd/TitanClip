@@ -226,122 +226,6 @@ const universalLlmAdapter: ServerAdapterModule = {
   agentConfigurationDoc: openaiCompatDoc,
 };
 
-// TitanClaw adapter — spawns the titanclaw CLI as a child process
-// Similar to claude_local which spawns the `claude` CLI
-let _titanClawDbRef: any = null;
-export function setTitanClawDbRef(db: any) { _titanClawDbRef = db; }
-
-async function listTitanClawModels(): Promise<{ id: string; label: string }[]> {
-  if (!_titanClawDbRef) return openaiCompatModels;
-  try {
-    const { instanceSettingsService } = await (Function("p", "return import(p)")("../services/instance-settings.js") as Promise<any>);
-    const svc = instanceSettingsService(_titanClawDbRef);
-    const admin = await svc.getAdmin();
-    const httpAdapters = (admin as any).httpAdapters ?? [];
-    const models: { id: string; label: string }[] = [];
-    for (const adapter of httpAdapters) {
-      if (!adapter.enabled) continue;
-      for (const modelId of adapter.models ?? []) {
-        models.push({ id: `${adapter.provider}/${modelId}`, label: `${modelId} (${adapter.name})` });
-      }
-    }
-    return models.length > 0 ? models : openaiCompatModels;
-  } catch {
-    return openaiCompatModels;
-  }
-}
-
-// Execute by spawning the titanclaw CLI — falls back to embedded execute if CLI not found
-const titanClawExecute = async (ctx: any) => {
-  const config = ctx.config ?? {};
-  const model = (config.model as string) ?? "";
-  const apiKey = (config.apiKey as string) ?? "";
-  const baseUrl = (config.baseUrl as string) ?? "";
-  const userMessage = ctx.context?.userMessage ?? ctx.context?.issueTitle ?? "Execute assigned task";
-
-  // Try CLI first
-  try {
-    const { execSync } = await import("child_process");
-    execSync("which titanclaw", { stdio: "ignore" });
-
-    // CLI is available — spawn it
-    const { spawn } = await import("child_process");
-    const args = ["run", "--task", userMessage];
-    if (model) { args.push("-m", model); }
-    if (apiKey) { args.push("--api-key", apiKey); }
-    if (baseUrl) { args.push("--base-url", baseUrl); }
-
-    return new Promise((resolve) => {
-      let fullContent = "";
-      let usage = { inputTokens: 0, outputTokens: 0 };
-      let resultModel = model;
-      let resultProvider = "";
-      let costUsd = 0;
-
-      const child = spawn("titanclaw", args, {
-        env: { ...process.env, TITANCLIP_API_URL: "http://127.0.0.1:3100/api" },
-        stdio: ["ignore", "pipe", "pipe"],
-      });
-
-      child.stdout.on("data", (data: Buffer) => {
-        const lines = data.toString().split("\n").filter(Boolean);
-        for (const line of lines) {
-          try {
-            const event = JSON.parse(line);
-            if (event.type === "chunk" && event.content) {
-              fullContent += event.content;
-              ctx.onLog("stdout", event.content);
-            } else if (event.type === "tool_start") {
-              ctx.onLog("stdout", `[tool] ${event.name}(${JSON.stringify(event.args)})\n`);
-            } else if (event.type === "tool_result") {
-              ctx.onLog("stdout", `[result] ${event.result}\n`);
-            } else if (event.type === "done") {
-              usage = event.usage ?? usage;
-              resultModel = event.model ?? resultModel;
-              resultProvider = event.provider ?? resultProvider;
-              costUsd = event.costUsd ?? costUsd;
-            } else if (event.type === "error") {
-              ctx.onLog("stderr", `Error: ${event.error}\n`);
-            }
-          } catch { /* skip non-JSON lines */ }
-        }
-      });
-
-      child.stderr.on("data", (data: Buffer) => {
-        ctx.onLog("stderr", data.toString());
-      });
-
-      child.on("close", (code: number) => {
-        resolve({
-          exitCode: code ?? 0,
-          signal: null,
-          timedOut: false,
-          usage,
-          model: resultModel,
-          provider: resultProvider,
-          costUsd,
-          resultJson: { content: fullContent },
-          summary: fullContent.slice(0, 200),
-        });
-      });
-    });
-  } catch {
-    // CLI not found — fall back to embedded universal_llm execute
-    const mod = await (Function("p", "return import(p)")("@titanclip/adapter-universal-llm/server") as Promise<any>);
-    return mod.execute(ctx);
-  }
-};
-
-const titanClawAdapter: ServerAdapterModule = {
-  type: "titanclaw_local",
-  execute: titanClawExecute,
-  testEnvironment: lazyTest,
-  models: openaiCompatModels,
-  listModels: listTitanClawModels,
-  supportsLocalAgentJwt: false,
-  agentConfigurationDoc: `# TitanClaw Adapter\n\nUses the TitanClaw CLI for agentic task execution.\nWhen the 'titanclaw' CLI is installed, spawns it as a child process.\nFalls back to the embedded universal_llm adapter if CLI is not found.\nSupports all built-in tools: web_search, shell_exec, read_file, write_file, delegate_to_agent, hire_agent.`,
-};
-
 const adaptersByType = new Map<string, ServerAdapterModule>(
   [
     claudeLocalAdapter,
@@ -354,7 +238,6 @@ const adaptersByType = new Map<string, ServerAdapterModule>(
     hermesLocalAdapter,
     universalLlmAdapter,
     openaiCompatibleAdapter,
-    titanClawAdapter,
     processAdapter,
     httpAdapter,
   ].map((a) => [a.type, a]),
