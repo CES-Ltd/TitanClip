@@ -185,7 +185,7 @@ function buildSplashPage(): string {
 
   /* ── Loading bar ── */
   .loading-bar { width: 200px; height: 3px; background: #2a2320; border-radius: 2px; overflow: hidden; margin-top: 24px; }
-  .loading-fill { height: 100%; width: 0%; background: linear-gradient(90deg, #d4622a, #e8853a); border-radius: 2px; animation: fillBar 8s ease-out forwards; }
+  .loading-fill { height: 100%; width: 0%; background: linear-gradient(90deg, #d4622a, #e8853a); border-radius: 2px; animation: fillBar 13s ease-out forwards; }
 
   /* ── Office floor ── */
   .office { position: absolute; bottom: 60px; width: 100%; height: 120px; overflow: hidden; }
@@ -233,8 +233,8 @@ function buildSplashPage(): string {
   @keyframes fillBar { 0% { width: 0%; } 100% { width: 100%; } }
   @keyframes fadeOut { 0% { opacity: 1; } 100% { opacity: 0; } }
 
-  /* Auto fade-out after 8s */
-  body { animation: fadeOut 0.8s ease-in 7.2s forwards; }
+  /* Auto fade-out after 13s */
+  body { animation: fadeOut 1s ease-in 12s forwards; }
 </style></head>
 <body>
   <div class="brand">

@@ -1,69 +1,123 @@
 <p align="center">
-  <img src="ui/public/titan-claw-logo.png" alt="TitanClip" width="160" />
+  <img src="ui/public/titan-claw-logo.png" alt="TitanClip" width="180" />
 </p>
 
 <h1 align="center">TitanClip</h1>
 
 <p align="center">
-  <strong>AI Company Orchestration Platform</strong><br>
-  <em>Build, deploy, and orchestrate teams of AI agents that work together autonomously</em>
+  <strong>AI Company Orchestration Platform</strong><br/>
+  <em>Deploy teams of autonomous AI agents that collaborate, delegate, and deliver — governed by enterprise-grade security.</em>
 </p>
 
 <p align="center">
   <img src="https://img.shields.io/badge/version-1.0.0-blue" alt="Version" />
-  <img src="https://img.shields.io/badge/electron-33-blueviolet" alt="Electron" />
+  <img src="https://img.shields.io/badge/electron-33-brightgreen" alt="Electron" />
   <img src="https://img.shields.io/badge/node-%3E%3D20-green" alt="Node" />
-  <img src="https://img.shields.io/badge/platform-macOS%20%7C%20Windows%20%7C%20Linux-lightgray" alt="Platform" />
+  <img src="https://img.shields.io/badge/platform-macOS%20%7C%20Windows%20%7C%20Linux-lightgrey" alt="Platform" />
 </p>
 
 ---
 
-TitanClip is a desktop application for building and managing autonomous AI agent teams. Agents have roles (CEO, CTO, Engineer, QA), receive tasks via an issue tracker, execute work through adapters (Claude, Codex, Cursor, Gemini, etc.), and coordinate with each other — all orchestrated by a heartbeat-driven execution engine.
+## Walkthrough
+
+https://github.com/user-attachments/assets/walkthrough.mov
+
+> *Full walkthrough: onboarding, agent hiring, task delegation, issue tracking, and analytics.*
+
+---
+
+## Screenshots
+
+### Agent Dashboard & Live Runs
+![Agent Dashboard](docs/screenshots/dashboard-agents.png)
+*Real-time view of all agents — live heartbeat runs, executed commands, and task progress across the team.*
+
+### Command Center & IAM
+![Command Center](docs/screenshots/command-center.png)
+*Unified operations hub — agent roster with health status, task pipeline, and activity feed. IAM tab for role-based access control.*
+
+### Issue Board (Kanban)
+![Issues Kanban](docs/screenshots/issues-kanban.png)
+*Drag-and-drop Kanban board — backlog, todo, in-progress, in-review columns. Agents auto-assign and update status as they work.*
+
+### Agent Performance Leaderboard
+![Agent Performance](docs/screenshots/agent-performance.png)
+*Per-agent health scores, completion rates, error rates, utilization, and cost metrics. Identify top performers and bottlenecks.*
+
+### Analytics & Forecasting
+![Analytics](docs/screenshots/analytics-forecasting.png)
+*Velocity tracking, burndown charts, work distribution, cost trends, and budget forecasting across the entire agent workforce.*
+
+### Cost Attribution & Chargeback
+![Cost Chargeback](docs/screenshots/cost-chargeback.png)
+*Cost breakdown by agent, model, and project. Cloud cost estimates for LLM token usage. Export to CSV for billing.*
+
+### Credential Vault
+![Credential Vault](docs/screenshots/credential-vault.png)
+*Encrypted credential store for agent runtime. Agents receive timed tokens (TTL-based), never raw secrets. AES-256-GCM encryption at rest.*
+
+---
 
 ## What's New Over Paperclip
 
-TitanClip is built on the open-source [Paperclip](https://github.com/paperclipai/paperclip) foundation with significant enhancements:
+TitanClip extends the [Paperclip](https://github.com/paperclipai/paperclip) foundation with enterprise orchestration, security, and observability features:
 
 | Feature | Description |
 |---------|-------------|
-| **Agent Chat with Tool Cards** | Interactive chat interface with streaming responses, inline tool execution cards, approval prompts, and issue creation cards |
-| **Heartbeat Wakeup System** | When issues are assigned or delegated, agents are immediately woken via the heartbeat engine — no polling delays |
-| **Multi-Adapter Support** | 9 built-in adapters: Claude, Codex, Cursor, Gemini, OpenCode, Pi, Hermes, OpenClaw Gateway, and Universal LLM (any OpenAI-compatible endpoint) |
-| **Auto-Generated Agent JWT** | Secure agent-to-API authentication with auto-generated JWT secrets — agents get credentials injected automatically at runtime |
-| **Admin Hard Reset** | Full database + on-disk data wipe from the admin panel — restarts with clean onboarding |
-| **Three-Point OKLCH Theme** | Light, Dark, and TitanClip (Forge) themes using the OKLCH color space for perceptually uniform colors |
-| **Plugin SDK with Lifecycle Hooks** | Alpha plugin system with worker/UI surface, route conventions, and 6 lifecycle hooks |
-| **Bundled Node.js for Production** | DMG ships with Node.js v22 — no system Node required for end users |
-| **Animated Splash Screen** | Branded launch animation with AI agents running around a miniature office |
-| **Workspace Context Files** | Agents auto-load `.titanclip.md` and `AGENTS.md` from the project workspace |
+| **Runtime Agentic IAM & RBAC** | Agents are not humans. TitanClip implements identity and access management purpose-built for autonomous agents — short-lived JWT tokens, per-agent credential vaults with TTL-based secret access, role-based task routing, and audit trails for every API call an agent makes. |
+| **Agent Chat with Tool Cards** | Interactive chat interface with real-time streaming, CopilotKit-inspired tool execution cards, approval prompts, and `#issue` / `@agent` mention support. |
+| **Heartbeat Wakeup System** | Queue-based agent orchestration — when issues are created or assigned, agents are woken automatically via the heartbeat system with execution locking, coalescing, and deferral. |
+| **Multi-Adapter Support** | 9 adapters: Claude, Codex, Cursor, Gemini, OpenCode, Pi, OpenClaw Gateway, Universal LLM (OpenAI-compatible), and generic HTTP/Process adapters. |
+| **Credential Vault with Timed Access** | AES-256-GCM encrypted secrets. Agents receive timed tokens with configurable TTL (default 3600s), max concurrent checkouts, and rotation policies. Agents never see raw secret values. |
+| **Auto-Generated Agent JWT** | On first run, TitanClip auto-generates a `PAPERCLIP_AGENT_JWT_SECRET` and creates short-lived HS256 JWTs for each agent run. No manual key management needed. |
+| **Three-Point OKLCH Theme System** | Light (clean slate), Dark (midnight), and TitanClip (forge — warm charcoal + copper accent) themes using perceptually uniform OKLCH color space. |
+| **Agent Performance & Analytics** | Per-agent health scores, completion rates, velocity tracking, burndown charts, work distribution, and cost attribution with chargeback reports. |
+| **Plugin SDK with Lifecycle Hooks** | Alpha plugin system — register custom tools, add UI contributions, hook into agent lifecycle events (pre/post tool call, pre/post LLM call, session start/end). |
+| **Admin DB Reset** | Hard reset that truncates all tables AND wipes on-disk data (workspaces, run logs, agent files). Clean re-onboarding in one click. |
+| **Bundled Node.js for Production** | DMG ships with Node.js v22 — end users don't need Node installed. Embedded PostgreSQL with auto-hydrated dylib symlinks. |
+| **Splash Animation** | Animated launch screen with office agents running around — personality for the platform. |
+
+---
+
+## Enterprise Security
+
+TitanClip is designed for environments where AI agents operate autonomously with access to sensitive systems.
+
+### Runtime Agentic IAM & RBAC
+
+Traditional IAM assumes human users. Agents are different — they run autonomously, make API calls without human oversight, and need access to secrets they should never persist. TitanClip addresses this with:
+
+- **Agent Identity** — Each agent gets a unique `PAPERCLIP_AGENT_ID` and `PAPERCLIP_COMPANY_ID` injected at runtime. Every API call is authenticated via short-lived JWT (HS256, 48h TTL).
+- **Credential Vault** — Secrets are encrypted with AES-256-GCM at rest. Agents check out timed tokens (configurable TTL: 60s to 86400s). The vault enforces max concurrent checkouts and supports manual/automatic rotation policies.
+- **Run-Scoped Access** — Each heartbeat run gets a `PAPERCLIP_RUN_ID`. All agent API calls include this header (`X-Paperclip-Run-Id`) for full audit traceability. When a run ends, its JWT is invalidated.
+- **Role-Based Task Routing** — Agents are assigned roles (CEO, CTO, Engineer, QA, DevOps, etc.). The delegation system routes tasks to the appropriate role. Agents cannot self-assign — they can only check out tasks explicitly assigned to them (unless @-mentioned).
+- **Autonomy Levels** — Per-agent autonomy: `sandboxed` (no tool execution), `supervised` (destructive tools require approval), `autonomous` (full access). Approval prompts surface in the chat UI with allow once / allow session / deny options.
+- **Secret Redaction** — Tool outputs are scanned for 25+ secret patterns (API keys, JWTs, private keys, database URLs) and redacted before logging or display.
+- **Prompt Injection Detection** — Context files (`.paperclip.md`, `AGENTS.md`) are scanned for injection patterns before being included in system prompts.
+
+### Audit & Compliance
+
+- Every agent action is logged with actor type, actor ID, entity type, entity ID, and timestamp
+- Cost events track per-turn token usage and USD cost by model
+- Chargeback reports attribute costs to agents, models, and projects
+- Export activity logs and cost data to CSV
+
+---
 
 ## Features
 
-### Agent Orchestration
-- **Heartbeat Engine** — Queue-based execution with issue-level locking, context coalescing, session compaction, and concurrency control
-- **Task Delegation** — Agents create and assign issues to other agents via tool calls
-- **Auto-Hiring** — The CEO agent can hire new team members from templates during chat
-- **Workload Balancing** — Issues auto-assigned to the least-busy available agent
+- **Agent Teams** — Hire, manage, and terminate AI agents with role-based organization
+- **Issue Tracking** — Full Kanban board with backlog, todo, in-progress, in-review, done, blocked
+- **Agent Chat** — Real-time conversational interface with streaming, tool call cards, and slash commands
+- **Heartbeat Orchestration** — Automatic task assignment and agent wakeup with execution locking
+- **Agent Gallery** — Template-based agent hiring with one-click deployment
+- **Goals & Projects** — Organize work across multiple projects with goal tracking
+- **Workflows & Routines** — Configurable automation and scheduled agent tasks
+- **Chatter** — Team communication feed for agent-to-agent coordination
+- **Inbox** — Gmail-style notification center for approvals, runs, and mentions
+- **Onboarding Wizard** — Guided setup for new companies and teams
 
-### Issue Tracking
-- **Kanban Board** — Drag-and-drop issue management with status columns
-- **Comments & @mentions** — Comment threads with agent mentions that trigger wakeups
-- **Priority & Labels** — Priority levels (low/medium/high/critical) with custom labels
-- **Execution Locking** — Prevents two agents from working on the same issue simultaneously
-
-### Chat Interface
-- **Streaming Responses** — Real-time token streaming with animated thinking indicator
-- **Tool Call Cards** — Collapsible cards showing tool execution with args and results
-- **Slash Commands** — `/create-issue`, `/status`, `/agents`, `/review`, `/plan`, `/help`
-- **# and @ Mentions** — Reference issues and agents inline with typeahead autocomplete
-
-### Enterprise Security
-- **Agent JWT Auto-Generation** — Server generates and injects short-lived JWTs for agent API access
-- **Per-Agent Autonomy Levels** — Sandboxed (no tools), Supervised (approval required), Autonomous (full access)
-- **Secret Redaction** — 25+ regex patterns detect and redact API keys, tokens, and credentials in tool output
-- **Prompt Injection Detection** — Context files scanned for override attempts, hidden Unicode, and exfiltration patterns
-- **Command Blocklist** — Dangerous shell commands (`sudo`, `rm -rf /`, fork bombs) blocked regardless of autonomy level
-- **Workspace-Bounded Access** — File operations restricted to agent workspace and project directories
+---
 
 ## Quick Start
 
@@ -71,7 +125,8 @@ TitanClip is built on the open-source [Paperclip](https://github.com/paperclipai
 
 1. Download `TitanClip-1.0.0-arm64.dmg` from [Releases](https://github.com/ankurCES/TitanClip/releases)
 2. Drag TitanClip to Applications
-3. Launch — the app bundles its own Node.js runtime, no dependencies needed
+3. Launch — the app bundles Node.js and PostgreSQL, no dependencies needed
+4. Complete the onboarding wizard to set up your first team
 
 ### Build from Source
 
@@ -84,81 +139,73 @@ pnpm run build:all
 pnpm run dev
 ```
 
-### Production Build
+### Production Build (macOS)
 
 ```bash
-# Full automated dist pipeline (macOS)
 pnpm run dist
-
-# Or step by step:
-pnpm run build:all              # Build all workspace packages + UI + Electron
-node scripts/download-node.mjs  # Download Node.js binary for bundling
-node scripts/prepare-server.mjs # Prepare server modules for packaging
-npx electron-builder --mac      # Package into DMG
+# Output: release/TitanClip-1.0.0-arm64.dmg
 ```
+
+---
 
 ## Architecture
 
 ```
 TitanClip
-├── Electron Main Process       (window management, IPC, tray, shortcuts)
-│   ├── Server Bridge            (spawns server as child process)
-│   ├── Plugin Host              (sandboxed plugin workers)
-│   └── Auto-Updater            (GitHub Releases)
-├── Express Server               (API + static UI serving)
-│   ├── Heartbeat Service        (agent execution engine)
-│   ├── Adapter Registry         (9 CLI/HTTP adapters)
-│   ├── Issue Assignment Wakeup  (bridges issues → heartbeat)
-│   ├── Agent Auth JWT           (auto-generated credentials)
-│   └── Routes                   (agents, issues, chat, admin, plugins)
-├── React UI                     (React 19, Vite 6, Tailwind CSS 4)
-│   ├── Dashboard                (metrics, charts, activity feed)
-│   ├── Agent Chat               (streaming, tool cards, approvals)
-│   ├── Issue Tracker            (kanban, detail, comments)
-│   └── Admin Settings           (adapters, themes, reset)
-└── Packages
-    ├── @titanclip/db            (Drizzle ORM, embedded PostgreSQL)
-    ├── @titanclip/shared        (validators, types, constants)
-    ├── @titanclip/adapter-utils (env builder, session compaction)
-    └── @titanclip/plugin-sdk    (alpha plugin API)
++-- Electron Main Process (23 modules)
+|   +-- Server Bridge -- spawns embedded Express server
+|   +-- Window Manager -- BrowserWindow with splash animation
+|   +-- IPC Handlers -- 296 routes bridging UI to native APIs
+|   +-- Plugin Host -- isolated worker processes
+|   +-- Auto-Updater -- GitHub Releases integration
++-- Server (Express + Embedded PostgreSQL)
+|   +-- Heartbeat Service -- agent orchestration engine
+|   +-- Agent Auth JWT -- runtime identity tokens
+|   +-- Adapter Registry -- 9 LLM adapters
+|   +-- Credential Vault -- AES-256-GCM encrypted secrets
+|   +-- Issue Tracker -- Kanban with auto-assignment
+|   +-- Plugin Loader -- dynamic tool/hook registration
++-- UI (React 19 + Vite 6 + Tailwind CSS 4)
+|   +-- Dashboard -- real-time agent monitoring
+|   +-- Chat -- streaming with tool cards
+|   +-- Command Center -- operations hub
+|   +-- Analytics -- velocity, burndown, cost forecasting
+|   +-- Admin -- settings, vault, access control
++-- Packages (monorepo)
+    +-- @titanclip/db -- Drizzle ORM schema + migrations
+    +-- @titanclip/shared -- validators, constants, types
+    +-- @titanclip/adapter-utils -- adapter shared utilities
+    +-- @titanclip/adapters/* -- 9 adapter packages
+    +-- @titanclip/plugin-sdk -- plugin authoring API
 ```
 
-## Tech Stack
+**Tech Stack:** Electron 33 | React 19 | Vite 6 | Tailwind CSS 4 | Express | PostgreSQL (embedded) | Drizzle ORM | better-auth | OKLCH theming
 
-| Layer | Technology |
-|-------|-----------|
-| Desktop | Electron 33 |
-| Frontend | React 19, TypeScript, Vite 6, Tailwind CSS 4 |
-| Backend | Express, Drizzle ORM, Embedded PostgreSQL |
-| Theming | OKLCH color space (3 themes) |
-| Build | pnpm workspaces, electron-builder |
+---
 
 ## Documentation
 
-- **In-App Help** — Press `?` or navigate to Help in the sidebar for keyboard shortcuts and feature documentation
-- **[Codebase Analysis](CODEBASE_ANALYSIS.md)** — Deep audit of every module with improvement opportunities
-- **[Skills Reference](skills/paperclip/SKILL.md)** — Agent skill documentation and API reference
+- **In-App Help** — Press `?` or navigate to Help in the sidebar for built-in documentation
+- **[Codebase Analysis](CODEBASE_ANALYSIS.md)** — Deep technical audit with findings and improvement opportunities
+- **[Agent Development Guide](docs/agent-development-guide.md)** — How to create and configure agents
+- **[Plugin Authoring Guide](docs/plugin-authoring-guide.md)** — Build plugins with the alpha SDK
+
+---
 
 ## Credits
 
-TitanClip is built on the excellent open-source foundation of **[Paperclip](https://github.com/paperclipai/paperclip)** by [PaperclipAI](https://github.com/paperclipai). We are grateful for their work in pioneering the AI agent orchestration platform concept.
+TitanClip is built on the open-source [Paperclip](https://github.com/paperclipai/paperclip) platform by [PaperclipAI](https://github.com/paperclipai). We gratefully acknowledge the Paperclip team for creating the foundational architecture — the adapter system, heartbeat engine, session management, and plugin SDK that make autonomous agent orchestration possible.
 
-**Key contributions from Paperclip:**
-- Core heartbeat execution engine and session management
-- Adapter abstraction layer for CLI-based AI tools
-- Embedded PostgreSQL integration for zero-config database
-- Plugin SDK architecture
-- Skill-based agent instruction system
+**TitanClip extensions** by [@ankurCES](https://github.com/ankurCES):
+- Agent Chat with tool cards and streaming UI
+- Runtime Agentic IAM with credential vault and timed secret access
+- Three-point OKLCH theme system
+- Agent performance analytics and cost attribution
+- Production DMG build with bundled Node.js
+- Splash animation and branding
 
-**TitanClip extensions by [ankurCES](https://github.com/ankurCES):**
-- Agent chat interface with streaming, tool cards, and slash commands
-- Heartbeat wakeup integration for immediate task assignment
-- Multi-adapter credential resolution and admin HTTP endpoint management
-- Three-point OKLCH theme system with TitanClip "Forge" theme
-- Production DMG build pipeline with bundled Node.js
-- Enterprise security features (JWT auto-gen, secret redaction, injection detection)
-- Animated splash screen and branding
+---
 
 ## License
 
-Private repository. Based on [Paperclip](https://github.com/paperclipai/paperclip) (MIT License).
+Private repository. Based on [Paperclip](https://github.com/paperclipai/paperclip).
