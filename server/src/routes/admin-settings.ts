@@ -208,7 +208,7 @@ export function adminSettingsRoutes(db: Db, config: AdminRoutesConfig) {
       );
 
       // Truncate all tables (preserving schema + migrations)
-      for (const row of tables.rows as any[]) {
+      for (const row of (tables as any).rows as any[]) {
         const tableName = row.tablename;
         try {
           await db.execute(
@@ -219,7 +219,7 @@ export function adminSettingsRoutes(db: Db, config: AdminRoutesConfig) {
 
       // Re-create the local board principal
       try {
-        const { principals } = await import("@titanclip/db");
+        const { principals } = await import("@titanclip/db") as any;
         await db.insert(principals).values({
           type: "user",
           externalId: "local-board",

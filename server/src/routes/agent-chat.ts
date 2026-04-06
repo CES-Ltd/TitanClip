@@ -17,7 +17,9 @@ import { conversationService } from "../services/conversations.js";
 import { agentMemoryService } from "../services/agent-memory.js";
 import { dashboardService } from "../services/dashboard.js";
 import { chatterService } from "../services/chatter.js";
+import { heartbeatService } from "../services/index.js";
 import { logActivity } from "../services/activity-log.js";
+import { queueIssueAssignmentWakeup, type IssueAssignmentWakeupDeps } from "../services/issue-assignment-wakeup.js";
 import { assertCompanyAccess } from "./authz.js";
 
 // ── Provider Base URL Defaults ───────────────────────────────────────────
@@ -130,6 +132,7 @@ export function agentChatRoutes(db: Db) {
   const memorySvc = agentMemoryService(db);
   const dashSvc = dashboardService(db);
   const chatSvc = chatterService(db);
+  const heartbeat = heartbeatService(db);
 
   router.post("/companies/:companyId/agents/:agentId/chat", async (req, res) => {
     const companyId = req.params.companyId as string;
@@ -214,7 +217,7 @@ export function agentChatRoutes(db: Db) {
       };
 
       try {
-        await handleSlashCommand(command, args, { db, companyId, agentId, agent, projectId: effectiveProjectId, sendSSE: slashSendSSE, convSvc, dashSvc, chatSvc });
+        await handleSlashCommand(command, args, { db, companyId, agentId, agent, projectId: effectiveProjectId, sendSSE: slashSendSSE, convSvc, dashSvc, chatSvc, heartbeat });
       } catch (err: any) {
         slashSendSSE({ type: "chunk", content: `Error: ${err.message}` });
         sendSSE({ type: "error", error: err.message });
@@ -377,7 +380,7 @@ ${templateList}
           conversationId: conversation.id,
           issueId,
         },
-        onLog: (stream, chunk) => {
+        onLog: async (stream, chunk) => {
           if (!chunk) return;
           if (stream === "stdout") {
             // Check if it's a structured tool call log
@@ -403,7 +406,7 @@ ${templateList}
 
                 // Process structured tool actions from result JSON
                 processToolAction(db, resultText, {
-                  companyId, agentId, agent, httpAdapters, sendSSE, chatSvc, projectId: effectiveProjectId,
+                  companyId, agentId, agent, httpAdapters, sendSSE, chatSvc, heartbeat, projectId: effectiveProjectId,
                 }).catch((e) => console.warn("[TitanClaw] Tool action error:", e.message));
 
                 // Log result to chatter
@@ -619,7 +622,7 @@ async function runSlashLLM(ctx: SlashContext, systemPrompt: string, userQuery: s
     runtime: { sessionId: `cmd-${Date.now()}`, sessionParams: {}, sessionDisplayId: "command", taskKey: `cmd:${Date.now()}` },
     config: chatConfig,
     context: { userMessage: userQuery },
-    onLog: (stream, chunk) => {
+    onLog: async (stream, chunk) => {
       if (stream === "stdout" && chunk && !chunk.startsWith("[tool]") && !chunk.startsWith("[result]") && !chunk.includes("--- Tool calls")) {
         ctx.sendSSE({ type: "chunk", content: chunk });
       }
@@ -639,6 +642,7 @@ interface SlashContext {
   convSvc: ReturnType<typeof conversationService>;
   dashSvc: ReturnType<typeof dashboardService>;
   chatSvc: ReturnType<typeof chatterService>;
+  heartbeat: IssueAssignmentWakeupDeps;
 }
 
 async function handleSlashCommand(command: string, args: string, ctx: SlashContext) {
@@ -858,6 +862,19 @@ async function cmdCreateIssue(description: string, ctx: SlashContext) {
       entityId: newIssue.id,
       details: { title, origin: "titan_claw_chat_command", projectId: resolvedProjectId },
     });
+
+    // Wake the assigned agent so it starts working on the task
+    if (assigneeAgentId) {
+      void queueIssueAssignmentWakeup({
+        heartbeat: ctx.heartbeat,
+        issue: { id: newIssue.id, assigneeAgentId, status: "todo" },
+        reason: "issue_assigned",
+        mutation: "create",
+        contextSource: "agent_chat.create_issue_command",
+        requestedByActorType: "user",
+        requestedByActorId: "local-board",
+      });
+    }
 
     // Send structured issue card event
     ctx.sendSSE({
@@ -1251,6 +1268,17 @@ async function processHireFromToolResult(
       },
     });
 
+    // Wake the newly hired agent so it starts working on its first task
+    void queueIssueAssignmentWakeup({
+      heartbeat: ctx.heartbeat,
+      issue: { id: hireIssue.id, assigneeAgentId: newAgent.id, status: "todo" },
+      reason: "issue_assigned",
+      mutation: "create",
+      contextSource: "agent_chat.hire",
+      requestedByActorType: "agent",
+      requestedByActorId: ctx.agentId,
+    });
+
     await logActivity(db, {
       companyId: ctx.companyId,
       actorType: "agent",
@@ -1274,6 +1302,7 @@ interface ToolActionCtx {
   httpAdapters: any[];
   sendSSE: (data: Record<string, unknown>) => void;
   chatSvc: ReturnType<typeof chatterService>;
+  heartbeat: IssueAssignmentWakeupDeps;
   projectId?: string | null;
 }
 
@@ -1364,6 +1393,17 @@ async function processDelegateAction(db: Db, parsed: any, ctx: ToolActionCtx) {
     entityType: "issue",
     entityId: newIssue.id,
     details: { targetAgentId: target.id, targetAgentName: target.name, taskTitle },
+  });
+
+  // Wake the assigned agent so it starts working on the delegated task
+  void queueIssueAssignmentWakeup({
+    heartbeat: ctx.heartbeat,
+    issue: { id: newIssue.id, assigneeAgentId: target.id, status: "todo" },
+    reason: "issue_assigned",
+    mutation: "create",
+    contextSource: "agent_chat.delegate",
+    requestedByActorType: "agent",
+    requestedByActorId: ctx.agentId,
   });
 
   // Log to chatter
