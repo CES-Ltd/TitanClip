@@ -8,7 +8,7 @@
  * 4. Output to build/server-modules/
  */
 
-import { mkdirSync, readFileSync, writeFileSync, existsSync, rmSync, cpSync } from "fs";
+import { mkdirSync, readFileSync, writeFileSync, existsSync, rmSync, cpSync, lstatSync } from "fs";
 import { join, resolve } from "path";
 import { execSync } from "child_process";
 
@@ -66,15 +66,19 @@ console.log(`  Merged ${Object.keys(cleanDeps).length} total npm dependencies`);
 
 // 3. Install production deps
 console.log(`  Installing ${Object.keys(cleanDeps).length} npm dependencies...`);
-execSync("npm install --production --legacy-peer-deps --ignore-scripts 2>&1", {
+execSync("npm install --production --legacy-peer-deps 2>&1", {
   cwd: STAGING,
   stdio: "inherit",
-  timeout: 120_000,
+  timeout: 180_000,
 });
 
 // 4. Move node_modules to output
 mkdirSync(OUTPUT, { recursive: true });
 cpSync(join(STAGING, "node_modules"), OUTPUT, { recursive: true });
+
+// 4b. Hydrate embedded-postgres symlinks (postinstall creates these but
+// electron-builder may lose symlinks during copy — create hard copies instead)
+hydratePostgresSymlinks();
 
 // 5. Copy workspace packages
 
@@ -179,5 +183,63 @@ module.exports = { getBOMEncoding, labelToName };
         console.log("  Patched html-encoding-sniffer to use CJS fallback");
       }
     }
+  }
+}
+
+/**
+ * Hydrate embedded-postgres dylib symlinks.
+ * The postgres binary links against short names (libzstd.1.dylib) but the
+ * package ships versioned files (libzstd.1.5.7.dylib) with a symlink manifest.
+ * electron-builder loses symlinks during copy, so we create hard copies instead.
+ */
+function hydratePostgresSymlinks() {
+  // Find the platform-specific embedded-postgres package
+  const platformPkgs = [
+    "@embedded-postgres/darwin-arm64",
+    "@embedded-postgres/darwin-x64",
+    "@embedded-postgres/linux-arm64",
+    "@embedded-postgres/linux-x64",
+    "@embedded-postgres/windows-x64",
+  ];
+
+  for (const pkgName of platformPkgs) {
+    const pkgDir = join(OUTPUT, ...pkgName.split("/"));
+    const manifestPath = join(pkgDir, "native", "pg-symlinks.json");
+
+    if (!existsSync(manifestPath)) continue;
+
+    console.log(`  Hydrating PostgreSQL symlinks for ${pkgName}...`);
+    const manifest = JSON.parse(readFileSync(manifestPath, "utf-8"));
+    let created = 0;
+
+    // Manifest is an array of { source: "native/lib/libfoo.1.2.dylib", target: "native/lib/libfoo.dylib" }
+    for (const entry of manifest) {
+      const srcPath = join(pkgDir, entry.source);
+      const tgtPath = join(pkgDir, entry.target);
+
+      if (!existsSync(srcPath)) {
+        console.warn(`  [warn] Source not found: ${entry.source}`);
+        continue;
+      }
+
+      try {
+        // Remove existing symlink (npm creates absolute symlinks that break when copied)
+        try {
+          const stat = lstatSync(tgtPath);
+          if (stat.isSymbolicLink()) {
+            rmSync(tgtPath);
+          } else {
+            continue; // Real file already exists
+          }
+        } catch { /* doesn't exist */ }
+
+        cpSync(srcPath, tgtPath);
+        created++;
+      } catch (err) {
+        console.warn(`  [warn] Failed to create ${entry.target}: ${err.message}`);
+      }
+    }
+
+    console.log(`  Created ${created} dylib copies for ${pkgName}`);
   }
 }
