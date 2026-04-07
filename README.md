@@ -200,7 +200,7 @@ TitanClip
 
 TitanClip is built on the open-source [Paperclip](https://github.com/paperclipai/paperclip) platform by [PaperclipAI](https://github.com/paperclipai). We gratefully acknowledge the Paperclip team for creating the foundational architecture — the adapter system, heartbeat engine, session management, and plugin SDK that make autonomous agent orchestration possible.
 
-**TitanClip** Built with ❤️ & 🛡️ by Team [CES Ltd.](https://cesltd.com) : [@anuragCES](https://github.com/anuragCES) & [@ankurCES](https://github.com/ankurCES) :
+**TitanClip Team**  : [@anuragCES](https://github.com/anuragCES) & [@ankurCES](https://github.com/ankurCES) :
 - Agent Chat with tool cards and streaming UI
 - Runtime Agentic IAM with credential vault and timed secret access
 - Three-point OKLCH theme system
@@ -213,3 +213,6 @@ TitanClip is built on the open-source [Paperclip](https://github.com/paperclipai
 ## License
 
 MIT License - Based on [Paperclip](https://github.com/paperclipai/paperclip).
+
+
+Built with ❤️ & 🛡️ by Team [CES Ltd.](https://cesltd.com)
