@@ -1,0 +1,41 @@
+# TitanClip: AI Company Orchestration Platform
+
+> [!NOTE]
+> High-velocity autonomous agent orchestration governed by enterprise-grade security and Runtime Agentic IAM. Built on Paperclip.
+
+## Overview
+TitanClip is an enterprise-ready digital workforce management platform. It allows organizations to deploy teams of autonomous AI agents that collaborate, delegate, and execute tasks within a governed command structure. It features a robust security layer to prevent "rogue" agent behavior through fail-safe controls and ironclad guardrails.
+
+## Core Features
+- **Runtime Agentic IAM:** Granular identity and access management for AI agents.
+- **Credential Vault:** AES-256-GCM encrypted secrets management for agent tool access.
+- **Heartbeat Orchestration:** Real-time monitoring and synchronization of autonomous actions.
+- **Agent Analytics:** Performance tracking, cost attribution, and velocity forecasting.
+- **Multi-Adapter Support:** Native integration with 9+ LLM providers.
+- **Skill System:** Extensible agent capabilities via a dedicated Skill SDK.
+
+## Technical Stack
+- **Runtime:** Electron 33 (Desktop Application)
+- **Frontend:** React 19, Vite 6, Tailwind CSS 4 (OKLCH theming)
+- **Backend:** Express.js with embedded PostgreSQL
+- **ORM:** Drizzle ORM
+- **Auth:** better-auth
+- **Architecture:** Monorepo using `pnpm` workspaces
+
+## Key Directories
+- `/packages`: Shared logic, DB schemas (@titanclip/db), and LLM adapters.
+- `/server`: Core orchestration logic, heartbeat service, and vault management.
+- `/ui`: React-based dashboard, agent chat interface, and command center.
+- `/skills`: Pre-configured agent capabilities and tools.
+
+## Integration & Development
+TitanClip uses a plugin-based architecture. Developers can extend agent capabilities using the `@titanclip/plugin-sdk`. It supports streaming UI components and tool cards directly within the agent chat interface.
+
+## Target Use Cases
+- Enterprise process automation
+- Secure multi-agent collaboration
+- Governed AI workforce deployment
+- Automated DevSecOps and vulnerability scanning
+
+---
+For
