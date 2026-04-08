@@ -10,6 +10,7 @@ import { spawn, ChildProcess } from "child_process";
 import http from "http";
 import path from "path";
 import { getServerSourcePath, getTsxBinPath, getResourcesPath } from "./paths.js";
+import { augmentPathEnv } from "./path-env.js";
 
 // tree-kill for clean process tree shutdown (kills postgres + child processes)
 let treeKill: (pid: number, signal?: string, callback?: (error?: Error) => void) => void;
@@ -25,17 +26,12 @@ let serverProcess: ChildProcess | null = null;
 const SERVER_PORT = 3100;
 const IS_DEV = !app.isPackaged;
 
-/**
- * Augmented PATH that includes common binary directories.
- * Required when launched from Finder/Dock (which has a minimal PATH).
- */
 function getAugmentedPath(): string {
-  const extra = process.platform === "darwin"
-    ? ["/opt/homebrew/bin", "/usr/local/bin", "/usr/local/sbin", "/usr/bin"]
-    : process.platform === "win32"
-    ? ["C:\\Program Files\\nodejs"]
-    : ["/usr/local/bin", "/usr/bin"];
-  return [...extra, process.env.PATH || ""].join(process.platform === "win32" ? ";" : ":");
+  const normalized = augmentPathEnv({
+    PATH: process.env.PATH,
+    Path: process.env.Path,
+  });
+  return normalized.PATH ?? normalized.Path ?? "";
 }
 
 export function startServer(): void {

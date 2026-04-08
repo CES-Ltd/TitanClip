@@ -1,5 +1,6 @@
 import { spawn, type ChildProcess } from "node:child_process";
 import { constants as fsConstants, promises as fs, type Dirent } from "node:fs";
+import os from "node:os";
 import path from "node:path";
 import type {
   AdapterSkillEntry,
@@ -255,6 +256,64 @@ export function defaultPathForPlatform() {
   return "/usr/local/bin:/opt/homebrew/bin:/usr/local/sbin:/usr/bin:/bin:/usr/sbin:/sbin";
 }
 
+function commonCommandDirsForPlatform(): string[] {
+  if (process.platform === "darwin") {
+    return ["/opt/homebrew/bin", "/usr/local/bin", "/usr/local/sbin", "/usr/bin"];
+  }
+  if (process.platform === "win32") {
+    return [
+      "C:\\Program Files\\nodejs",
+      "C:\\Program Files\\Git\\cmd",
+      "C:\\Program Files\\Git\\bin",
+    ];
+  }
+  return ["/usr/local/bin", "/usr/bin", "/bin", "/usr/sbin", "/sbin"];
+}
+
+function pathKeyFromEnv(env: NodeJS.ProcessEnv): "PATH" | "Path" {
+  if (typeof env.Path === "string" && typeof env.PATH !== "string") return "Path";
+  return "PATH";
+}
+
+function splitPathValue(value: string, delimiter: string): string[] {
+  return value
+    .split(delimiter)
+    .map((entry) => entry.trim())
+    .filter((entry) => entry.length > 0);
+}
+
+function homeDirFromEnv(env: NodeJS.ProcessEnv): string | undefined {
+  const home = env.HOME ?? env.USERPROFILE;
+  if (typeof home === "string" && home.trim().length > 0) return home.trim();
+  try {
+    const fallback = os.homedir();
+    return typeof fallback === "string" && fallback.length > 0 ? fallback : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+function userLocalBinDirs(homeDir: string | undefined): string[] {
+  if (!homeDir) return [];
+  return [path.join(homeDir, ".local", "bin")];
+}
+
+function mergePathEntries(existingPath: string | undefined, homeDir?: string): string {
+  const delimiter = process.platform === "win32" ? ";" : ":";
+  const merged = new Set<string>();
+  const ordered = [
+    ...splitPathValue(existingPath ?? "", delimiter),
+    ...splitPathValue(defaultPathForPlatform(), delimiter),
+    ...commonCommandDirsForPlatform(),
+    ...userLocalBinDirs(homeDir),
+  ];
+  for (const entry of ordered) {
+    if (entry.length === 0) continue;
+    merged.add(entry);
+  }
+  return Array.from(merged).join(delimiter);
+}
+
 function windowsPathExts(env: NodeJS.ProcessEnv): string[] {
   return (env.PATHEXT ?? ".EXE;.CMD;.BAT;.COM").split(";").filter(Boolean);
 }
@@ -332,9 +391,14 @@ async function resolveSpawnTarget(
 }
 
 export function ensurePathInEnv(env: NodeJS.ProcessEnv): NodeJS.ProcessEnv {
-  if (typeof env.PATH === "string" && env.PATH.length > 0) return env;
-  if (typeof env.Path === "string" && env.Path.length > 0) return env;
-  return { ...env, PATH: defaultPathForPlatform() };
+  const nextEnv = { ...env };
+  const key = pathKeyFromEnv(nextEnv);
+  const existingValue = typeof nextEnv[key] === "string" ? nextEnv[key] : undefined;
+  nextEnv[key] = mergePathEntries(existingValue, homeDirFromEnv(nextEnv));
+  if (key === "PATH") {
+    delete (nextEnv as Record<string, string | undefined>).Path;
+  }
+  return nextEnv;
 }
 
 export async function ensureAbsoluteDirectory(
@@ -739,6 +803,59 @@ export async function removeMaintainerOnlySkillSymlinks(
 export async function ensureCommandResolvable(command: string, cwd: string, env: NodeJS.ProcessEnv) {
   const resolved = await resolveCommandPath(command, cwd, env);
   if (resolved) return;
+  // #region agent log
+  {
+    const pv = env.PATH ?? env.Path ?? "";
+    const delim = process.platform === "win32" ? ";" : ":";
+    const dirs = pv.split(delim).filter(Boolean);
+    const homeResolved = homeDirFromEnv(env);
+    const pathHasLocalBin = dirs.some(
+      (d) => d.replace(/\\/g, "/").endsWith("/.local/bin") || d.includes("/.local/bin"),
+    );
+    void fs
+      .appendFile(
+        "/Users/anurag.sharma.ces/titanclip/TitanClip/.cursor/debug-77b578.log",
+        `${JSON.stringify({
+          sessionId: "77b578",
+          runId: "resolve-fail",
+          location: "adapter-utils/server-utils.ts:ensureCommandResolvable",
+          message: "command not resolved on PATH",
+          data: {
+            hypothesisId: "HOME-missing-or-path",
+            command,
+            cwd,
+            platform: process.platform,
+            pathDirCount: dirs.length,
+            pathSample: dirs.slice(0, 8),
+            pathHasLocalBin,
+            homeResolvedPresent: Boolean(homeResolved),
+            pathEndsWithNvmHint: dirs.some((d) => d.includes("nvm") || d.includes(".nvm")),
+          },
+          timestamp: Date.now(),
+        })}\n`,
+      )
+      .catch(() => {});
+    fetch("http://127.0.0.1:7938/ingest/6b22370e-104e-4fef-8f2d-0acefdeb4ff7", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "77b578" },
+      body: JSON.stringify({
+        sessionId: "77b578",
+        location: "adapter-utils/server-utils.ts:ensureCommandResolvable",
+        message: "command not resolved on PATH",
+        data: {
+          hypothesisId: "H1-H3",
+          command,
+          cwd,
+          platform: process.platform,
+          pathDirCount: dirs.length,
+          pathSample: dirs.slice(0, 8),
+          pathEndsWithNvmHint: dirs.some((d) => d.includes("nvm") || d.includes(".nvm")),
+        },
+        timestamp: Date.now(),
+      }),
+    }).catch(() => {});
+  }
+  // #endregion
   if (command.includes("/") || command.includes("\\")) {
     const absolute = path.isAbsolute(command) ? command : path.resolve(cwd, command);
     throw new Error(`Command is not executable: "${command}" (resolved: "${absolute}")`);

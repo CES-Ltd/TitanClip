@@ -8,7 +8,7 @@ import type { AdapterRuntimeServiceReport } from "@titanclip/adapter-utils";
 import type { Db } from "@titanclip/db";
 import { executionWorkspaces, projectWorkspaces, workspaceRuntimeServices } from "@titanclip/db";
 import { and, desc, eq, inArray } from "drizzle-orm";
-import { asNumber, asString, parseObject, renderTemplate } from "../adapters/utils.js";
+import { asNumber, asString, ensurePathInEnv, parseObject, renderTemplate } from "../adapters/utils.js";
 import { resolveHomeAwarePath } from "../home-paths.js";
 import {
   createLocalServiceKey,
@@ -132,7 +132,7 @@ export function sanitizeRuntimeServiceBaseEnv(baseEnv: NodeJS.ProcessEnv): NodeJ
   delete env.DATABASE_URL;
   delete env.npm_config_tailscale_auth;
   delete env.npm_config_authenticated_private;
-  return env;
+  return ensurePathInEnv(env);
 }
 
 function stableRuntimeServiceId(input: {
@@ -268,7 +268,7 @@ async function executeProcess(input: {
     const child = spawn(input.command, input.args, {
       cwd: input.cwd,
       stdio: ["ignore", "pipe", "pipe"],
-      env: input.env ?? process.env,
+      env: ensurePathInEnv(input.env ?? process.env),
     });
     let stdout = "";
     let stderr = "";

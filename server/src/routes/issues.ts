@@ -339,6 +339,12 @@ export function issueRoutes(
       return;
     }
 
+    const includeRoutineExecutionsQuery = req.query.includeRoutineExecutions;
+    const includeRoutineExecutionsExplicit =
+      includeRoutineExecutionsQuery === "true" || includeRoutineExecutionsQuery === "1";
+    const includeRoutineExecutionsDefaultForAssignee =
+      !includeRoutineExecutionsExplicit && typeof req.query.assigneeAgentId === "string" && req.query.assigneeAgentId.trim().length > 0;
+
     const result = await svc.list(companyId, {
       status: req.query.status as string | undefined,
       assigneeAgentId: req.query.assigneeAgentId as string | undefined,
@@ -354,7 +360,7 @@ export function issueRoutes(
       originKind: req.query.originKind as string | undefined,
       originId: req.query.originId as string | undefined,
       includeRoutineExecutions:
-        req.query.includeRoutineExecutions === "true" || req.query.includeRoutineExecutions === "1",
+        includeRoutineExecutionsExplicit || includeRoutineExecutionsDefaultForAssignee,
       q: req.query.q as string | undefined,
     });
     res.json(result);

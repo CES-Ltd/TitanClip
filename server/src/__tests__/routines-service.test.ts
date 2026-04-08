@@ -324,6 +324,72 @@ describeEmbeddedPostgres("routine service live-execution coalescing", () => {
     expect(routineIssues[0]?.id).toBe(previousIssue.id);
   });
 
+  it("re-wakes and repairs stale routine executions blocked by a terminal executionRunId lock", async () => {
+    const { agentId, companyId, issueSvc, routine, svc, wakeups } = await seedFixture();
+
+    const previousRunId = randomUUID();
+    const staleHeartbeatRunId = randomUUID();
+    const existingIssue = await issueSvc.create(companyId, {
+      projectId: routine.projectId,
+      title: routine.title,
+      description: routine.description,
+      status: "todo",
+      priority: routine.priority,
+      assigneeAgentId: null as any,
+      originKind: "routine_execution",
+      originId: routine.id,
+      originRunId: previousRunId,
+    });
+
+    await db.insert(heartbeatRuns).values({
+      id: staleHeartbeatRunId,
+      companyId,
+      agentId,
+      invocationSource: "assignment",
+      triggerDetail: "system",
+      status: "succeeded",
+      contextSnapshot: { issueId: existingIssue.id },
+      startedAt: new Date("2026-03-20T12:01:00.000Z"),
+      finishedAt: new Date("2026-03-20T12:02:00.000Z"),
+    });
+
+    await db
+      .update(issues)
+      .set({
+        executionRunId: staleHeartbeatRunId,
+        executionLockedAt: new Date("2026-03-20T12:01:00.000Z"),
+      })
+      .where(eq(issues.id, existingIssue.id));
+
+    const run = await svc.runRoutine(routine.id, { source: "manual" });
+
+    expect(run.status).toBe("coalesced");
+    expect(run.linkedIssueId).toBe(existingIssue.id);
+    expect(wakeups).toHaveLength(1);
+    expect(wakeups[0]).toEqual(
+      expect.objectContaining({
+        agentId,
+        opts: expect.objectContaining({
+          reason: "issue_assigned",
+          payload: { issueId: existingIssue.id, mutation: "coalesce" },
+        }),
+      }),
+    );
+
+    const repaired = await db
+      .select({
+        assigneeAgentId: issues.assigneeAgentId,
+        executionRunId: issues.executionRunId,
+      })
+      .from(issues)
+      .where(eq(issues.id, existingIssue.id))
+      .then((rows) => rows[0] ?? null);
+
+    expect(repaired?.assigneeAgentId).toBe(routine.assigneeAgentId);
+    expect(repaired?.executionRunId).toBeTruthy();
+    expect(repaired?.executionRunId).not.toBe(staleHeartbeatRunId);
+  });
+
   it("interpolates routine variables into the execution issue and stores resolved values", async () => {
     const { companyId, agentId, projectId, svc } = await seedFixture();
     const variableRoutine = await svc.create(

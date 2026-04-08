@@ -311,4 +311,38 @@ describe("agent permission routes", () => {
       },
     ]);
   });
+
+  it("includes routine executions in the agent inbox-lite view", async () => {
+    mockIssueService.list.mockResolvedValue([
+      {
+        id: "issue-1",
+        identifier: "PAP-910",
+        title: "Routine execution",
+        status: "todo",
+        priority: "high",
+        projectId: null,
+        goalId: null,
+        parentId: null,
+        updatedAt: new Date("2026-03-19T00:00:00.000Z"),
+        activeRun: null,
+      },
+    ]);
+
+    const app = createApp({
+      type: "agent",
+      agentId,
+      companyId,
+      runId: "run-1",
+      source: "agent_key",
+    });
+
+    const res = await request(app).get("/api/agents/me/inbox-lite");
+
+    expect(res.status).toBe(200);
+    expect(mockIssueService.list).toHaveBeenCalledWith(companyId, {
+      assigneeAgentId: agentId,
+      status: "todo,in_progress,blocked",
+      includeRoutineExecutions: true,
+    });
+  });
 });
