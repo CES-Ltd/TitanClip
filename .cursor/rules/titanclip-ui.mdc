@@ -1,0 +1,11 @@
+---
+description: TitanClip UI — React 19, Vite, Tailwind, theming
+globs: ui/**/*.{ts,tsx}
+alwaysApply: false
+---
+
+# UI (`@titanclip/ui`)
+
+- Stack: **React 19**, **Vite**, **Tailwind** (see `ui/package.json`). Match existing components, layout, and **OKLCH** theme usage.
+- Prefer colocated patterns already used under `ui/src/`. Do not introduce duplicate design systems.
+- After substantive changes: `pnpm --filter @titanclip/ui typecheck`. Use the UI Vitest project when adding or fixing UI tests.

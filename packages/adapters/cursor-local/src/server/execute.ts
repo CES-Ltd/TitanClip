@@ -271,7 +271,50 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
   );
   const billingType = resolveCursorBillingType(effectiveEnv);
   const runtimeEnv = ensurePathInEnv(effectiveEnv);
+  // #region agent log
+  {
+    const pv = runtimeEnv.PATH ?? runtimeEnv.Path ?? "";
+    const delim = process.platform === "win32" ? ";" : ":";
+    const dirs = pv.split(delim).filter(Boolean);
+    const pe = process.env.PATH ?? process.env.Path ?? "";
+    const procDirs = pe.split(delim).filter(Boolean);
+    fetch("http://127.0.0.1:7938/ingest/6b22370e-104e-4fef-8f2d-0acefdeb4ff7", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "77b578" },
+      body: JSON.stringify({
+        sessionId: "77b578",
+        location: "cursor-local/execute.ts:before-ensureCommandResolvable",
+        message: "cursor adapter PATH context",
+        data: {
+          hypothesisId: "H2-H4",
+          command,
+          cwd,
+          configCommandKeyPresent: Object.prototype.hasOwnProperty.call(config, "command"),
+          procPathDirCount: procDirs.length,
+          runtimePathDirCount: dirs.length,
+          runtimePathSample: dirs.slice(0, 6),
+        },
+        timestamp: Date.now(),
+      }),
+    }).catch(() => {});
+  }
+  // #endregion
   await ensureCommandResolvable(command, cwd, runtimeEnv);
+  // #region agent log
+  void fs
+    .appendFile(
+      "/Users/anurag.sharma.ces/titanclip/TitanClip/.cursor/debug-77b578.log",
+      `${JSON.stringify({
+        sessionId: "77b578",
+        runId: "post-fix",
+        location: "cursor-local/execute.ts:after-ensureCommandResolvable",
+        message: "command resolved on augmented PATH",
+        data: { hypothesisId: "verify-H2", command },
+        timestamp: Date.now(),
+      })}\n`,
+    )
+    .catch(() => {});
+  // #endregion
   const resolvedCommand = await resolveCommandForLogs(command, cwd, runtimeEnv);
   const loggedEnv = buildInvocationEnvForLogs(env, {
     runtimeEnv,

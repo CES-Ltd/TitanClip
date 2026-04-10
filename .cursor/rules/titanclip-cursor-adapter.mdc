@@ -1,0 +1,11 @@
+---
+description: Cursor local adapter — CLI integration and skills sync
+globs: packages/adapters/cursor-local/**/*.{ts,tsx}
+alwaysApply: false
+---
+
+# Cursor local adapter (`@titanclip/adapter-cursor-local`)
+
+- Integrates with **Cursor CLI / home layout** (e.g. skills under `~/.cursor/skills`). Preserve **backward compatibility** for paths and config expectations used by Paperclip/TitanClip.
+- Prefer extending existing tests under this package; add Vitest coverage when behavior or filesystem contracts change.
+- Do not assume a single OS: keep path handling via `node:path` / `os.homedir()` patterns consistent with the rest of the adapter.

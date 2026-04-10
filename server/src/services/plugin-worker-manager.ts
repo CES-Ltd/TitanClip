@@ -49,6 +49,7 @@ import type {
   InitializeParams,
 } from "@titanclip/plugin-sdk";
 import { logger } from "../middleware/logger.js";
+import { ensurePathInEnv } from "../adapters/utils.js";
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -607,9 +608,13 @@ export function createPluginWorkerHandle(
     // Security: Do NOT spread process.env into the worker. Plugins should only
     // receive a minimal, controlled environment to prevent leaking host
     // secrets (like DATABASE_URL, internal API keys, etc.).
+    const normalizedPathEnv = ensurePathInEnv({
+      PATH: process.env.PATH,
+      Path: process.env.Path,
+    });
     const workerEnv: Record<string, string> = {
       ...options.env,
-      PATH: process.env.PATH ?? "",
+      PATH: normalizedPathEnv.PATH ?? normalizedPathEnv.Path ?? "",
       NODE_PATH: process.env.NODE_PATH ?? "",
       PAPERCLIP_PLUGIN_ID: pluginId,
       NODE_ENV: process.env.NODE_ENV ?? "production",

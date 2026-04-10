@@ -1,0 +1,11 @@
+---
+description: Shared packages — db, shared, adapters, plugin SDK
+globs: packages/**/*.{ts,tsx}
+alwaysApply: false
+---
+
+# Packages (`packages/`)
+
+- **Shared types/utilities**: `@titanclip/shared`. **Schema/migrations**: `@titanclip/db`. **Adapter glue**: `@titanclip/adapter-utils` and `packages/adapters/*`.
+- **Plugins**: follow `docs/plugin-authoring-guide.md` and `packages/plugins/sdk`. Example plugins under `packages/plugins/examples/*` are **reference only**, not the production app.
+- When changing a package API consumed by `server` or `ui`, run **`pnpm run typecheck`** from the repo root to catch cross-package breaks.

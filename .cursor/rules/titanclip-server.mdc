@@ -1,0 +1,11 @@
+---
+description: TitanClip server — Express ESM, routes, heartbeat, adapters
+globs: server/**/*.ts
+alwaysApply: false
+---
+
+# Server (`@titanclip/server`)
+
+- Package is **ESM** (`"type": "module"` in `server/package.json`). Prefer **NodeNext** resolution and existing patterns for routes, services, heartbeat, and adapter registration.
+- After substantive changes: `pnpm --filter @titanclip/server typecheck`.
+- Tests: use Vitest via the `server` project in root `vitest.config.ts` or the server’s local Vitest config as appropriate.

@@ -133,8 +133,8 @@ function nextCronTickInTimeZone(expression: string, timeZone: string, after: Dat
 
 function nextResultText(status: string, issueId?: string | null) {
   if (status === "issue_created" && issueId) return `Created execution issue ${issueId}`;
-  if (status === "coalesced") return "Coalesced into an existing live execution issue";
-  if (status === "skipped") return "Skipped because a live execution issue already exists";
+  if (status === "coalesced") return "Coalesced into an existing execution issue";
+  if (status === "skipped") return "Skipped because an execution issue already exists";
   if (status === "completed") return "Execution issue completed";
   if (status === "failed") return "Execution failed";
   return status;
@@ -620,6 +620,37 @@ export function routineService(db: Db, deps: { heartbeat?: IssueAssignmentWakeup
       .then((rows) => rows[0]?.issues ?? null);
   }
 
+  async function findExecutionIssueWithRunLock(
+    routine: typeof routines.$inferSelect,
+    executor: Db = db,
+  ) {
+    return executor
+      .select()
+      .from(issues)
+      .where(
+        and(
+          eq(issues.companyId, routine.companyId),
+          eq(issues.originKind, "routine_execution"),
+          eq(issues.originId, routine.id),
+          inArray(issues.status, OPEN_ISSUE_STATUSES),
+          isNull(issues.hiddenAt),
+          isNotNull(issues.executionRunId),
+        ),
+      )
+      .orderBy(desc(issues.updatedAt), desc(issues.createdAt))
+      .limit(1)
+      .then((rows) => rows[0] ?? null);
+  }
+
+  async function isLiveHeartbeatRun(runId: string, executor: Db = db) {
+    const row = await executor
+      .select({ status: heartbeatRuns.status })
+      .from(heartbeatRuns)
+      .where(eq(heartbeatRuns.id, runId))
+      .then((rows) => rows[0] ?? null);
+    return row ? LIVE_HEARTBEAT_RUN_STATUSES.includes(row.status) : false;
+  }
+
   async function finalizeRun(runId: string, patch: Partial<typeof routineRuns.$inferInsert>, executor: Db = db) {
     return executor
       .update(routineRuns)
@@ -723,6 +754,58 @@ export function routineService(db: Db, deps: { heartbeat?: IssueAssignmentWakeup
 
       let createdIssue: Awaited<ReturnType<typeof issueSvc.create>> | null = null;
       try {
+        const runLockedIssue = await findExecutionIssueWithRunLock(input.routine, txDb);
+        if (runLockedIssue && input.routine.concurrencyPolicy !== "always_enqueue") {
+          const status = input.routine.concurrencyPolicy === "skip_if_active" ? "skipped" : "coalesced";
+
+          const runId = runLockedIssue.executionRunId;
+          const runIsLive = runId ? await isLiveHeartbeatRun(runId, txDb) : false;
+          const assigneeAgentIdForWake = runLockedIssue.assigneeAgentId ?? input.routine.assigneeAgentId ?? null;
+          const shouldRepairAssignee = !runLockedIssue.assigneeAgentId && Boolean(input.routine.assigneeAgentId);
+          if (!runIsLive) {
+            await queueIssueAssignmentWakeup({
+              heartbeat,
+              issue: {
+                id: runLockedIssue.id,
+                assigneeAgentId: assigneeAgentIdForWake,
+                status: runLockedIssue.status,
+              },
+              reason: "issue_assigned",
+              mutation: "coalesce",
+              contextSource: "routine.dispatch",
+              requestedByActorType: input.source === "schedule" ? "system" : undefined,
+              rethrowOnError: true,
+            });
+          }
+
+          if (shouldRepairAssignee && input.routine.assigneeAgentId) {
+            await txDb
+              .update(issues)
+              .set({
+                assigneeAgentId: input.routine.assigneeAgentId,
+                assigneeUserId: null,
+                updatedAt: new Date(),
+              })
+              .where(eq(issues.id, runLockedIssue.id));
+          }
+
+          const updated = await finalizeRun(createdRun.id, {
+            status,
+            linkedIssueId: runLockedIssue.id,
+            coalescedIntoRunId: runLockedIssue.originRunId,
+            completedAt: triggeredAt,
+          }, txDb);
+          await updateRoutineTouchedState({
+            routineId: input.routine.id,
+            triggerId: input.trigger?.id ?? null,
+            triggeredAt,
+            status,
+            issueId: runLockedIssue.id,
+            nextRunAt,
+          }, txDb);
+          return updated ?? createdRun;
+        }
+
         const activeIssue = await findLiveExecutionIssue(input.routine, txDb);
         if (activeIssue && input.routine.concurrencyPolicy !== "always_enqueue") {
           const status = input.routine.concurrencyPolicy === "skip_if_active" ? "skipped" : "coalesced";
@@ -772,9 +855,41 @@ export function routineService(db: Db, deps: { heartbeat?: IssueAssignmentWakeup
             throw error;
           }
 
-          const existingIssue = await findLiveExecutionIssue(input.routine, txDb);
+          const existingIssue = await findExecutionIssueWithRunLock(input.routine, txDb);
           if (!existingIssue) throw error;
+
           const status = input.routine.concurrencyPolicy === "skip_if_active" ? "skipped" : "coalesced";
+          const existingRunId = existingIssue.executionRunId;
+          const existingRunIsLive = existingRunId ? await isLiveHeartbeatRun(existingRunId, txDb) : false;
+
+          if (!existingRunIsLive) {
+            const assigneeAgentIdForWake = existingIssue.assigneeAgentId ?? input.routine.assigneeAgentId ?? null;
+            await queueIssueAssignmentWakeup({
+              heartbeat,
+              issue: {
+                id: existingIssue.id,
+                assigneeAgentId: assigneeAgentIdForWake,
+                status: existingIssue.status,
+              },
+              reason: "issue_assigned",
+              mutation: "coalesce",
+              contextSource: "routine.dispatch",
+              requestedByActorType: input.source === "schedule" ? "system" : undefined,
+              rethrowOnError: true,
+            });
+          }
+
+          if (!existingIssue.assigneeAgentId && input.routine.assigneeAgentId) {
+            await txDb
+              .update(issues)
+              .set({
+                assigneeAgentId: input.routine.assigneeAgentId,
+                assigneeUserId: null,
+                updatedAt: new Date(),
+              })
+              .where(eq(issues.id, existingIssue.id));
+          }
+
           const updated = await finalizeRun(createdRun.id, {
             status,
             linkedIssueId: existingIssue.id,

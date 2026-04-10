@@ -1,0 +1,12 @@
+# Reduce Cursor index noise (align with .gitignore where useful)
+node_modules/
+dist/
+.titanclip/
+*.tsbuildinfo
+.env
+.env.local
+release/
+.build-server/
+.server-deps/
+build/
+
