@@ -89,7 +89,7 @@ export function verifyAdminToken(token: string): boolean {
 
 export interface AdminAuthService {
   
-  (pin: string): Promise<boolean>;
+  verifyPin(pin: string): Promise<boolean>;
   changePin(currentPin: string, newPin: string): Promise<void>;
   issueToken(): { token: string; expiresAt: Date };
   verifyToken(token: string): boolean;
